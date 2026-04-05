@@ -1,21 +1,16 @@
 import pandas as pd
-from factors import rank_signal
+import numpy as np
 
 
-def long_short(signal, top_pct=0.2, bottom_pct=0.2):
-    ranked = rank_signal(signal)
-    weights = pd.DataFrame(0.0, index=signal.index, columns=signal.columns)
-    weights[ranked >= (1 - top_pct)] = 1.0
-    weights[ranked <= bottom_pct] = -1.0
-    row_gross = weights.abs().sum(axis=1)
-    weights = weights.div(row_gross, axis=0).fillna(0.0)
-    return weights
+def generate_target_weights(momentum_scores, top_n=15):
+    monthly_scores = momentum_scores.resample('ME').last()
+    target_weights = pd.DataFrame(index=monthly_scores.index, columns=monthly_scores.columns)
 
+    for date, row in monthly_scores.iterrows():
+        valid_scores = row.dropna()
+        top_stocks = valid_scores.nlargest(top_n)
+        if not top_stocks.empty:
+            weight = 1.0 / len(top_stocks)
+            target_weights.loc[date, top_stocks.index] = weight
 
-def long_only(signal, top_n=20):
-    ranked = signal.rank(axis=1, ascending=False)
-    weights = pd.DataFrame(0.0, index=signal.index, columns=signal.columns)
-    weights[ranked <= top_n] = 1.0
-    row_sum = weights.sum(axis=1)
-    weights = weights.div(row_sum, axis=0).fillna(0.0)
-    return weights
+    return target_weights.fillna(0)
