@@ -1,26 +1,36 @@
-import yfinance as yf
 import pandas as pd
-from pathlib import Path
+import yfinance as yf
+import os
 
-DATA_DIR = Path(__file__).resolve().parents[1] / "data"
-PRICES_DIR = DATA_DIR / "prices"
+def load_tickers(filepath="../data/tickers.csv"):
+    df = pd.read_csv(filepath)
+    tickers = df['ticker'].tolist()
+    if 'SPY' not in tickers:
+        tickers.append('SPY')
+    return tickers
 
+def download_price_data(tickers, start_date, end_date):
+ 
+    print(f"Downloading data for {len(tickers)} tickers...")
+    
+    data = yf.download(tickers, start=start_date, end=end_date)
+    
 
-def download_prices(tickers, start, end):
-    data = yf.download(tickers, start=start, end=end, auto_adjust=True)["Close"]
-    return data
+    adj_close = data['Adj Close']
+    
+    adj_close = adj_close.sort_index()
+    adj_close = adj_close.ffill() 
+    
+    daily_returns = adj_close.pct_change()
+    
+    return adj_close, daily_returns
 
-
-def load_tickers(filepath=None):
-    path = filepath or DATA_DIR / "tickers.csv"
-    df = pd.read_csv(path)
-    return df["ticker"].dropna().tolist()
-
-
-def save_prices(df, filename="prices.csv"):
-    PRICES_DIR.mkdir(parents=True, exist_ok=True)
-    df.to_csv(PRICES_DIR / filename)
-
-
-def load_prices(filename="prices.csv"):
-    return pd.read_csv(PRICES_DIR / filename, index_col=0, parse_dates=True)
+if __name__ == "__main__":
+    START_DATE = "2016-01-01"
+    END_DATE = "2026-01-01"
+    
+    tickers_list = load_tickers()
+    prices_df, returns_df = download_price_data(tickers_list, START_DATE, END_DATE)
+    
+    print("\nPrice Data Head:")
+    print(prices_df.head())
