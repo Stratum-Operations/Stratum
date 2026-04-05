@@ -1,1 +1,51 @@
 ticker,sector,market_cap
+AAPL,Technology,Large
+MSFT,Technology,Large
+AMZN,Consumer Discretionary,Large
+NVDA,Technology,Large
+GOOGL,Communication Services,Large
+META,Communication Services,Large
+TSLA,Consumer Discretionary,Large
+AVGO,Technology,Large
+PEP,Consumer Staples,Large
+COST,Consumer Staples,Large
+ADBE,Technology,Large
+CSCO,Technology,Large
+NFLX,Communication Services,Large
+AMD,Technology,Large
+CMCSA,Communication Services,Large
+TMUS,Communication Services,Large
+INTC,Technology,Large
+AMAT,Technology,Large
+QCOM,Technology,Large
+TXN,Technology,Large
+AMGN,Health Care,Large
+HON,Industrials,Large
+INTU,Technology,Large
+SBUX,Consumer Discretionary,Large
+MDLZ,Consumer Staples,Large
+ISRG,Health Care,Large
+GILD,Health Care,Large
+BKNG,Consumer Discretionary,Large
+ADI,Technology,Large
+VRTX,Health Care,Large
+REGN,Health Care,Large
+PANW,Technology,Large
+SNPS,Technology,Large
+ASML,Technology,Large
+CDNS,Technology,Large
+PYPL,Technology,Large
+MU,Technology,Large
+KLAC,Technology,Large
+ADSK,Technology,Large
+MAR,Consumer Discretionary,Large
+FTNT,Technology,Large
+CSX,Industrials,Large
+MCHP,Technology,Large
+MNST,Consumer Staples,Large
+LRCX,Technology,Large
+ORLY,Consumer Discretionary,Large
+ADP,Technology,Large
+CTAS,Industrials,Large
+PDD,Consumer Discretionary,Large
+MELI,Consumer Discretionary,Large
