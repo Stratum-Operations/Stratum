@@ -1,61 +1,54 @@
 import pandas as pd
 import numpy as np
-from pathlib import Path
-
-OUTPUTS_DIR = Path(__file__).resolve().parents[1] / "outputs"
-TRADING_DAYS = 252
+import os
 
 
-def total_return(returns):
-    return (1 + returns).prod() - 1
+def calculate_metrics(performance_data, risk_free_rate=0.0):
+    trading_days = len(performance_data)
+    years = trading_days / 252.0
+    metrics = {}
+
+    for column in ['Strategy', 'SPY']:
+        col_return = f'{column}_Return'
+        col_equity = f'{column}_Equity'
+
+        initial_val = performance_data[col_equity].iloc[0]
+        final_val = performance_data[col_equity].iloc[-1]
+        total_return = (final_val / initial_val) - 1
+        cagr = (final_val / initial_val) ** (1 / years) - 1
+        annualized_volatility = performance_data[col_return].std() * np.sqrt(252)
+        annualized_return = performance_data[col_return].mean() * 252
+        sharpe_ratio = (annualized_return - risk_free_rate) / annualized_volatility
+        running_max = performance_data[col_equity].cummax()
+        max_drawdown = ((performance_data[col_equity] / running_max) - 1).min()
+
+        metrics[column] = {
+            'Total Return': f"{total_return * 100:.2f}%",
+            'CAGR': f"{cagr * 100:.2f}%",
+            'Annualized Volatility': f"{annualized_volatility * 100:.2f}%",
+            'Sharpe Ratio': f"{sharpe_ratio:.2f}",
+            'Max Drawdown': f"{max_drawdown * 100:.2f}%"
+        }
+
+    return pd.DataFrame(metrics)
 
 
-def cagr(returns):
-    n_years = len(returns) / TRADING_DAYS
-    return (1 + total_return(returns)) ** (1 / n_years) - 1
+def save_evidence(performance_data, target_weights, momentum_scores, output_dir="../outputs/"):
+    os.makedirs(output_dir, exist_ok=True)
+    performance_data.to_csv(os.path.join(output_dir, "performance.csv"))
 
+    rebalance_dates = target_weights.index[target_weights.sum(axis=1) > 0]
+    log_records = []
 
-def annualised_volatility(returns):
-    return returns.std() * np.sqrt(TRADING_DAYS)
+    for date in rebalance_dates:
+        weights = target_weights.loc[date]
+        selected_tickers = weights[weights > 0].index
+        for ticker in selected_tickers:
+            log_records.append({
+                'date': date.strftime('%Y-%m-%d'),
+                'ticker': ticker,
+                'momentum_6m': round(momentum_scores.loc[date, ticker], 4),
+                'weight': round(weights[ticker], 4)
+            })
 
-
-def sharpe_ratio(returns, risk_free=0.0):
-    excess = returns - risk_free / TRADING_DAYS
-    return excess.mean() / excess.std() * np.sqrt(TRADING_DAYS)
-
-
-def max_drawdown(returns):
-    cum = (1 + returns).cumprod()
-    rolling_max = cum.cummax()
-    drawdown = (cum - rolling_max) / rolling_max
-    return drawdown.min()
-
-
-def calmar_ratio(returns):
-    mdd = abs(max_drawdown(returns))
-    return cagr(returns) / mdd if mdd != 0 else np.nan
-
-
-def sortino_ratio(returns, risk_free=0.0):
-    excess = returns - risk_free / TRADING_DAYS
-    downside = excess[excess < 0].std() * np.sqrt(TRADING_DAYS)
-    return excess.mean() * TRADING_DAYS / downside if downside != 0 else np.nan
-
-
-def compute_all(returns):
-    return {
-        "total_return": total_return(returns),
-        "cagr": cagr(returns),
-        "annualised_volatility": annualised_volatility(returns),
-        "sharpe_ratio": sharpe_ratio(returns),
-        "max_drawdown": max_drawdown(returns),
-        "calmar_ratio": calmar_ratio(returns),
-        "sortino_ratio": sortino_ratio(returns),
-    }
-
-
-def save_metrics(returns):
-    m = compute_all(returns)
-    df = pd.DataFrame([m])
-    df.to_csv(OUTPUTS_DIR / "metrics.csv", index=False)
-    return df
+    pd.DataFrame(log_records).to_csv(os.path.join(output_dir, "rebalance_log.csv"), index=False)
