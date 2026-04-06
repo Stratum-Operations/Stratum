@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 from pathlib import Path
 
@@ -57,4 +58,49 @@ def plot_rolling_returns(performance_data, output_dir=CHARTS_DIR, window=252):
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "rolling_returns.png"), dpi=300)
+    plt.close()
+
+
+def plot_rolling_sharpe(performance_data, output_dir=CHARTS_DIR, window=252):
+    os.makedirs(output_dir, exist_ok=True)
+    plt.figure(figsize=(12, 6))
+    
+    strat_rolling_ret = performance_data['Strategy_Return'].rolling(window=window).mean() * 252
+    strat_rolling_vol = performance_data['Strategy_Return'].rolling(window=window).std() * np.sqrt(252)
+    strat_sharpe = strat_rolling_ret / strat_rolling_vol
+    
+    spy_rolling_ret = performance_data['SPY_Return'].rolling(window=window).mean() * 252
+    spy_rolling_vol = performance_data['SPY_Return'].rolling(window=window).std() * np.sqrt(252)
+    spy_sharpe = spy_rolling_ret / spy_rolling_vol
+    
+    plt.plot(strat_sharpe.index, strat_sharpe, label='Strategy 12M Rolling Sharpe', linewidth=1.5)
+    plt.plot(spy_sharpe.index, spy_sharpe, label='SPY 12M Rolling Sharpe', linewidth=1.5, linestyle='--')
+    plt.axhline(0, color='black', linewidth=1, alpha=0.5)
+    plt.title('12-Month Rolling Sharpe Ratio', fontsize=16)
+    plt.xlabel('Date', fontsize=12)
+    plt.ylabel('Sharpe Ratio', fontsize=12)
+    plt.legend(loc='upper left')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "rolling_sharpe.png"), dpi=300)
+    plt.close()
+
+
+def plot_rolling_alpha(performance_data, output_dir=CHARTS_DIR, window=252):
+    os.makedirs(output_dir, exist_ok=True)
+    plt.figure(figsize=(12, 6))
+    
+    strat_rolling = performance_data['Strategy_Return'].rolling(window=window).apply(lambda x: (1 + x).prod() - 1)
+    spy_rolling = performance_data['SPY_Return'].rolling(window=window).apply(lambda x: (1 + x).prod() - 1)
+    alpha = strat_rolling - spy_rolling
+    
+    plt.plot(alpha.index, alpha * 100, label='Strategy 12M Rolling Alpha', linewidth=1.5, color='purple')
+    plt.axhline(0, color='black', linewidth=1, alpha=0.5)
+    plt.title('12-Month Rolling Alpha (Excess Return vs SPY)', fontsize=16)
+    plt.xlabel('Date', fontsize=12)
+    plt.ylabel('Alpha (%)', fontsize=12)
+    plt.legend(loc='upper left')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "rolling_alpha.png"), dpi=300)
     plt.close()

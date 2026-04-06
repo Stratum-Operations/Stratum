@@ -1,0 +1,22 @@
+name: Live Paper Tracker
+on:
+  schedule:
+    - cron: '0 22 28-31 * 1-5'
+  workflow_dispatch:
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: python fetch_universe.py
+      - run: python src/main.py
+      - run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/live_paper_ledger.csv
+          git commit -m "Live Paper Rebalance" || echo "No changes to commit"
+          git push

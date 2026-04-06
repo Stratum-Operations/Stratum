@@ -11,7 +11,12 @@ def calculate_metrics(performance_data, target_weights=None, risk_free_rate=0.0)
     years = trading_days / 252.0 if trading_days > 0 else 1
     metrics = {}
 
-    for column in ['Strategy', 'SPY']:
+    columns_to_process = ['Strategy']
+    for col in df.columns:
+        if col.endswith('_Return') and col != 'Strategy_Return':
+            columns_to_process.append(col.split('_Return')[0])
+
+    for column in columns_to_process:
         col_return = f'{column}_Return'
         col_equity = f'{column}_Equity'
         initial_val = df[col_equity].iloc[0] if not df.empty else 0
@@ -48,7 +53,9 @@ def calculate_metrics(performance_data, target_weights=None, risk_free_rate=0.0)
                 'Annulized Turnover': f"{ann_turnover * 100:.1f}%",
                 'Names Changed': f"{avg_changes:.1f}"
             })
-            metrics['SPY'].update({'Avg Turnover': '-', 'Annulized Turnover': '-', 'Names Changed': '-'})
+            for column in columns_to_process:
+                if column != 'Strategy':
+                    metrics[column].update({'Avg Turnover': '-', 'Annulized Turnover': '-', 'Names Changed': '-'})
 
     return pd.DataFrame(metrics)
 
@@ -71,3 +78,40 @@ def save_evidence(performance_data, target_weights, momentum_scores, metrics_df,
                 'weight': round(float(weights[ticker]), 4)
             })
     pd.DataFrame(log_records).to_csv(os.path.join(output_dir, "rebalance_log.csv"), index=False)
+
+
+from scipy.stats import pearsonr
+
+def calculate_factor_attribution(log_data, s_ret):
+    if log_data.empty: return pd.DataFrame()
+    
+    rebalance_dates = sorted(list(log_data['date'].unique()))
+    results = []
+    
+    for i in range(len(rebalance_dates) - 1):
+        curr_date = rebalance_dates[i]
+        next_date = rebalance_dates[i+1]
+        
+        subset = log_data[log_data['date'] == curr_date]
+        tickers = subset['ticker'].tolist()
+        
+        fwd_returns = []
+        for t in tickers:
+            try:
+                ret = (s_ret.loc[curr_date:next_date, t] + 1).prod() - 1
+                fwd_returns.append((t, ret))
+            except:
+                fwd_returns.append((t, np.nan))
+                
+        fwd_df = pd.DataFrame(fwd_returns, columns=['ticker', 'fwd_ret']).set_index('ticker')
+        merged = subset.set_index('ticker').join(fwd_df).dropna(subset=['fwd_ret', 'r6', 'r12', 'rv', 'rq'])
+        
+        for factor in ['r6', 'r12', 'rv', 'rq']:
+            if len(merged) > 1:
+                corr, _ = pearsonr(merged[factor], merged['fwd_ret'])
+                if not np.isnan(corr):
+                    results.append({'date': curr_date, 'factor': factor, 'corr': corr})
+                
+    if not results: return pd.DataFrame()
+    res_df = pd.DataFrame(results)
+    return res_df.groupby('factor')['corr'].mean().to_frame(name='Avg Pearson Correlation')

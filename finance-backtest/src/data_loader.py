@@ -1,32 +1,18 @@
 import pandas as pd
-import yfinance as yf
+import os
 from pathlib import Path
 
-TICKERS_PATH = Path(__file__).resolve().parent.parent / "data" / "tickers.csv"
+PRICES_DIR = Path(__file__).resolve().parent.parent / "data" / "prices"
 
-def load_tickers(filepath=TICKERS_PATH):
-    df = pd.read_csv(filepath)
-    if 'SPY' not in df['ticker'].tolist():
-        return df['ticker'].tolist() + ['SPY']
-    return df['ticker'].tolist()
+def download_price_data(universe):
+    price_file = os.path.join(PRICES_DIR, f"{universe.lower()}_prices.parquet")
+    if os.path.exists(price_file):
+        adj_close = pd.read_parquet(price_file)
+        return adj_close, adj_close.pct_change()
+    return pd.DataFrame(), pd.DataFrame()
 
-
-def download_price_data(tickers, start_date, end_date):
-    data = yf.download(tickers, start=start_date, end=end_date, auto_adjust=True)
-    adj_close = data['Close'] if isinstance(data.columns, pd.MultiIndex) else data
-    adj_close = adj_close.apply(pd.to_numeric, errors='coerce').sort_index().ffill()
-    return adj_close, adj_close.pct_change()
-
-
-def fetch_fundamentals(tickers):
-    results = []
-    for t in tickers:
-        if t == 'SPY': continue
-        info = yf.Ticker(t).info
-        results.append({
-            'ticker': t,
-            'roe': info.get('returnOnEquity', 0),
-            'debt_equity': info.get('debtToEquity', 0),
-            'fcf_margin': (info.get('freeCashflow', 0) / info.get('totalRevenue', 1)) if info.get('totalRevenue', 1) > 0 else 0
-        })
-    return pd.DataFrame(results).set_index('ticker')
+def fetch_fundamentals(universe):
+    fun_file = os.path.join(PRICES_DIR, f"{universe.lower()}_fundamentals.parquet")
+    if os.path.exists(fun_file):
+        return pd.read_parquet(fun_file)
+    return pd.DataFrame()
