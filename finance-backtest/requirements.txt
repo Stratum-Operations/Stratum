@@ -5,3 +5,5 @@ yfinance
 fastparquet
 pyarrow
 scipy
+pytz
+schedule
