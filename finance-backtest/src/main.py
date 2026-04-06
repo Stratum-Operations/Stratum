@@ -1,75 +1,59 @@
 import pandas as pd
 import os
-from data_loader import load_tickers, download_price_data
-from factors import calculate_momentum_6m
-from strategy import generate_target_weights
+from data_loader import load_tickers, download_price_data, fetch_fundamentals
+from factors import calculate_momentum_6m, calculate_momentum_12m, calculate_volatility_3m
+from strategy import generate_target_weights, generate_target_weights_v2, generate_target_weights_v3, generate_target_weights_v4
 from portfolio import simulate_portfolio
 from metrics import calculate_metrics, save_evidence
-from plots import plot_equity_curve, plot_drawdowns, plot_rolling_returns
 
-# Config
-START_DATE = "2016-01-01"
-END_DATE = "2024-01-01"
-TOP_N = 15
-INITIAL_CAPITAL = 10000
+START_DATE, END_DATE, TOP_N, INITIAL_CAPITAL = "2016-01-01", "2024-01-01", 15, 10000
 
 def main():
-    print("\n" + "="*40)
-    print("      VERSION 1 MOMENTUM BACKTEST")
-    print("="*40)
-
-    # 1. Load Tickers
-    print("\n[PHASE 1] Loading Tickers...")
     tickers = load_tickers()
-    print(f"Loaded {len(tickers)} tickers (including SPY benchmark)")
-
-    # 2. Download Data
-    print("\n[PHASE 2] Downloading Price Data...")
-    prices, daily_returns = download_price_data(tickers, START_DATE, END_DATE)
+    prices, ret = download_price_data(tickers, START_DATE, END_DATE)
+    if prices.empty: return
     
-    if prices.empty:
-        print("\n[!] ERROR: No price data downloaded. Check your connection or ticker symbols.")
-        return
+    spy_ret, s_prices, s_ret = ret['SPY'], prices.drop(columns=['SPY']), ret.drop(columns=['SPY'])
+    m6, m12, v3 = calculate_momentum_6m(s_prices), calculate_momentum_12m(s_prices), calculate_volatility_3m(s_ret)
     
-    spy_returns = daily_returns['SPY']
-    stock_prices = prices.drop(columns=['SPY'])
-    stock_returns = daily_returns.drop(columns=['SPY'])
+    fun = fetch_fundamentals(tickers)
+    tdf = pd.read_csv("data/tickers.csv")
 
-    # 3. Compute Factor
-    print("\n[PHASE 3] Computing 6-Month Momentum Factor...")
-    momentum_scores = calculate_momentum_6m(stock_prices)
+    w1 = generate_target_weights(m6, TOP_N)
+    p1 = simulate_portfolio(s_ret, w1, spy_ret, INITIAL_CAPITAL, friction=0.0)
+    r1 = calculate_metrics(p1, w1)
 
-    # 4. Generate Strategy Weights
-    print("\n[PHASE 4] Generating Strategy Weights...")
-    weights = generate_target_weights(momentum_scores, top_n=TOP_N)
+    w2, _ = generate_target_weights_v2(m6, m12, TOP_N)
+    p2 = simulate_portfolio(s_ret, w2, spy_ret, INITIAL_CAPITAL, friction=0.0)
+    r2 = calculate_metrics(p2, w2)
 
-    # 5. Simulate Portfolio
-    print("\n[PHASE 5] Simulating Portfolio Performance...")
-    performance = simulate_portfolio(stock_returns, weights, spy_returns, INITIAL_CAPITAL)
-    
-    print("\n--- Performance DataFrame Info ---")
-    print(performance.info())
-    print(performance.head())
+    w3, _ = generate_target_weights_v3(m6, m12, v3, TOP_N)
+    p3 = simulate_portfolio(s_ret, w3, spy_ret, INITIAL_CAPITAL, friction=0.0)
+    r3 = calculate_metrics(p3, w3)
 
-    # 6. Calculate Metrics
-    print("\n[PHASE 6] Calculating Performance Metrics...")
-    results = calculate_metrics(performance)
-    print("\n--- Summary Statistics ---")
-    print(results)
+    w4, log4 = generate_target_weights_v4(m6, m12, v3, fun, tdf)
+    p4 = simulate_portfolio(s_ret, w4, spy_ret, INITIAL_CAPITAL, friction=0.0020)
+    r4 = calculate_metrics(p4, w4)
 
-    # 7. Save Evidence
-    print("\n[PHASE 7] Saving Evidence (CSVs)...")
-    save_evidence(performance, weights, momentum_scores, results)
+    log4.to_csv("outputs/rebalance_log_v4.csv", index=False)
 
-    # 8. Generate Charts
-    print("\n[PHASE 8] Generating Charts...")
-    plot_equity_curve(performance)
-    plot_drawdowns(performance)
-    plot_rolling_returns(performance)
+    df_comp = pd.DataFrame({
+        'Metric': r1.index,
+        'V1': r1['Strategy'].values,
+        'V2': r2['Strategy'].values,
+        'V3': r3['Strategy'].values,
+        'V4 (Friction)': r4['Strategy'].values,
+        'SPY': r1['SPY'].values
+    })
 
-    print("\n" + "="*40)
-    print("      BACKTEST COMPLETE")
-    print("="*40 + "\n")
+    print("\n" + "="*85)
+    print("      STRATEGY COMPARISON: V1-V4 (V4 includes Sector-Neutral + Quality + Friction)")
+    print("="*85)
+    print(df_comp.to_string(index=False))
+    print("="*85 + "\n")
 
 if __name__ == "__main__":
     main()
+
+
+
