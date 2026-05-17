@@ -5,7 +5,7 @@ from factors import calculate_momentum, calculate_volatility_3m
 from strategy import generate_target_weights_v6
 from portfolio import simulate_portfolio
 from metrics import calculate_metrics, calculate_factor_attribution
-from robustness import bootstrap_cagr, run_parameter_perturbation
+from robustness import bootstrap_cagr, run_parameter_perturbation, run_walk_forward_optimization
 
 INITIAL_CAPITAL = 10000
 TOP_N = 15
@@ -139,6 +139,12 @@ def main():
         )
         print(pt_df.to_string(index=False))
         print("="*85 + "\n")
+        
+        # Chronological Walk-Forward Optimization (WFO) comparison
+        run_walk_forward_optimization(
+            results['SP500']['s_prices'], results['SP500']['s_ret'],
+            results['SP500']['spy_ret'], results['SP500']['fun'], None
+        )
 
 if __name__ == "__main__":
     main()

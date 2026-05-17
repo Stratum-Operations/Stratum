@@ -18,7 +18,7 @@ import WatchlistManager from './components/WatchlistManager'
 import ReportingEngine from './components/ReportingEngine'
 import { LayoutDashboard, Table, History, BarChart2, FlaskConical, Zap, Activity, ShieldCheck, ShoppingCart, ClipboardList, FileText } from 'lucide-react'
 
-const API_BASE = 'http://127.0.0.1:8000/api'
+const API_BASE = 'http://127.0.0.1:8001/api'
 
 const TABS = [
   { id: 'overview', name: 'Overview', icon: LayoutDashboard },
