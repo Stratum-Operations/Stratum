@@ -72,16 +72,15 @@ export default function LivePortfolioTracker({ holdings, perf }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 2fr', gap: '24px' }}>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--radius-sm)' }}>
-             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ background: '#ffffff', padding: '24px', border: '1px solid #e5e7eb' }}>
+             <span style={{ fontSize: '0.8rem', color: '#000000', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontFamily: 'JetBrains Mono, monospace' }}>
                 <ShoppingCart size={14} /> Current Live Ledger (Frozen Picks)
              </span>
-             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                {liveData.slice(0, 8).map(d => (
                  <LiveLedgerItem 
                    key={d.ticker} 
-                   ticker={d.ticker} 
                    entry={d.entryPrice} 
                    current={d.currentPrice}
                    weight={6.6}
@@ -91,20 +90,20 @@ export default function LivePortfolioTracker({ holdings, perf }) {
           </div>
         </div>
 
-        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--radius-sm)' }}>
-           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+        <div style={{ background: '#ffffff', padding: '24px', border: '1px solid #e5e7eb' }}>
+           <span style={{ fontSize: '0.8rem', color: '#000000', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontFamily: 'JetBrains Mono, monospace' }}>
               <TrendingUp size={14} /> Expectation vs. Reality (Live Drift)
            </span>
            <div style={{ height: '300px' }}>
              <ResponsiveContainer width="100%" height="100%">
                <LineChart data={chartData}>
-                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                 <XAxis dataKey="month" stroke="#8a9fc2" tick={{fontSize: 10}} />
-                 <YAxis stroke="#8a9fc2" tick={{fontSize: 10}} domain={['auto', 'auto']} />
-                 <Tooltip contentStyle={{background: '#0a0e17', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-sm)'}} />
-                 <Legend wrapperStyle={{fontSize: '0.85rem', paddingTop: '10px'}} />
-                 <Line type="monotone" dataKey="Expected" stroke="var(--text-muted)" strokeDasharray="5 5" strokeWidth={1} dot={false} />
-                 <Line type="monotone" dataKey="Realized" stroke="var(--accent-cyan)" strokeWidth={3} dot={false} />
+                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                 <XAxis dataKey="month" stroke="#e5e7eb" tick={{fontSize: 10, fill: '#000000', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600}} />
+                 <YAxis stroke="#e5e7eb" tick={{fontSize: 10, fill: '#000000', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600}} domain={['auto', 'auto']} />
+                 <Tooltip contentStyle={{background: '#ffffff', border: '1px solid #e5e7eb', color: '#000000', fontFamily: 'JetBrains Mono, monospace'}} />
+                 <Legend wrapperStyle={{fontSize: '0.85rem', paddingTop: '15px', color: '#000000', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700}} />
+                 <Line type="monotone" dataKey="Expected" stroke="#000000" strokeDasharray="5 5" strokeWidth={1} dot={false} />
+                 <Line type="monotone" dataKey="Realized" stroke="#000000" strokeWidth={2.5} dot={false} />
                </LineChart>
              </ResponsiveContainer>
            </div>
@@ -112,8 +111,8 @@ export default function LivePortfolioTracker({ holdings, perf }) {
 
       </div>
 
-      <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--radius-sm)' }}>
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+      <div style={{ background: '#ffffff', padding: '24px', border: '1px solid #e5e7eb' }}>
+        <span style={{ fontSize: '0.8rem', color: '#000000', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontFamily: 'JetBrains Mono, monospace' }}>
           <AlertCircle size={14} /> Live Rank Drift Monitor (Factor Signal Decay)
         </span>
         <div className="table-wrapper">
@@ -133,14 +132,14 @@ export default function LivePortfolioTracker({ holdings, perf }) {
                   <td>{d.ticker}</td>
                   <td>{d.score.toFixed(2)}</td>
                   <td>{d.currentScore.toFixed(2)}</td>
-                  <td style={{ color: d.drift > 8 ? 'var(--accent-red)' : 'var(--text-muted)' }}>
+                  <td style={{ color: '#000000', fontWeight: d.drift > 8 ? 800 : 400 }}>
                     -{d.drift.toFixed(2)}%
                   </td>
                   <td>
                     {d.drift > 8 ? (
-                      <span className="drift-alert">Signal Deterioration</span>
+                      <span className="drift-alert" style={{ border: '1px solid #000000', fontWeight: 800 }}>Signal Deterioration</span>
                     ) : (
-                      <span style={{ color: 'var(--accent-green)' }}>Stable</span>
+                      <span style={{ color: '#000000', fontWeight: 600 }}>Stable</span>
                     )}
                   </td>
                 </tr>

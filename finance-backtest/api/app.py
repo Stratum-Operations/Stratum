@@ -159,31 +159,42 @@ def get_backtest_metrics():
         raise HTTPException(status_code=500, detail=f"Failed to load metrics: {str(e)}")
 
 @app.get("/api/signals/screener")
-def get_signals_screener():
+def get_signals_screener(limit: int = 200):
     """
-    Returns the top 50 tickers based on the latest Z-scored composite alpha signal scores.
+    Returns all tickers in the universe ranked by composite Z-score descending.
+    The top 15 by score are the optimizer's selected holdings.
+    Accepts optional `limit` query param (default 200 = full universe).
     """
     try:
         if not os.path.exists(LOG_PATH):
             raise HTTPException(status_code=404, detail="Rebalance log file does not exist")
-            
+
         df = pd.read_csv(LOG_PATH)
         latest_date = df['date'].max()
         recent = df[df['date'] == latest_date].copy()
-        
-        # Sort by Z-scored composite score descending and take the top 50
-        top_50 = recent.sort_values(by='score', ascending=False).head(50)
-        
+
+        # Full universe sorted by composite score
+        ranked = recent.sort_values(by='score', ascending=False).head(limit).reset_index(drop=True)
+        ranked['rank'] = ranked.index + 1          # 1-based rank
+        ranked['selected'] = ranked['weight'] > 0  # True = in the active portfolio
+
         try:
             sec_df = pd.read_csv(os.path.join(BASE_DIR, "data", "tickers.csv"))
-            top_50 = top_50.merge(sec_df[['ticker', 'sector']], on='ticker', how='left')
-            top_50['sector'] = top_50['sector'].fillna('Other')
+            ranked = ranked.merge(sec_df[['ticker', 'sector']], on='ticker', how='left')
+            ranked['sector'] = ranked['sector'].fillna('Other')
         except Exception:
-            top_50['sector'] = 'Other'
-            
+            ranked['sector'] = 'Other'
+
+        # Round float columns for clean JSON
+        float_cols = ['m6','m12','vol','roe','de','fcf','r6','r12','rv','rq','score','weight']
+        for c in float_cols:
+            if c in ranked.columns:
+                ranked[c] = ranked[c].round(4)
+
         return {
             "date": latest_date,
-            "screener": top_50.to_dict(orient="records")
+            "total": len(ranked),
+            "screener": ranked.to_dict(orient="records")
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to run screener: {str(e)}")

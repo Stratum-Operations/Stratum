@@ -69,38 +69,38 @@ export default function RobustnessLab({ perf }) {
            </div>
         </div>
 
-        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--radius-sm)' }}>
-           <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '16px' }}>
+        <div style={{ background: '#ffffff', padding: '24px', border: '1px solid #e5e7eb' }}>
+           <span style={{ fontSize: '0.85rem', color: '#000000', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', fontFamily: 'JetBrains Mono, monospace' }}>
              <History size={14} /> In-Sample vs. Out-of-Sample Performance
            </span>
            <div style={{ height: '320px' }}>
              <ResponsiveContainer width="100%" height="100%">
                <LineChart data={walkForwardData}>
-                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                 <XAxis dataKey="date" stroke="#8a9fc2" tick={{fontSize: 10}} />
-                 <YAxis stroke="#8a9fc2" tick={{fontSize: 10}} />
-                 <Tooltip contentStyle={{background: '#0a0e17', border: '1px solid var(--glass-border)'}} />
-                 <ReferenceArea x1={walkForwardData[0]?.date} x2={splitDate} fill="rgba(255,255,255,0.03)" label={{ position: 'insideTopLeft', value: 'IN-SAMPLE (IS)', fill: '#8a9fc2', fontSize: 10 }} />
-                 <ReferenceArea x1={splitDate} x2={walkForwardData[walkForwardData.length-1]?.date} fill="transparent" label={{ position: 'insideTopLeft', value: 'OUT-OF-SAMPLE (OOS)', fill: 'var(--accent-cyan)', fontSize: 10 }} />
-                 <Line type="monotone" dataKey="Strategy_Equity" stroke="var(--accent-cyan)" strokeWidth={2} dot={false} />
-                 <Line type="monotone" dataKey="SPY_Equity" stroke="rgba(255,255,255,0.2)" strokeWidth={1} dot={false} />
+                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                 <XAxis dataKey="date" stroke="#e5e7eb" tick={{fontSize: 10, fill: '#000000', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600}} />
+                 <YAxis stroke="#e5e7eb" tick={{fontSize: 10, fill: '#000000', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600}} />
+                 <Tooltip contentStyle={{background: '#ffffff', border: '1px solid #e5e7eb', color: '#000000', fontFamily: 'JetBrains Mono, monospace'}} />
+                 <ReferenceArea x1={walkForwardData[0]?.date} x2={splitDate} fill="#f9fafb" label={{ position: 'insideTopLeft', value: 'IN-SAMPLE (IS)', fill: '#000000', fontSize: 10, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }} />
+                 <ReferenceArea x1={splitDate} x2={walkForwardData[walkForwardData.length-1]?.date} fill="transparent" label={{ position: 'insideTopLeft', value: 'OUT-OF-SAMPLE (OOS)', fill: '#000000', fontSize: 10, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }} />
+                 <Line type="monotone" dataKey="Strategy_Equity" stroke="#000000" strokeWidth={2} dot={false} />
+                 <Line type="monotone" dataKey="SPY_Equity" stroke="#000000" strokeWidth={1} strokeDasharray="3 3" dot={false} />
                </LineChart>
              </ResponsiveContainer>
            </div>
            
-           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginTop: '16px' }}>
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '4px' }}>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>In-Sample Metrics</span>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '4px' }}>
-                   <span>Sharpe: **1.35**</span>
-                   <span>Win Rate: **62%**</span>
+           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px', marginTop: '24px' }}>
+              <div style={{ background: '#ffffff', padding: '18px', border: '1px solid #e5e7eb' }}>
+                <span style={{ fontSize: '0.7rem', color: '#000000', textTransform: 'uppercase', fontWeight: 800, fontFamily: 'JetBrains Mono, monospace' }}>In-Sample Metrics</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '6px', color: '#000000', fontWeight: 600 }}>
+                   <span>Sharpe: <strong>1.35</strong></span>
+                   <span>Win Rate: <strong>62%</strong></span>
                 </div>
               </div>
-              <div style={{ background: 'rgba(0, 229, 255, 0.05)', padding: '12px', borderRadius: '4px', border: '1px solid rgba(0, 229, 255, 0.1)' }}>
-                <span style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', textTransform: 'uppercase' }}>Out-of-Sample Metrics</span>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '4px' }}>
-                   <span>Sharpe: **1.22**</span>
-                   <span>Win Rate: **58%**</span>
+              <div style={{ background: '#ffffff', padding: '18px', border: '1px solid #e5e7eb' }}>
+                <span style={{ fontSize: '0.7rem', color: '#000000', textTransform: 'uppercase', fontWeight: 800, fontFamily: 'JetBrains Mono, monospace' }}>Out-of-Sample Metrics</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '6px', color: '#000000', fontWeight: 600 }}>
+                   <span>Sharpe: <strong>1.22</strong></span>
+                   <span>Win Rate: <strong>58%</strong></span>
                 </div>
               </div>
            </div>

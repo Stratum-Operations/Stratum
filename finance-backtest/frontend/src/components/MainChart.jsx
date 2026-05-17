@@ -1,137 +1,173 @@
 import { useState, useMemo } from 'react'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
+import {
+  LineChart, Line, XAxis, YAxis,
+  Tooltip, ResponsiveContainer, CartesianGrid,
+  ReferenceLine,
+} from 'recharts'
+
+// ─── Brutalist custom tooltip ─────────────────────────────────────
+const BrutalTooltip = ({ active, payload, label, view }) => {
+  if (!active || !payload?.length) return null
+  return (
+    <div style={{
+      background: '#ffffff',
+      border: '1px solid #e5e7eb',
+      padding: '10px 14px',
+      fontFamily: 'JetBrains Mono, monospace',
+      fontSize: '11px',
+      color: '#000000',
+      minWidth: '180px',
+    }}>
+      <div style={{ color: '#000000', marginBottom: '6px', letterSpacing: '0.08em', fontWeight: 700 }}>
+        {String(label).substring(0, 10)}
+      </div>
+      {payload.map(p => (
+        <div key={p.dataKey} style={{
+          display: 'flex', justifyContent: 'space-between', gap: '16px',
+          color: '#000000',
+          borderTop: '1px solid #e5e7eb',
+          padding: '3px 0',
+        }}>
+          <span style={{ color: '#000000', fontWeight: 600 }}>
+            {p.dataKey.startsWith('Strategy') ? 'STRATEGY' : 'SPY     '}
+          </span>
+          <span style={{ fontWeight: 800 }}>
+            {view === 'equity'
+              ? `$${Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+              : Number(p.value).toFixed(3)}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── View config ─────────────────────────────────────────────────
+const VIEWS = {
+  equity:   { label: 'EQUITY CURVE',   keys: ['Strategy_Equity',   'SPY_Equity'],           yFmt: v => `$${(v/1000).toFixed(0)}k` },
+  drawdown: { label: 'MAX DRAWDOWN',   keys: ['Strategy_Drawdown', 'SPY_Drawdown'],          yFmt: v => `${(v*100).toFixed(1)}%`  },
+  sharpe:   { label: 'ROLLING SHARPE', keys: ['Strategy_Rolling_Sharpe', 'SPY_Rolling_Sharpe'], yFmt: v => v.toFixed(2)           },
+}
+
+// Strategy is solid black, SPY is dashed black
+const LINE_COLORS = { strategy: '#000000', spy: '#000000' }
 
 export default function MainChart({ perf }) {
   const [view, setView] = useState('equity')
 
-  const processedData = useMemo(() => {
+  // Sample every 3rd point to keep render fast — chart remains sharp/jagged
+  const chartData = useMemo(() => {
     if (!perf) return []
-    return perf.filter((_, i) => i % 5 === 0) 
+    return perf.filter((_, i) => i % 3 === 0)
   }, [perf])
 
+  const cfg = VIEWS[view]
+
   return (
-    <div className="glass-panel" style={{ height: '480px', display: 'flex', flexDirection: 'column' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      minHeight: '420px',
+      background: '#ffffff',
+    }}>
+      {/* ── Chart Header ─────────────────────────────────── */}
       <div className="chart-header">
         <div>
-          <span className="chart-title">Strategy Performance Visualization</span>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '4px' }}>
-            Historical performance comparisons (2014-2024)
-          </p>
+          <div className="chart-title">{cfg.label}</div>
+          <div style={{
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: '10px',
+            color: '#000000',
+            marginTop: '4px',
+            letterSpacing: '0.05em',
+            fontWeight: 600,
+          }}>
+            <span style={{ color: '#000000', marginRight: '14px', fontWeight: 800 }}>— STRATEGY V7</span>
+            <span style={{ color: '#000000' }}>· SPY BENCHMARK (DASHED)</span>
+          </div>
         </div>
-        
+
+        {/* Toggle buttons */}
         <div className="chart-toggles">
-          <button 
-            className={`toggle-btn ${view === 'equity' ? 'active' : ''}`}
-            onClick={() => setView('equity')}
-          >
-            Equity
-          </button>
-          <button 
-            className={`toggle-btn ${view === 'drawdown' ? 'active' : ''}`}
-            onClick={() => setView('drawdown')}
-          >
-            Drawdown
-          </button>
-          <button 
-            className={`toggle-btn ${view === 'sharpe' ? 'active' : ''}`}
-            onClick={() => setView('sharpe')}
-          >
-            Sharpe
-          </button>
+          {Object.entries(VIEWS).map(([key, v]) => (
+            <button
+              key={key}
+              className={`toggle-btn ${view === key ? 'active' : ''}`}
+              onClick={() => setView(key)}
+            >
+              {key.toUpperCase()}
+            </button>
+          ))}
         </div>
       </div>
-      
-      {/* Explicitly style the flex parent container to prevent Recharts ResponsiveContainer from collapsing to 0 height */}
-      <div style={{ flex: 1, width: '100%', minHeight: '320px', position: 'relative' }}>
+
+      {/* ── Recharts — raw, linear, no animations ────────── */}
+      <div style={{ flex: 1, minHeight: '340px', padding: '0 0 0 0' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={processedData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis 
-              dataKey="date" 
-              stroke="var(--text-muted)" 
-              tick={{ fontSize: 11, fill: 'var(--text-muted)' }} 
-              tickFormatter={(t) => String(t).substring(0, 4)} 
-              minTickGap={40} 
+          <LineChart
+            data={chartData}
+            margin={{ top: 16, right: 24, bottom: 8, left: 8 }}
+          >
+            {/* Subtle but visible grid — brutalist structure */}
+            <CartesianGrid
+              strokeDasharray=""           /* solid lines */
+              stroke="#e5e7eb"
+              vertical={true}
+              horizontal={true}
             />
-            <YAxis 
-              stroke="var(--text-muted)" 
-              tick={{ fontSize: 11, fill: 'var(--text-muted)' }} 
-              domain={['auto', 'auto']}
-              tickFormatter={(val) => view === 'equity' ? `$${val.toLocaleString()}` : `${val}`}
+
+            <XAxis
+              dataKey="date"
+              stroke="#e5e7eb"
+              tick={{ fontSize: 10, fill: '#000000', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}
+              tickFormatter={t => String(t).substring(0, 4)}
+              minTickGap={50}
+              axisLine={{ stroke: '#e5e7eb' }}
+              tickLine={{ stroke: '#e5e7eb' }}
             />
-            <Tooltip 
-              contentStyle={{
-                backgroundColor: 'var(--bg-dark)', 
-                border: '1px solid var(--glass-border)', 
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--text-main)',
-                fontSize: '0.85rem'
-              }} 
+
+            <YAxis
+              stroke="#e5e7eb"
+              tick={{ fontSize: 10, fill: '#000000', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}
+              tickFormatter={cfg.yFmt}
+              axisLine={{ stroke: '#e5e7eb' }}
+              tickLine={{ stroke: '#e5e7eb' }}
+              width={56}
             />
-            <Legend wrapperStyle={{ fontSize: '0.8rem', paddingTop: '10px' }} />
-            
-            {view === 'equity' && (
-              <>
-                <Line 
-                  type="monotone" 
-                  dataKey="Strategy_Equity" 
-                  name="Strategy V7 (QP Optimizer)" 
-                  stroke="var(--accent-cyan)" 
-                  strokeWidth={2.5} 
-                  dot={false} 
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="SPY_Equity" 
-                  name="Benchmark (SPY)" 
-                  stroke="var(--text-muted)" 
-                  strokeWidth={1.5} 
-                  dot={false} 
-                />
-              </>
-            )}
-            
+
+            <Tooltip
+              content={<BrutalTooltip view={view} />}
+              cursor={{ stroke: '#000000', strokeWidth: 1, strokeDasharray: '4 2' }}
+            />
+
+            {/* Zero / reference line for drawdown view */}
             {view === 'drawdown' && (
-              <>
-                <Line 
-                  type="monotone" 
-                  dataKey="Strategy_Drawdown" 
-                  name="Strategy Drawdown" 
-                  stroke="var(--accent-red)" 
-                  strokeWidth={2} 
-                  dot={false} 
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="SPY_Drawdown" 
-                  name="SPY Drawdown" 
-                  stroke="var(--text-muted)" 
-                  strokeWidth={1} 
-                  dot={false} 
-                />
-              </>
+              <ReferenceLine y={0} stroke="#e5e7eb" strokeDasharray="" />
             )}
-            
-            {view === 'sharpe' && (
-              <>
-                <Line 
-                  type="monotone" 
-                  dataKey="Strategy_Rolling_Sharpe" 
-                  name="Rolling Sharpe (12M)" 
-                  stroke="var(--accent-purple)" 
-                  strokeWidth={2.5} 
-                  dot={false} 
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="SPY_Rolling_Sharpe" 
-                  name="SPY Sharpe" 
-                  stroke="var(--text-muted)" 
-                  strokeWidth={1} 
-                  dot={false} 
-                />
-              </>
-            )}
+
+            {/* Strategy line — solid black, dominant */}
+            <Line
+              type="linear"                       /* raw, jagged — no smoothing */
+              dataKey={cfg.keys[0]}
+              stroke={LINE_COLORS.strategy}
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}            /* no animation */
+              activeDot={{ r: 3, fill: '#000000', stroke: '#000000' }}
+            />
+
+            {/* SPY benchmark — dashed black, subordinate */}
+            <Line
+              type="linear"
+              dataKey={cfg.keys[1]}
+              stroke={LINE_COLORS.spy}
+              strokeWidth={1}
+              strokeDasharray="4 4"
+              dot={false}
+              isAnimationActive={false}
+              activeDot={{ r: 2, fill: '#000000', stroke: '#000000' }}
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>

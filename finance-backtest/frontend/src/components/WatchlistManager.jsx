@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Bookmark, Plus, X, Tag, FileText, LayoutList } from 'lucide-react'
 
 export default function WatchlistManager({ topTickers }) {
