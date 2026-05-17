@@ -3,8 +3,11 @@ import json
 import pandas as pd
 import os
 from datetime import datetime
+from dotenv import load_dotenv
 
-WEBHOOK_URL = "https://discord.com/api/webhooks/PLACEHOLDER"
+load_dotenv()
+
+WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
 
 def send_alert(title, msg, color=0x00ff88):
     payload = {
@@ -15,9 +18,11 @@ def send_alert(title, msg, color=0x00ff88):
             "timestamp": datetime.utcnow().isoformat()
         }]
     }
+    if not WEBHOOK_URL:
+        return
     try:
         requests.post(WEBHOOK_URL, json=payload)
-    except:
+    except Exception:
         pass
 
 def check_risk_limits(holdings, sector_map):

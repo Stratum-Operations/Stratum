@@ -7,3 +7,4 @@ pyarrow
 scipy
 pytz
 schedule
+python-dotenv

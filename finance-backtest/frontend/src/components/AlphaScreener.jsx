@@ -3,235 +3,91 @@ import axios from 'axios'
 
 const API_BASE = 'http://127.0.0.1:8001/api'
 
-// ─── Column definitions — every column displayed has a fixed pixel width ──
-// ─── Column definitions — every column displayed has a fixed pixel width ──
 const COLS = [
-  { key: 'rank',    label: '#',          width: 36,  align: 'right',  title: 'Composite rank (1 = highest alpha score)' },
-  { key: 'ticker',  label: 'TICKER',     width: 68,  align: 'left',   title: 'Ticker symbol' },
-  { key: 'sector',  label: 'SECTOR',     width: 148, align: 'left',   title: 'GICS sector classification' },
-  // Raw factor inputs
-  { key: 'm6',      label: 'MOM 6M',     width: 72,  align: 'right',  title: '6-month raw price momentum (decimal return)', fmt: 'pct' },
-  { key: 'm12',     label: 'MOM 12M',    width: 72,  align: 'right',  title: '12-month raw price momentum (decimal return)', fmt: 'pct' },
-  { key: 'vol',     label: 'RVOL',       width: 64,  align: 'right',  title: 'Realised annualised volatility', fmt: 'pct' },
-  { key: 'roe',     label: 'ROE',        width: 64,  align: 'right',  title: 'Return on Equity (TTM)', fmt: 'pct' },
-  { key: 'de',      label: 'D/E',        width: 56,  align: 'right',  title: 'Debt-to-Equity ratio', fmt: 'x2' },
-  { key: 'fcf',     label: 'FCF MGN',    width: 72,  align: 'right',  title: 'Free Cash Flow margin', fmt: 'pct' },
-  // Z-score outputs — these are the alpha signals
-  { key: 'r6',      label: 'Z·MOM6',     width: 72,  align: 'right',  title: 'Cross-sectional Z-score: 6M momentum', fmt: 'z', zscore: true },
-  { key: 'r12',     label: 'Z·MOM12',    width: 72,  align: 'right',  title: 'Cross-sectional Z-score: 12M momentum', fmt: 'z', zscore: true },
-  { key: 'rv',      label: 'Z·VOL',      width: 72,  align: 'right',  title: 'Cross-sectional Z-score: low-volatility (inverted)', fmt: 'z', zscore: true },
-  { key: 'rq',      label: 'Z·QUAL',     width: 72,  align: 'right',  title: 'Cross-sectional Z-score: quality composite', fmt: 'z', zscore: true },
-  // Composite output
-  { key: 'score',   label: 'COMPOSITE',  width: 84,  align: 'right',  title: 'Final composite alpha score (equal-weighted Z-scores)', fmt: 'z', zscore: true },
-  { key: 'weight',  label: 'ALLOC %',    width: 72,  align: 'right',  title: 'QP optimizer target weight (0 = not selected)', fmt: 'pct' },
+  { key: 'rank',    label: '#',         width: 36,  align: 'right',  title: 'Composite rank' },
+  { key: 'ticker',  label: 'TICKER',    width: 68,  align: 'left',   title: 'Ticker symbol' },
+  { key: 'sector',  label: 'SECTOR',    width: 148, align: 'left',   title: 'GICS sector' },
+  { key: 'm6',      label: 'MOM 6M',    width: 72,  align: 'right',  title: '6M momentum',  fmt: 'pct' },
+  { key: 'm12',     label: 'MOM 12M',   width: 72,  align: 'right',  title: '12M momentum', fmt: 'pct' },
+  { key: 'vol',     label: 'RVOL',      width: 64,  align: 'right',  title: 'Realised vol', fmt: 'pct' },
+  { key: 'roe',     label: 'ROE',       width: 64,  align: 'right',  title: 'ROE (TTM)',    fmt: 'pct' },
+  { key: 'de',      label: 'D/E',       width: 56,  align: 'right',  title: 'Debt/Equity',  fmt: 'x2'  },
+  { key: 'fcf',     label: 'FCF MGN',   width: 72,  align: 'right',  title: 'FCF margin',   fmt: 'pct' },
+  { key: 'r6',      label: 'Z·MOM6',    width: 72,  align: 'right',  title: 'Z-score 6M',   fmt: 'z', zscore: true },
+  { key: 'r12',     label: 'Z·MOM12',   width: 72,  align: 'right',  title: 'Z-score 12M',  fmt: 'z', zscore: true },
+  { key: 'rv',      label: 'Z·VOL',     width: 72,  align: 'right',  title: 'Z-score vol',  fmt: 'z', zscore: true },
+  { key: 'rq',      label: 'Z·QUAL',    width: 72,  align: 'right',  title: 'Z-score qual', fmt: 'z', zscore: true },
+  { key: 'score',   label: 'COMPOSITE', width: 84,  align: 'right',  title: 'Composite alpha score', fmt: 'z', zscore: true },
+  { key: 'weight',  label: 'ALLOC %',   width: 72,  align: 'right',  title: 'QP target weight', fmt: 'pct' },
 ]
 
-// ─── Formatter helpers ────────────────────────────────────────────────────
 function fmt(value, type) {
   if (value === null || value === undefined || value === '') return '—'
   const v = parseFloat(value)
   if (isNaN(v)) return '—'
   switch (type) {
-    case 'pct':  return `${(v * 100).toFixed(2)}%`
-    case 'x2':   return v.toFixed(2) + 'x'
-    case 'z':    return (v >= 0 ? '+' : '') + v.toFixed(2)
-    default:     return String(value)
+    case 'pct': return `${(v * 100).toFixed(2)}%`
+    case 'x2':  return v.toFixed(2) + 'x'
+    case 'z':   return (v >= 0 ? '+' : '') + v.toFixed(2)
+    default:    return String(value)
   }
 }
 
-// ─── Z-score cell colour — strictly monochromatic ─────────────────────────
 function zColor(value) {
-  return '#000000'
+  const v = parseFloat(value)
+  if (v > 1.0)  return '#22c55e'
+  if (v < -1.0) return '#ef4444'
+  return '#d0d0d0'
 }
 
-// ─── Inline styles — monochromatic brutalist table ────────────────────────
-const S = {
-  // Outer shell
-  shell: {
-    fontFamily: 'Inter, sans-serif',
-    fontSize: '11px',
-    background: '#ffffff',
-    color: '#000000',
-  },
-  // Top toolbar strip
-  toolbar: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '15px 24px', /* Increased by 50% */
-    borderBottom: '1px solid #e5e7eb',
-    background: '#ffffff',
-    gap: '24px',
-    flexWrap: 'wrap',
-  },
-  toolbarLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '30px',
-    flexWrap: 'wrap',
-  },
-  title: {
-    fontSize: '11px',
-    fontWeight: 800,
-    letterSpacing: '0.22em',
-    textTransform: 'uppercase',
-    color: '#000000',
-  },
-  metaChip: {
-    fontSize: '10px',
-    color: '#000000',
-    letterSpacing: '0.05em',
-    fontWeight: 600,
-  },
-  // Sort controls
-  sortLabel: {
-    fontSize: '10px',
-    color: '#000000',
-    letterSpacing: '0.1em',
-    textTransform: 'uppercase',
-    marginRight: '9px',
-    fontWeight: 700,
-  },
-  // Filter input
-  filterInput: {
-    background: '#ffffff',
-    border: '1px solid #e5e7eb',
-    color: '#000000',
-    padding: '6px 12px', /* Increased by 50% */
-    fontSize: '11px',
-    fontFamily: 'JetBrains Mono, monospace',
-    outline: 'none',
-    width: '120px',
-    letterSpacing: '0.05em',
-  },
-  // Legend strip
-  legendStrip: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '18px',
-    padding: '9px 24px', /* Increased by 50% */
-    borderBottom: '1px solid #e5e7eb',
-    background: '#ffffff',
-    fontSize: '9px',
-    color: '#000000',
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-    fontWeight: 700,
-  },
-  legendBox: (color) => ({
-    width: '10px',
-    height: '10px',
-    background: '#000000',
-    display: 'inline-block',
-    flexShrink: 0,
-    border: '1px solid #000000',
-  }),
-  // Scrollable table container
-  tableWrap: {
-    overflowX: 'auto',
-    overflowY: 'auto',
-    maxHeight: 'calc(100vh - 280px)',
-  },
-  // The table itself
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    tableLayout: 'fixed',
-  },
-  // TH
-  th: (align, width) => ({
-    width: `${width}px`,
-    minWidth: `${width}px`,
-    padding: '15px 12px', /* Increased by 50% */
-    textAlign: align,
-    fontSize: '9px',
-    fontWeight: 800,
-    letterSpacing: '0.14em',
-    textTransform: 'uppercase',
-    color: '#000000',
-    background: '#ffffff',
-    borderTop: '1px solid #e5e7eb',
-    borderBottom: '1px solid #e5e7eb',
-    position: 'sticky',
-    top: 0,
-    zIndex: 10,
-    cursor: 'pointer',
-    userSelect: 'none',
-    whiteSpace: 'nowrap',
-  }),
-  thActive: {
-    color: '#000000',
-    borderBottom: '2px solid #000000',
-    fontWeight: 900,
-  },
-  // Divider between raw-factor block and Z-score block
-  thDivider: {},
-  // TD
-  td: (align, highlight, isZScore, value) => ({
-    padding: '15px 12px', /* Increased by 50% */
-    textAlign: align,
-    borderBottom: '1px solid #e5e7eb',
-    whiteSpace: 'nowrap',
-    background: '#ffffff',
-    color: '#000000',
-    fontWeight: isZScore && Math.abs(parseFloat(value)) > 1.0 ? 800 : 400,
-    textDecoration: isZScore && parseFloat(value) < -1.0 ? 'underline' : 'none',
-  }),
-  // The first-column divider
-  tdDivider: {},
-  // Highlighted row — top 15: stark black left-border
-  rowHighlight: {},
-  // Status bar at bottom
-  statusBar: {
-    padding: '12px 24px', /* Increased by 50% */
-    borderTop: '1px solid #e5e7eb',
-    fontSize: '9px',
-    color: '#000000',
-    letterSpacing: '0.08em',
-    display: 'flex',
-    gap: '36px',
-    background: '#ffffff',
-    fontWeight: 600,
-  },
+const TH_BASE = {
+  padding: '10px 10px',
+  fontSize: '9px',
+  fontWeight: 700,
+  letterSpacing: '0.14em',
+  textTransform: 'uppercase',
+  color: '#888888',
+  background: '#0e0e0e',
+  borderBottom: '1px solid #2e2e2e',
+  position: 'sticky',
+  top: 0,
+  zIndex: 10,
+  cursor: 'pointer',
+  userSelect: 'none',
+  whiteSpace: 'nowrap',
+  fontFamily: 'JetBrains Mono, monospace',
 }
 
-// ─── Sortable column header ───────────────────────────────────────────────
-function TH({ col, sortKey, sortDir, onSort, divider }) {
+function TH({ col, sortKey, sortDir, onSort }) {
   const active = sortKey === col.key
   return (
     <th
       title={col.title}
       style={{
-        ...S.th(col.align, col.width),
-        ...(active ? S.thActive : {}),
-        ...(divider ? S.thDivider : {}),
+        ...TH_BASE,
+        width: col.width, minWidth: col.width,
+        textAlign: col.align,
+        color: active ? '#ffffff' : '#888888',
+        borderBottom: active ? '2px solid #d0d0d0' : '1px solid #2e2e2e',
       }}
       onClick={() => onSort(col.key)}
     >
-      {col.label}
-      {active ? (sortDir === 'desc' ? ' ▼' : ' ▲') : ''}
+      {col.label}{active ? (sortDir === 'desc' ? ' ▼' : ' ▲') : ''}
     </th>
   )
 }
 
-// ─── Main component ───────────────────────────────────────────────────────
 export default function AlphaScreener() {
-  const [rows, setRows]         = useState([])
-  const [date, setDate]         = useState('')
-  const [total, setTotal]       = useState(0)
-  const [loading, setLoading]   = useState(true)
-  const [error, setError]       = useState(null)
-
-  // Sort state — default: composite score descending
-  const [sortKey, setSortKey]   = useState('score')
-  const [sortDir, setSortDir]   = useState('desc')
-
-  // Sector filter
+  const [rows, setRows]               = useState([])
+  const [date, setDate]               = useState('')
+  const [total, setTotal]             = useState(0)
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState(null)
+  const [sortKey, setSortKey]         = useState('score')
+  const [sortDir, setSortDir]         = useState('desc')
   const [filterSector, setFilterSector] = useState('ALL')
-  // Ticker search
-  const [search, setSearch]     = useState('')
+  const [search, setSearch]           = useState('')
 
-  // ── Fetch ───────────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
       try {
@@ -248,158 +104,137 @@ export default function AlphaScreener() {
     load()
   }, [])
 
-  // ── Derived sector list ─────────────────────────────────────────
   const sectors = useMemo(() => {
     const s = new Set(rows.map(r => r.sector).filter(Boolean))
     return ['ALL', ...Array.from(s).sort()]
   }, [rows])
 
-  // ── Filtered + sorted rows ──────────────────────────────────────
   const displayed = useMemo(() => {
     let d = [...rows]
-
     if (filterSector !== 'ALL') d = d.filter(r => r.sector === filterSector)
     if (search.trim()) {
       const q = search.trim().toUpperCase()
       d = d.filter(r => r.ticker?.toUpperCase().includes(q) || r.sector?.toUpperCase().includes(q))
     }
-
     d.sort((a, b) => {
       const av = parseFloat(a[sortKey]) ?? 0
       const bv = parseFloat(b[sortKey]) ?? 0
       return sortDir === 'desc' ? bv - av : av - bv
     })
-
     return d
   }, [rows, filterSector, search, sortKey, sortDir])
 
-  // The set of top-15 tickers from the base (score-ranked) list
   const top15Tickers = useMemo(() => new Set(rows.slice(0, 15).map(r => r.ticker)), [rows])
 
-  // ── Sort handler ────────────────────────────────────────────────
   const handleSort = (key) => {
     if (key === sortKey) setSortDir(d => d === 'desc' ? 'asc' : 'desc')
     else { setSortKey(key); setSortDir('desc') }
   }
 
-  // ── Render states ────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div style={{ ...S.shell, padding: '40px', textAlign: 'center', color: '#6b7280', letterSpacing: '0.15em' }}>
-        LOADING SCREENER DATA...
-      </div>
-    )
-  }
-  if (error) {
-    return (
-      <div style={{ ...S.shell, padding: '40px', textAlign: 'center', color: '#ef4444', letterSpacing: '0.1em' }}>
-        ERROR: {error}
-      </div>
-    )
-  }
+  if (loading) return (
+    <div style={{ background: '#070707', padding: '60px', textAlign: 'center', color: '#888888', letterSpacing: '0.15em', fontFamily: 'JetBrains Mono, monospace', fontSize: '10px' }}>
+      LOADING SCREENER DATA...
+    </div>
+  )
+
+  if (error) return (
+    <div style={{ background: '#070707', padding: '40px', textAlign: 'center', color: '#ef4444', letterSpacing: '0.1em', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontSize: '11px' }}>
+      ERROR: {error}
+    </div>
+  )
 
   const selectedCount = rows.filter(r => r.selected).length
+  const inputStyle = {
+    background: '#141414',
+    border: '1px solid #2e2e2e',
+    color: '#d0d0d0',
+    padding: '5px 10px',
+    fontSize: '11px',
+    fontFamily: 'JetBrains Mono, monospace',
+    outline: 'none',
+  }
 
   return (
-    <div style={S.shell}>
+    <div style={{ background: '#070707', fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#d0d0d0' }}>
 
-      {/* ── Toolbar ──────────────────────────────────────── */}
-      <div style={S.toolbar}>
-        <div style={S.toolbarLeft}>
-          <span style={S.title}>Alpha Screener</span>
-          <span style={S.metaChip}>
-            AS OF {date} &nbsp;·&nbsp; {total} ASSETS
+      {/* Toolbar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid #1c1c1c', background: '#0e0e0e', gap: '16px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#ffffff', fontFamily: 'JetBrains Mono, monospace' }}>
+            Alpha Screener
+          </span>
+          <span style={{ fontSize: '10px', color: '#888888', letterSpacing: '0.05em', fontFamily: 'JetBrains Mono, monospace' }}>
+            {date} · {total} ASSETS
           </span>
 
-          {/* Sector filter */}
-          <span>
-            <span style={S.sortLabel}>SECTOR:</span>
-            <select
-              value={filterSector}
-              onChange={e => setFilterSector(e.target.value)}
-              style={{ ...S.filterInput, width: 'auto', cursor: 'pointer' }}
-            >
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>SECTOR:</span>
+            <select value={filterSector} onChange={e => setFilterSector(e.target.value)} style={{ ...inputStyle, cursor: 'pointer', width: 'auto' }}>
               {sectors.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </span>
 
-          {/* Ticker search */}
-          <span>
-            <span style={S.sortLabel}>SEARCH:</span>
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="TICKER..."
-              style={S.filterInput}
-            />
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '9px', color: '#888888', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>SEARCH:</span>
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="TICKER..." style={{ ...inputStyle, width: '120px' }} />
           </span>
         </div>
-
-        <span style={{ ...S.metaChip, flexShrink: 0 }}>
-          SHOWING {displayed.length} / {total} &nbsp;·&nbsp; {selectedCount} SELECTED
+        <span style={{ fontSize: '9px', color: '#888888', flexShrink: 0, fontFamily: 'JetBrains Mono, monospace' }}>
+          {displayed.length} / {total} &nbsp;·&nbsp; {selectedCount} SELECTED
         </span>
       </div>
 
-      {/* ── Legend ───────────────────────────────────────── */}
-      <div style={S.legendStrip}>
-        <span style={{ fontWeight: 900, fontFamily: 'JetBrains Mono, monospace' }}>TICKER</span>
-        <span>HEAVY BOLD TICKER: SELECTED (TOP 15)</span>
-        <span style={{ marginLeft: '18px', fontWeight: 800, textDecoration: 'underline', fontFamily: 'JetBrains Mono, monospace' }}><u>Z</u></span>
-        <span>Z-SCORE &lt; −1.0 (UNDERLINED DEVIATION)</span>
-        <span style={{ marginLeft: '18px', fontWeight: 900, fontFamily: 'JetBrains Mono, monospace' }}>Z</span>
-        <span>Z-SCORE &gt; +1.0 (BOLD SIGNAL)</span>
-        <span style={{ marginLeft: '24px', color: '#000000', fontWeight: 600, textTransform: 'uppercase' }}>
-          ·  CLICK HEADER TO SORT  ·  HOVER FOR DEFINITIONS
-        </span>
+      {/* Legend */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '8px 20px', borderBottom: '1px solid #1c1c1c', background: '#0e0e0e', fontSize: '9px', color: '#4a4a4a', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>
+        <span style={{ color: '#22c55e', fontWeight: 900 }}>Z</span>
+        <span>Z-SCORE &gt; +1.0</span>
+        <span style={{ color: '#ef4444', fontWeight: 900 }}>Z</span>
+        <span>Z-SCORE &lt; −1.0</span>
+        <span style={{ marginLeft: '12px', color: '#ffffff', fontWeight: 900 }}>█</span>
+        <span>TOP 15 SELECTED</span>
+        <span style={{ marginLeft: 'auto', color: '#3d3d3d' }}>CLICK HEADER TO SORT</span>
       </div>
 
-      {/* ── Table ────────────────────────────────────────── */}
-      <div style={S.tableWrap}>
-        <table style={S.table}>
+      {/* Table */}
+      <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 340px)' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
           <colgroup>
             {COLS.map(c => <col key={c.key} style={{ width: c.width }} />)}
           </colgroup>
-
           <thead>
             <tr>
-              {COLS.map((col, i) => (
-                <TH
-                  key={col.key}
-                  col={col}
-                  sortKey={sortKey}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                  divider={false}
-                />
+              {COLS.map(col => (
+                <TH key={col.key} col={col} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
               ))}
             </tr>
           </thead>
-
           <tbody>
-            {displayed.map((row, rowIdx) => {
+            {displayed.map(row => {
               const isTop15 = top15Tickers.has(row.ticker)
               return (
-                <tr
-                  key={row.ticker}
-                  style={{ background: '#ffffff' }}
-                >
-                  {COLS.map((col, colIdx) => {
+                <tr key={row.ticker} style={{ background: isTop15 ? '#0e0f0e' : '#070707', borderLeft: isTop15 ? '2px solid #22c55e' : '2px solid transparent' }}>
+                  {COLS.map(col => {
                     const raw   = row[col.key]
                     const isZ   = !!col.zscore
                     const label = col.fmt ? fmt(raw, col.fmt) : (raw ?? '—')
+                    const zVal  = isZ ? parseFloat(raw) : 0
 
                     return (
                       <td
                         key={col.key}
                         style={{
-                          ...S.td(col.align, isTop15, isZ, raw),
-                          // Rank cell — large, bold, right-aligned
-                          ...(col.key === 'rank' ? { fontWeight: isTop15 ? 900 : 700, color: '#000000', fontSize: '11px', textAlign: 'right' } : {}),
-                          // Ticker cell — heavy bold for top 15 selected, clean black text
-                          ...(col.key === 'ticker' ? { fontWeight: isTop15 ? 900 : 400, color: '#000000', letterSpacing: '0.04em' } : {}),
-                          // Allocation cell — clean black text
-                          ...(col.key === 'weight' ? { color: '#000000', fontWeight: isTop15 ? 900 : 400 } : {}),
+                          padding: '8px 10px',
+                          textAlign: col.align,
+                          borderBottom: '1px solid #111111',
+                          whiteSpace: 'nowrap',
+                          background: 'transparent',
+                          fontFamily: col.key === 'ticker' ? 'JetBrains Mono, monospace' : 'inherit',
+                          fontWeight: col.key === 'ticker' ? (isTop15 ? 900 : 600) :
+                                      isZ ? (Math.abs(zVal) > 1.0 ? 800 : 400) : 400,
+                          color: col.key === 'ticker' ? (isTop15 ? '#22c55e' : '#d0d0d0') :
+                                 col.key === 'weight' ? (parseFloat(raw) > 0 ? '#d0d0d0' : '#4a4a4a') :
+                                 isZ ? zColor(raw) : '#d0d0d0',
+                          fontSize: col.key === 'rank' ? '10px' : '11px',
                         }}
                       >
                         {String(label)}
@@ -413,17 +248,14 @@ export default function AlphaScreener() {
         </table>
       </div>
 
-      {/* ── Status bar ───────────────────────────────────── */}
-      <div style={S.statusBar}>
+      {/* Status bar */}
+      <div style={{ padding: '8px 20px', borderTop: '1px solid #1c1c1c', fontSize: '9px', color: '#4a4a4a', letterSpacing: '0.08em', display: 'flex', gap: '28px', background: '#0e0e0e', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>
         <span>SORT: {sortKey.toUpperCase()} {sortDir.toUpperCase()}</span>
         <span>FILTER: {filterSector}</span>
         <span>DATE: {date}</span>
-        <span>Z-SCORES: CROSS-SECTIONAL · SECTOR-NEUTRAL</span>
-        <span style={{ marginLeft: 'auto' }}>
-          PHINEUS OS · QP OPTIMIZER V7
-        </span>
+        <span>Z-SCORES: CROSS-SECTIONAL</span>
+        <span style={{ marginLeft: 'auto', color: '#3d3d3d' }}>PHINEUS OS · QP OPTIMIZER V7</span>
       </div>
-
     </div>
   )
 }

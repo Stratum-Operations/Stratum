@@ -11,28 +11,25 @@ export default {
         mono: ['JetBrains Mono', 'Courier New', 'monospace'],
       },
       colors: {
-        // Strict monochromatic theme
-        background:  '#ffffff',
-        foreground:  '#000000',
-        border:      '#e5e7eb',
-        
-        // Legacy compatibility mappings to prevent compile breakages
-        'b-black':   '#ffffff',
-        'b-base':    '#ffffff',
-        'b-raised':  '#ffffff',
-        'b-border':  '#e5e7eb',
-        'b-dim':     '#000000',
-        'b-muted':   '#000000',
-        'b-sub':     '#000000',
-        'b-white':   '#000000',
-        'b-lime':    '#000000',
-        'b-lime-dim':'#e5e7eb',
-        'b-red':     '#000000',
-        'b-green':   '#000000',
-        'b-amber':   '#000000',
+        /* ── Dark brutalist trading theme ── */
+        bg:          '#070707',
+        surface:     '#0e0e0e',
+        'surface-2': '#141414',
+        'surface-3': '#1a1a1a',
+        border:      '#1c1c1c',
+        'border-2':  '#2e2e2e',
+        'border-3':  '#404040',
+        text:        '#d0d0d0',
+        'text-2':    '#888888',
+        'text-3':    '#4a4a4a',
+        white:       '#ffffff',
+        green:       '#22c55e',
+        'green-dim': '#166534',
+        red:         '#ef4444',
+        'red-dim':   '#7f1d1d',
+        amber:       '#f59e0b',
       },
       borderRadius: {
-        // Absolutely zero rounded corners
         DEFAULT: '0px',
         none: '0px',
         sm: '0px',
@@ -43,7 +40,6 @@ export default {
         full: '0px',
       },
       boxShadow: {
-        // Zero drop shadows
         DEFAULT: 'none',
         sm: 'none',
         md: 'none',
@@ -53,13 +49,10 @@ export default {
         inner: 'none',
         none: 'none',
       },
-      fontSize: {
-        'kpi': ['5rem', { lineHeight: '1', letterSpacing: '-0.02em', fontWeight: '900' }],
-        'kpi-sm': ['3.5rem', { lineHeight: '1', letterSpacing: '-0.02em', fontWeight: '900' }],
-      },
-      letterSpacing: {
-        military: '0.25em',
-        wide2: '0.15em',
+      fontWeight: {
+        700: '700',
+        800: '800',
+        900: '900',
       },
     },
   },

@@ -13,7 +13,12 @@ jobs:
           python-version: '3.11'
       - run: pip install -r requirements.txt
       - run: python fetch_universe.py
-      - run: python src/main.py
+      - name: Run Tracker
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+        run: python src/main.py
       - run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'

@@ -3,23 +3,22 @@ import axios from 'axios'
 
 const API = 'http://127.0.0.1:8001/api'
 
-// ─── Raw system-UI color tokens ──────────────────────────────────────────
 const C = {
-  bg:       '#ffffff',
-  base:     '#ffffff',
-  raised:   '#ffffff',
-  border:   '#e5e7eb',
-  borderHi: '#000000',
-  dim:      '#000000',
-  muted:    '#000000',
-  sub:      '#000000',
-  white:    '#ffffff',
-  lime:     '#000000',
-  red:      '#000000',
-  green:    '#000000',
+  bg:       '#070707',
+  base:     '#0e0e0e',
+  raised:   '#141414',
+  border:   '#1c1c1c',
+  borderHi: '#2e2e2e',
+  text:     '#d0d0d0',
+  dim:      '#d0d0d0',
+  muted:    '#888888',
+  sub:      '#aaaaaa',
+  white:    '#e0e0e0',
+  lime:     '#22c55e',
+  red:      '#ef4444',
+  green:    '#22c55e',
 }
 
-// ─── Reconciliation row math ─────────────────────────────────────────────
 function buildDiff(targetWeights, alpacaPositions, aum) {
   const allTickers = Array.from(new Set([
     ...targetWeights.map(w => w.ticker),
@@ -39,7 +38,6 @@ function buildDiff(targetWeights, alpacaPositions, aum) {
   .sort((a, b) => b.dollarDelta - a.dollarDelta)
 }
 
-// ─── Tiny label/value row ────────────────────────────────────────────────
 function KV({ label, value, valueColor }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: `1px solid ${C.border}`, padding: '5px 0' }}>
@@ -58,7 +56,7 @@ export default function TradeBlotter() {
   const [error, setError]           = useState(null)
   const [executing, setExecuting]   = useState(false)
   const [orders, setOrders]         = useState(null)
-  const [confirmed, setConfirmed]   = useState(false)  // two-step confirm gate
+  const [confirmed, setConfirmed]   = useState(false)
 
   const load = async () => {
     setLoading(true); setError(null); setOrders(null); setConfirmed(false)
@@ -78,7 +76,7 @@ export default function TradeBlotter() {
   const diff = useMemo(() => buildDiff(weights, positions, aum), [weights, positions, aum])
 
   const handleExecute = async () => {
-    if (!confirmed) { setConfirmed(true); return }   // first press → arm
+    if (!confirmed) { setConfirmed(true); return }
     setExecuting(true); setConfirmed(false)
     try {
       const res = await axios.post(`${API}/portfolio/execute_rebalance`, {
@@ -90,24 +88,19 @@ export default function TradeBlotter() {
     setExecuting(false)
   }
 
-  // ─── Layout constants ────────────────────────────────────────────────
   const mono = { fontFamily: 'JetBrains Mono, monospace' }
 
   return (
-    <div style={{ background: C.bg, color: C.white, minHeight: '100%', ...mono, fontSize: '12px' }}>
+    <div style={{ background: C.bg, color: C.text, minHeight: '100%', ...mono, fontSize: '12px' }}>
 
-      {/* ══ TOP BAND ═══════════════════════════════════════════════════════ */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', borderBottom: `2px solid ${C.borderHi}`, background: C.base }}>
-        <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase' }}>
+      {/* ── Top Band ─────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', borderBottom: `1px solid ${C.borderHi}`, background: C.base }}>
+        <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: C.text }}>
           Trade Blotter — Execution Terminal
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '9px', color: C.muted, letterSpacing: '0.1em' }}>
-            TARGET DATE: {rebalDate}
-          </span>
-          <span style={{ fontSize: '9px', color: C.muted, letterSpacing: '0.1em' }}>
-            BROKER: ALPACA PAPER
-          </span>
+          <span style={{ fontSize: '9px', color: C.muted, letterSpacing: '0.1em' }}>TARGET DATE: {rebalDate}</span>
+          <span style={{ fontSize: '9px', color: C.muted, letterSpacing: '0.1em' }}>BROKER: ALPACA PAPER</span>
           <button
             onClick={load}
             style={{ background: 'none', border: `1px solid ${C.border}`, color: C.muted, padding: '3px 10px', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}
@@ -122,29 +115,24 @@ export default function TradeBlotter() {
       ) : error ? (
         <div style={{ padding: '40px', color: C.red, letterSpacing: '0.1em', fontSize: '11px', borderLeft: `4px solid ${C.red}`, margin: '24px' }}>{error}</div>
       ) : (
-        /* ══ MAIN BODY — INTENTIONALLY ASYMMETRIC COLUMNS ══════════════════ */
-        /* Left col is narrow and tall (auth terminal), right col is wide (data) */
         <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', minHeight: 'calc(100vh - 300px)' }}>
 
-          {/* ─── LEFT: AUTHORIZATION TERMINAL ────────────────────────────── */}
-          <div style={{ borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column' }}>
+          {/* ── Left: Authorization Terminal ────────────────────────── */}
+          <div style={{ borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', background: C.base }}>
 
-            {/* AUM input — raw system UI */}
+            {/* AUM Input */}
             <div style={{ padding: '16px', borderBottom: `1px solid ${C.border}` }}>
-              <div style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: C.muted, marginBottom: '8px' }}>
-                Account AUM
-              </div>
+              <div style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: C.muted, marginBottom: '8px' }}>Account AUM</div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                <span style={{ fontSize: '13px', color: C.dim }}>$</span>
+                <span style={{ fontSize: '13px', color: C.muted }}>$</span>
                 <input
                   type="number"
                   value={aum}
                   onChange={e => setAum(Math.max(1000, parseInt(e.target.value) || 0))}
                   style={{
-                    /* Deliberately unstyled — system default appearance */
                     background: 'transparent',
                     border: 'none',
-                    borderBottom: `1px solid ${C.border}`,
+                    borderBottom: `1px solid ${C.borderHi}`,
                     color: C.white,
                     fontSize: '22px',
                     fontFamily: 'JetBrains Mono, monospace',
@@ -159,30 +147,26 @@ export default function TradeBlotter() {
 
             {/* Reconciliation stats */}
             <div style={{ padding: '16px', borderBottom: `1px solid ${C.border}` }}>
-              <div style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: C.muted, marginBottom: '12px' }}>
-                Reconciliation
-              </div>
+              <div style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: C.muted, marginBottom: '12px' }}>Reconciliation</div>
               <KV label="Positions out-of-sync" value={diff.length} />
-              <KV label="Buy orders" value={diff.filter(r => r.side === 'BUY').length} valueColor={C.lime} />
-              <KV label="Sell orders" value={diff.filter(r => r.side === 'SELL').length} valueColor={C.red} />
-              <KV label="Est. gross turnover" value={`$${diff.reduce((s, r) => s + r.dollarDelta, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`} />
-              <KV label="Target positions" value={weights.filter(w => w.weight > 0).length} />
+              <KV label="Buy orders"            value={diff.filter(r => r.side === 'BUY').length}  valueColor={C.lime} />
+              <KV label="Sell orders"           value={diff.filter(r => r.side === 'SELL').length} valueColor={C.red} />
+              <KV label="Est. gross turnover"   value={`$${diff.reduce((s, r) => s + r.dollarDelta, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`} />
+              <KV label="Target positions"      value={weights.filter(w => w.weight > 0).length} />
             </div>
 
-            {/* Execution rules note */}
-            <div style={{ padding: '16px', borderBottom: `1px solid ${C.border}`, fontSize: '9px', color: C.dim, lineHeight: 1.6, letterSpacing: '0.04em' }}>
-              ORDERS ARE FLOOR-ROUNDED TO PREVENT MARGIN OVERDRAFT.
-              SIDE DETERMINED BY DELTA-WEIGHT SIGN.
+            {/* Execution note */}
+            <div style={{ padding: '16px', borderBottom: `1px solid ${C.border}`, fontSize: '9px', color: C.muted, lineHeight: 1.7, letterSpacing: '0.04em' }}>
+              ORDERS FLOOR-ROUNDED TO PREVENT MARGIN OVERDRAFT.<br />
+              SIDE DETERMINED BY DELTA-WEIGHT SIGN.<br />
               ORDER TYPE: MARKET · TIF: DAY.
             </div>
 
-            {/* ── THE BIG BUTTON — stark, massive, no embellishment ── */}
+            {/* Execute Button */}
             <div style={{ padding: '20px', marginTop: 'auto' }}>
-
-              {/* Confirmation gate message */}
               {confirmed && !executing && (
                 <div style={{
-                  border: `2px solid ${C.red}`,
+                  border: `1px solid ${C.red}`,
                   padding: '10px',
                   marginBottom: '12px',
                   fontSize: '10px',
@@ -190,43 +174,34 @@ export default function TradeBlotter() {
                   letterSpacing: '0.08em',
                   lineHeight: 1.5,
                 }}>
-                  ⚠ CONFIRM: THIS WILL SUBMIT {diff.length} LIVE MARKET ORDERS.
-                  PRESS AGAIN TO AUTHORIZE.
+                  ⚠ CONFIRM: {diff.length} LIVE MARKET ORDERS.<br />PRESS AGAIN TO AUTHORIZE.
                 </div>
               )}
 
               <button
                 onClick={handleExecute}
                 disabled={executing || diff.length === 0}
+                className={
+                  diff.length === 0 ? 'execute-btn-disabled' :
+                  confirmed         ? 'execute-btn-armed'    :
+                  'execute-btn'
+                }
                 style={{
                   display: 'block',
                   width: '100%',
-                  /* Massive, stark typography — the entire button IS the text */
-                  fontSize: diff.length === 0 ? '14px' : (confirmed ? '18px' : '22px'),
-                  fontFamily: 'Space Grotesk, sans-serif',
+                  fontSize: diff.length === 0 ? '14px' : confirmed ? '18px' : '22px',
+                  fontFamily: 'JetBrains Mono, monospace',
                   fontWeight: 900,
-                  letterSpacing: executing ? '0.05em' : '-0.01em',
+                  letterSpacing: '-0.01em',
                   textTransform: 'uppercase',
                   lineHeight: 1.1,
-                  /* No decoration — outline only when armed */
-                  background:   confirmed    ? C.red
-                                : diff.length === 0 ? C.raised
-                                : C.lime,
-                  color:        diff.length === 0 ? C.dim
-                                : C.black || '#000000',
-                  border:       'none',
-                  padding:      '24px 16px',
-                  cursor:       diff.length === 0 ? 'not-allowed' : 'pointer',
-                  /* Deliberately no border-radius (handled by global reset) */
+                  cursor: diff.length === 0 ? 'not-allowed' : 'pointer',
                 }}
               >
-                {executing
-                  ? 'SENDING ORDERS…'
-                  : diff.length === 0
-                  ? 'NO ORDERS\nREQUIRED'
-                  : confirmed
-                  ? `CONFIRM\n${diff.length} ORDERS`
-                  : 'EXECUTE\nREBALANCE'}
+                {executing ? 'SENDING ORDERS…' :
+                 diff.length === 0 ? 'NO ORDERS REQUIRED' :
+                 confirmed ? `CONFIRM ${diff.length} ORDERS` :
+                 'EXECUTE REBALANCE'}
               </button>
 
               {orders && !executing && (
@@ -237,10 +212,10 @@ export default function TradeBlotter() {
             </div>
           </div>
 
-          {/* ─── RIGHT: TWO-PANEL DATA AREA ──────────────────────────────── */}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {/* ── Right: Data Tables ───────────────────────────────────── */}
+          <div style={{ display: 'flex', flexDirection: 'column', background: C.bg }}>
 
-            {/* Top half: diff table */}
+            {/* Diff table */}
             <div style={{ borderBottom: `1px solid ${C.border}` }}>
               <div style={{ padding: '8px 16px', borderBottom: `1px solid ${C.border}`, background: C.raised, fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: C.muted }}>
                 Discrepancy Tickets — sorted by dollar delta
@@ -250,27 +225,27 @@ export default function TradeBlotter() {
                   <thead>
                     <tr style={{ background: C.raised }}>
                       {['SYMBOL', 'SIDE', 'CURR WT', 'TARGET WT', 'Δ WT', '$ DELTA', 'CUR QTY', 'PRICE'].map(h => (
-                        <th key={h} style={{ padding: '6px 10px', textAlign: h === 'SYMBOL' ? 'left' : 'right', fontSize: '9px', fontWeight: 600, letterSpacing: '0.12em', color: C.muted, borderBottom: `2px solid ${C.borderHi}`, borderRight: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>
-                          {h === 'SYMBOL' ? h : h}
+                        <th key={h} style={{ padding: '6px 10px', textAlign: h === 'SYMBOL' ? 'left' : 'right', fontSize: '9px', fontWeight: 600, letterSpacing: '0.12em', color: C.muted, borderBottom: `1px solid ${C.borderHi}`, borderRight: `1px solid ${C.border}`, whiteSpace: 'nowrap', background: C.raised }}>
+                          {h}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {diff.map((r, i) => (
+                    {diff.map(r => (
                       <tr key={r.ticker} style={{ borderBottom: `1px solid ${C.border}` }}>
-                        <td style={{ padding: '7px 10px', fontWeight: 700, color: C.white, borderRight: `1px solid ${C.border}` }}>{r.ticker}</td>
-                        <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 700, color: r.side === 'BUY' ? C.lime : C.red, borderRight: `1px solid ${C.border}` }}>{r.side}</td>
-                        <td style={{ padding: '7px 10px', textAlign: 'right', color: C.muted, borderRight: `1px solid ${C.border}` }}>{(r.currentW * 100).toFixed(2)}%</td>
-                        <td style={{ padding: '7px 10px', textAlign: 'right', borderRight: `1px solid ${C.border}` }}>{(r.targetW * 100).toFixed(2)}%</td>
-                        <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 700, color: r.deltaW > 0 ? C.lime : C.red, borderRight: `1px solid ${C.border}` }}>
+                        <td style={{ padding: '7px 10px', fontWeight: 700, color: C.white, borderRight: `1px solid ${C.border}`, background: C.bg }}>{r.ticker}</td>
+                        <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 700, color: r.side === 'BUY' ? C.lime : C.red, borderRight: `1px solid ${C.border}`, background: C.bg }}>{r.side}</td>
+                        <td style={{ padding: '7px 10px', textAlign: 'right', color: C.muted, borderRight: `1px solid ${C.border}`, background: C.bg }}>{(r.currentW * 100).toFixed(2)}%</td>
+                        <td style={{ padding: '7px 10px', textAlign: 'right', borderRight: `1px solid ${C.border}`, background: C.bg, color: C.text }}>{(r.targetW * 100).toFixed(2)}%</td>
+                        <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 700, color: r.deltaW > 0 ? C.lime : C.red, borderRight: `1px solid ${C.border}`, background: C.bg }}>
                           {r.deltaW > 0 ? '+' : ''}{(r.deltaW * 100).toFixed(2)}%
                         </td>
-                        <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 700, borderRight: `1px solid ${C.border}` }}>
+                        <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 700, borderRight: `1px solid ${C.border}`, background: C.bg, color: C.text }}>
                           ${r.dollarDelta.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </td>
-                        <td style={{ padding: '7px 10px', textAlign: 'right', color: C.muted, borderRight: `1px solid ${C.border}` }}>{r.qty}</td>
-                        <td style={{ padding: '7px 10px', textAlign: 'right', color: C.muted }}>${Number(r.price).toFixed(2)}</td>
+                        <td style={{ padding: '7px 10px', textAlign: 'right', color: C.muted, borderRight: `1px solid ${C.border}`, background: C.bg }}>{r.qty}</td>
+                        <td style={{ padding: '7px 10px', textAlign: 'right', color: C.muted, background: C.bg }}>${Number(r.price).toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -278,8 +253,8 @@ export default function TradeBlotter() {
               </div>
             </div>
 
-            {/* Bottom half: generated orders OR current holdings */}
-            <div style={{ flex: 1 }}>
+            {/* Holdings or Orders */}
+            <div style={{ flex: 1, background: C.bg }}>
               {orders ? (
                 <>
                   <div style={{ padding: '8px 16px', borderBottom: `1px solid ${C.border}`, background: C.raised, fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: C.lime }}>
@@ -288,20 +263,20 @@ export default function TradeBlotter() {
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
                       <thead>
-                        <tr style={{ background: C.raised }}>
+                        <tr>
                           {['SYMBOL', 'SIDE', 'QTY', 'ORDER TYPE', 'TIF'].map(h => (
-                            <th key={h} style={{ padding: '6px 10px', textAlign: h === 'SYMBOL' ? 'left' : 'right', fontSize: '9px', fontWeight: 600, letterSpacing: '0.12em', color: C.lime, borderBottom: `1px solid ${C.lime}`, borderRight: `1px solid ${C.border}` }}>{h}</th>
+                            <th key={h} style={{ padding: '6px 10px', textAlign: h === 'SYMBOL' ? 'left' : 'right', fontSize: '9px', fontWeight: 600, letterSpacing: '0.12em', color: C.lime, borderBottom: `1px solid ${C.border}`, borderRight: `1px solid ${C.border}`, background: C.raised }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {orders.map((o, i) => (
                           <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}>
-                            <td style={{ padding: '6px 10px', fontWeight: 700, color: C.white, borderRight: `1px solid ${C.border}` }}>{o.symbol}</td>
-                            <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: o.side?.toLowerCase() === 'buy' ? C.lime : C.red, borderRight: `1px solid ${C.border}` }}>{o.side?.toUpperCase()}</td>
-                            <td style={{ padding: '6px 10px', textAlign: 'right', borderRight: `1px solid ${C.border}` }}>{o.qty}</td>
-                            <td style={{ padding: '6px 10px', textAlign: 'right', color: C.muted, borderRight: `1px solid ${C.border}` }}>{o.type || 'market'}</td>
-                            <td style={{ padding: '6px 10px', textAlign: 'right', color: C.muted }}>{o.time_in_force || 'day'}</td>
+                            <td style={{ padding: '6px 10px', fontWeight: 700, color: C.white, borderRight: `1px solid ${C.border}`, background: C.bg }}>{o.symbol}</td>
+                            <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: o.side?.toLowerCase() === 'buy' ? C.lime : C.red, borderRight: `1px solid ${C.border}`, background: C.bg }}>{o.side?.toUpperCase()}</td>
+                            <td style={{ padding: '6px 10px', textAlign: 'right', borderRight: `1px solid ${C.border}`, background: C.bg, color: C.text }}>{o.qty}</td>
+                            <td style={{ padding: '6px 10px', textAlign: 'right', color: C.muted, borderRight: `1px solid ${C.border}`, background: C.bg }}>{o.type || 'market'}</td>
+                            <td style={{ padding: '6px 10px', textAlign: 'right', color: C.muted, background: C.bg }}>{o.time_in_force || 'day'}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -316,9 +291,9 @@ export default function TradeBlotter() {
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
                       <thead>
-                        <tr style={{ background: C.raised }}>
+                        <tr>
                           {['SYMBOL', 'QTY', 'AVG ENTRY', 'CURR PRICE', 'UNREAL P&L'].map(h => (
-                            <th key={h} style={{ padding: '6px 10px', textAlign: h === 'SYMBOL' ? 'left' : 'right', fontSize: '9px', fontWeight: 600, letterSpacing: '0.12em', color: C.muted, borderBottom: `2px solid ${C.borderHi}`, borderRight: `1px solid ${C.border}` }}>{h}</th>
+                            <th key={h} style={{ padding: '6px 10px', textAlign: h === 'SYMBOL' ? 'left' : 'right', fontSize: '9px', fontWeight: 600, letterSpacing: '0.12em', color: C.muted, borderBottom: `1px solid ${C.borderHi}`, borderRight: `1px solid ${C.border}`, background: C.raised }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -327,11 +302,11 @@ export default function TradeBlotter() {
                           const pl = (p.current_price - p.avg_entry_price) * p.qty
                           return (
                             <tr key={p.symbol} style={{ borderBottom: `1px solid ${C.border}` }}>
-                              <td style={{ padding: '6px 10px', fontWeight: 700, color: C.white, borderRight: `1px solid ${C.border}` }}>{p.symbol}</td>
-                              <td style={{ padding: '6px 10px', textAlign: 'right', color: C.sub, borderRight: `1px solid ${C.border}` }}>{p.qty}</td>
-                              <td style={{ padding: '6px 10px', textAlign: 'right', color: C.muted, borderRight: `1px solid ${C.border}` }}>${Number(p.avg_entry_price).toFixed(2)}</td>
-                              <td style={{ padding: '6px 10px', textAlign: 'right', borderRight: `1px solid ${C.border}` }}>${Number(p.current_price).toFixed(2)}</td>
-                              <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: pl >= 0 ? C.lime : C.red }}>
+                              <td style={{ padding: '6px 10px', fontWeight: 700, color: C.white, borderRight: `1px solid ${C.border}`, background: C.bg }}>{p.symbol}</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', color: C.muted, borderRight: `1px solid ${C.border}`, background: C.bg }}>{p.qty}</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', color: C.muted, borderRight: `1px solid ${C.border}`, background: C.bg }}>${Number(p.avg_entry_price).toFixed(2)}</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', borderRight: `1px solid ${C.border}`, background: C.bg, color: C.text }}>${Number(p.current_price).toFixed(2)}</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: pl >= 0 ? C.lime : C.red, background: C.bg }}>
                                 {pl >= 0 ? '+' : ''}${pl.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                               </td>
                             </tr>
