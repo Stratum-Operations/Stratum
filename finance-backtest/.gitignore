@@ -19,3 +19,5 @@ frontend/dist/
 dist/
 .DS_Store
 *.log
+output*.txt
+tmp_test.py
