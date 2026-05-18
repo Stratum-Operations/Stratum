@@ -8,3 +8,4 @@ scipy
 pytz
 schedule
 python-dotenv
+openai

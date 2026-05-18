@@ -3,7 +3,7 @@ import axios from 'axios'
 import {
   LayoutDashboard, BarChart2, FileText,
   SlidersHorizontal, Eye, Settings2, Activity,
-  Radio, GitCommit, ClipboardList,
+  Radio, GitCommit, ClipboardList, Briefcase,
 } from 'lucide-react'
 import './App.css'
 
@@ -21,11 +21,18 @@ import RobustnessLab       from './components/RobustnessLab'
 import TradeBlotter        from './components/TradeBlotter'
 import WatchlistManager    from './components/WatchlistManager'
 import ReportingEngine     from './components/ReportingEngine'
+import PortfolioEntry      from './components/PortfolioEntry'
 
 const API_BASE = 'http://127.0.0.1:8001/api'
 
 /* ── Navigation structure ───────────────────────────────────── */
 const NAV = [
+  {
+    section: 'Portfolio',
+    items: [
+      { id: 'portfolio',  label: 'My Portfolio',     icon: Briefcase       },
+    ],
+  },
   {
     section: 'Command Center',
     items: [
@@ -217,6 +224,9 @@ export default function App() {
           <div className="content-scroll">
             {/* KPI Header — always visible inside each view */}
             <KpiHeader strat={strat} spy={spy} winRate={winRate} perf={data.perf} />
+
+            {/* ── Portfolio ──────────────────────────────────────── */}
+            {view === 'portfolio' && <PortfolioEntry />}
 
             {/* ── Command Center ─────────────────────────────────── */}
             {view === 'dashboard' && (
