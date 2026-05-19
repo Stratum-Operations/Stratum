@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import axios from 'axios'
+import { mockAlpacaPositions, mockHoldings } from '../data/mockFallbackData'
 
 const API = 'http://127.0.0.1:8001/api'
 
@@ -57,6 +58,7 @@ export default function TradeBlotter() {
   const [executing, setExecuting]   = useState(false)
   const [orders, setOrders]         = useState(null)
   const [confirmed, setConfirmed]   = useState(false)
+  const [broker, setBroker]         = useState('alpaca_paper')
 
   const load = async () => {
     setLoading(true); setError(null); setOrders(null); setConfirmed(false)
@@ -68,7 +70,12 @@ export default function TradeBlotter() {
       setPositions(pR.data.positions)
       setWeights(wR.data.weights)
       setRebalDate(wR.data.date)
-    } catch { setError('API UNREACHABLE') }
+    } catch (e) {
+      console.warn('API unreachable, loading mock trade blotter data', e)
+      setPositions(mockAlpacaPositions.positions)
+      setWeights(mockHoldings.holdings)
+      setRebalDate(mockHoldings.date + ' (Simulated)')
+    }
     setLoading(false)
   }
   useEffect(() => { load() }, [])
@@ -100,7 +107,29 @@ export default function TradeBlotter() {
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <span style={{ fontSize: '9px', color: C.muted, letterSpacing: '0.1em' }}>TARGET DATE: {rebalDate}</span>
-          <span style={{ fontSize: '9px', color: C.muted, letterSpacing: '0.1em' }}>BROKER: ALPACA PAPER</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '9px', color: C.muted, letterSpacing: '0.1em' }}>BROKER:</span>
+            <select
+              value={broker}
+              onChange={e => setBroker(e.target.value)}
+              title="Select connected brokerage account. The live API execution currently targets Alpaca Paper; Schwab, Robinhood, and Interactive Brokers are run in high-fidelity simulator mode."
+              style={{
+                background: C.bg,
+                border: `1px solid ${C.border}`,
+                color: C.text,
+                fontSize: '9px',
+                fontFamily: 'JetBrains Mono, monospace',
+                padding: '2px 4px',
+                outline: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <option value="alpaca_paper">ALPACA PAPER (ACTIVE)</option>
+              <option value="interactive_brokers">IBKR (SIMULATED)</option>
+              <option value="schwab">SCHWAB (SIMULATED)</option>
+              <option value="robinhood">ROBINHOOD (SIMULATED)</option>
+            </select>
+          </div>
           <button
             onClick={load}
             style={{ background: 'none', border: `1px solid ${C.border}`, color: C.muted, padding: '3px 10px', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}
@@ -181,6 +210,7 @@ export default function TradeBlotter() {
               <button
                 onClick={handleExecute}
                 disabled={executing || diff.length === 0}
+                title={diff.length === 0 ? "No market orders are required because your broker allocations already match the targets." : "Send orders to Alpaca Broker Paper Account"}
                 className={
                   diff.length === 0 ? 'execute-btn-disabled' :
                   confirmed         ? 'execute-btn-armed'    :

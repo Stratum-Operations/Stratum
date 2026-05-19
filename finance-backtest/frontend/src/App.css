@@ -506,7 +506,25 @@ body {
 .sidebar::-webkit-scrollbar-thumb { background: var(--border-3); }
 
 .sidebar-section {
-  padding: 22px 14px 4px;
+  padding: 16px 14px 4px;
+}
+
+.sidebar-section-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  cursor: pointer !important;
+  padding: 0 10px 8px !important;
+  user-select: none !important;
+  transition: all 0.2s ease;
+}
+
+.sidebar-section-header:hover .sidebar-section-label {
+  color: var(--text-1) !important;
+}
+
+.sidebar-section-header:hover svg {
+  color: var(--text-1) !important;
 }
 
 .sidebar-section-label {
@@ -515,10 +533,11 @@ body {
   letter-spacing: 0 !important;
   text-transform: none !important;
   color: var(--text-3) !important;
-  padding: 0 10px 8px !important;
+  padding: 0 !important;
   display: block;
   font-family: 'IBM Plex Sans', sans-serif !important;
   background: transparent !important;
+  transition: color 0.2s ease;
 }
 
 .sidebar-item {
@@ -658,7 +677,7 @@ body {
 /* ─── KPI Header Row ─────────────────────────────────────────────── */
 .header-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
   border-bottom: none;
   background: transparent;
@@ -1646,3 +1665,34 @@ button:hover, .btn:hover {
     flex-wrap: wrap;
   }
 }
+
+/* Demo Warning Banner */
+.demo-banner {
+  background: var(--red-dim);
+  border: 1px solid var(--red);
+  color: var(--red);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  box-shadow: 0 4px 12px rgba(220, 63, 77, 0.08);
+}
+
+.demo-banner-indicator {
+  width: 8px;
+  height: 8px;
+  background-color: var(--red);
+  border-radius: 50%;
+  animation: pulse-red 1.5s infinite;
+}
+
+@keyframes pulse-red {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.6; }
+}
+

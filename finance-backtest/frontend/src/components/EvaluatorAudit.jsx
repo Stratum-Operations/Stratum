@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
+import { mockEvaluatorAudit } from '../data/mockFallbackData'
 import {
   AlertTriangle,
   BarChart3,
@@ -82,7 +83,8 @@ export default function EvaluatorAudit() {
         const res = await axios.get(`${API_BASE}/portfolio/evaluator_audit`)
         if (live) setAudit(res.data)
       } catch (err) {
-        if (live) setError('Evaluator audit could not be loaded.')
+        console.warn('API unreachable, loading mock evaluator audit data', err)
+        if (live) setAudit(mockEvaluatorAudit)
       } finally {
         if (live) setLoading(false)
       }

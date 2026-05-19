@@ -278,6 +278,7 @@ function ImportPreview({ rows, rejected, onImport, loading }) {
         <button
           onClick={onImport}
           disabled={!canImport}
+          title={!canImport ? "No holdings parsed yet. Please drag & drop a CSV file, or paste text in the input fields on the left." : "Import previewed holdings and run portfolio analysis"}
           style={{
             background: canImport ? 'var(--ink)' : 'var(--surface-2)',
             color: canImport ? '#fff' : 'var(--text-3)',
@@ -1289,6 +1290,9 @@ export default function PortfolioEntry() {
             >
               {importName || 'Choose a CSV or drag it here'}
             </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: 8, fontFamily: SANS, lineHeight: 1.4 }}>
+              Requires headers for <strong>ticker / symbol</strong> and <strong>shares / quantity</strong> (e.g. <code>ticker,shares,cost_basis</code>).
+            </div>
           </ImportCard>
 
           <ImportCard active={!!pasteText} icon={ClipboardPaste} title="Paste holdings">
@@ -1316,6 +1320,9 @@ export default function PortfolioEntry() {
                 lineHeight: 1.7,
               }}
             />
+            <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: 8, fontFamily: SANS, lineHeight: 1.4 }}>
+              Supports comma, tab, or space-delimited text. Formats must follow: <code>ticker, shares, [cost_basis]</code>.
+            </div>
           </ImportCard>
         </div>
 

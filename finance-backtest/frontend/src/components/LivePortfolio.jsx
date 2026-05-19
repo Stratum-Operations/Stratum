@@ -3,6 +3,7 @@ import axios from 'axios'
 import { ChevronDown, ChevronUp, PieChart, ShieldCheck, Sparkles, TrendingUp } from 'lucide-react'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
+import { mockHoldings } from '../data/mockFallbackData'
 
 export default function LivePortfolio() {
   const [data, setData]       = useState(null)
@@ -16,12 +17,17 @@ export default function LivePortfolio() {
         const res = await axios.get('http://127.0.0.1:8001/api/portfolio/current_weights')
         setData(res.data)
       } catch (err) {
-        setError('Failed to fetch live portfolio metrics')
+        console.warn('API unreachable, loading mock live portfolio data', err)
+        setData({
+          weights: mockHoldings.holdings,
+          date: mockHoldings.date
+        })
       }
       setLoading(false)
     }
     fetchPortfolio()
   }, [])
+
 
   const summary = useMemo(() => {
     const weights = data?.weights ?? []

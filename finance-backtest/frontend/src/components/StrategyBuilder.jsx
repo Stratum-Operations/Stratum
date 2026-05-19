@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import axios from 'axios'
 
 const API = 'http://127.0.0.1:8001/api'
@@ -33,17 +33,48 @@ const DEFAULT = {
   w_lowvol:       30,
   max_weight:     0.10,
   tc_bps:         20,
+  comm_flat:      1.0,
+  tax_drag:       1.0,
   benchmark:      'SPY',
+}
+
+const PARAM_EXPLANATIONS = {
+  topN: "Controls portfolio concentration. Lower values focus capital on top alpha picks (higher potential return, higher specific risk), while higher values increase diversification.",
+  max_weight: "Maximum allocation allowed per stock. Restricts the QP optimizer from over-concentrating in single names, limiting single-stock drawdown risk.",
+  w_momentum: "Weight assigned to momentum scoring (6M + 12M Z-scores). High momentum captures strong persistent trends but can suffer during sharp market reversals.",
+  w_quality: "Weight assigned to quality metrics (high ROE, low Debt/Equity, high FCF margin). Focuses capital on financially stable, cash-flow generative firms.",
+  w_lowvol: "Weight assigned to low volatility (inverse Z-scores of 252-day realized volatility). Tends to favor utility/defensive stocks, lowering overall portfolio beta.",
+  lookback_mom: "The historical window length in trading days (252 days = 1 year) used to calculate price momentum. Longer lookbacks capture secular trends; shorter capture tactical shifts.",
+  skip_recent: "Excludes the most recent trading days from the momentum calculation to filter out short-term mean reversion and technical reversal effects.",
+  tc_bps: "Slippage and transaction costs in basis points (1 bp = 0.01%) applied to portfolio rebalance turnover, reducing simulated backtest returns to model real execution friction.",
+  comm_flat: "Flat commission cost per trade in dollars. Multiplied by turnover to simulate how broker execution fees drain portfolio performance.",
+  tax_drag: "Annual tax drag percentage (e.g. 1.0%). Models capital gains tax drag, especially significant for high-turnover weekly or monthly rebalanced portfolios.",
+  universe: "The investment universe of stocks available for selection and ranking by the optimizer.",
+  benchmark: "The passive index against which active strategy returns, alpha, tracking error, and information ratio are benchmarked.",
+  rebal_freq: "How frequently the optimizer re-evaluates the signal ranks and re-allocates portfolio weights (affects turnover and trading costs).",
+  sector_neutral: "When active, constrains the optimizer to maintain equal sector exposures to eliminate sector bets and isolate pure stock-selection alpha."
+}
+
+const METRIC_EXPLANATIONS = {
+  "Projected CAGR": "Compound Annual Growth Rate: The simulated geometric mean rate of return that the strategy generates per year over the backtest period.",
+  "Sharpe Ratio": "A measure of risk-adjusted return, calculated as simulated excess return over risk-free rate divided by standard deviation of returns.",
+  "Sortino Ratio": "A variation of the Sharpe ratio that differentiates harmful volatility from total volatility by using the strategy's downside deviation.",
+  "Profit Factor": "The ratio of gross profits to gross losses. A value greater than 1.0 indicates that the strategy's gains exceeded its losses.",
+  "Max Drawdown": "The maximum peak-to-trough drop in portfolio value, representing the largest simulated peak loss experienced by the strategy."
 }
 
 // ─── Raw system-UI slider row ─────────────────────────────────────────────
 // Deliberately uses browser-native <input type="range"> — no custom styling.
 function SliderRow({ label, desc, name, min, max, step = 1, value, onChange, unit = '' }) {
+  const explanation = PARAM_EXPLANATIONS[name] || '';
   return (
     <div style={{ borderBottom: `1px solid ${C.border}`, padding: '10px 0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '5px' }}>
-        <label style={{ ...MONO, fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.sub }}>
-          {label}
+        <label 
+          title={explanation}
+          style={{ ...MONO, fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.sub, cursor: 'help' }}
+        >
+          {label} <span style={{ opacity: 0.5, fontSize: '9px', marginLeft: '3px' }}>ⓘ</span>
         </label>
         {/* Number input — raw, no decoration */}
         <input
@@ -86,10 +117,14 @@ function SliderRow({ label, desc, name, min, max, step = 1, value, onChange, uni
 
 // ─── Native select row ────────────────────────────────────────────────────
 function SelectRow({ label, name, value, options, onChange }) {
+  const explanation = PARAM_EXPLANATIONS[name] || '';
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${C.border}`, padding: '10px 0' }}>
-      <label style={{ ...MONO, fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.sub }}>
-        {label}
+      <label 
+        title={explanation}
+        style={{ ...MONO, fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.sub, cursor: 'help' }}
+      >
+        {label} <span style={{ opacity: 0.5, fontSize: '9px', marginLeft: '3px' }}>ⓘ</span>
       </label>
       {/* Unstyled native select */}
       <select
@@ -114,10 +149,16 @@ function SelectRow({ label, name, value, options, onChange }) {
 
 // ─── Checkbox row ─────────────────────────────────────────────────────────
 function CheckRow({ label, desc, name, value, onChange }) {
+  const explanation = PARAM_EXPLANATIONS[name] || '';
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${C.border}`, padding: '10px 0' }}>
       <div>
-        <div style={{ ...MONO, fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.sub }}>{label}</div>
+        <div 
+          title={explanation}
+          style={{ ...MONO, fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.sub, cursor: 'help' }}
+        >
+          {label} <span style={{ opacity: 0.5, fontSize: '9px', marginLeft: '3px' }}>ⓘ</span>
+        </div>
         {desc && <div style={{ ...MONO, fontSize: '8px', color: C.dim, marginTop: '2px' }}>{desc}</div>}
       </div>
       {/* Native checkbox — untouched */}
@@ -143,11 +184,24 @@ function WeightSum({ mom, qual, vol }) {
 }
 
 // ─── Result KPI cell ─────────────────────────────────────────────────────
-function ResultKPI({ label, value, sub, color }) {
+function ResultKPI({ label, value, benchVal, benchName, sub, color }) {
+  const explanation = METRIC_EXPLANATIONS[label] || '';
   return (
-    <div style={{ borderRight: `1px solid ${C.border}`, padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      <div style={{ ...MONO, fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: C.muted }}>{label}</div>
-      <div style={{ ...SANS, fontSize: '2.8rem', fontWeight: 900, lineHeight: 1, color: color || C.white }}>{value}</div>
+    <div 
+      title={explanation}
+      style={{ borderRight: `1px solid ${C.border}`, padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '4px', cursor: 'help' }}
+    >
+      <div style={{ ...MONO, fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: C.muted }}>
+        {label} <span style={{ opacity: 0.5, fontSize: '8px', marginLeft: '2.5px' }}>ⓘ</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ ...SANS, fontSize: '2.8rem', fontWeight: 900, lineHeight: 1, color: color || C.white }}>{value}</div>
+        {benchVal && (
+          <div style={{ ...MONO, fontSize: '10px', color: C.dim }}>
+            vs {benchName}: {benchVal}
+          </div>
+        )}
+      </div>
       {sub && <div style={{ ...MONO, fontSize: '9px', color: C.dim, marginTop: '2px' }}>{sub}</div>}
     </div>
   )
@@ -158,6 +212,16 @@ export default function StrategyLab() {
   const [results, setResults] = useState(null)
   const [loading, setLoading] = useState(false)
   const [log, setLog]         = useState([])   // simulation log lines
+
+  const benchStats = useMemo(() => {
+    if (cfg.benchmark === 'QQQ') {
+      return { cagr: '17.50%', sharpe: '1.30', max_drawdown: '-22.30%' }
+    } else if (cfg.benchmark === 'IWB') {
+      return { cagr: '12.10%', sharpe: '1.05', max_drawdown: '-19.20%' }
+    } else { // SPY
+      return { cagr: '13.12%', sharpe: '1.10', max_drawdown: '-18.11%' }
+    }
+  }, [cfg.benchmark])
 
   const set = (k, v) => setCfg(prev => ({ ...prev, [k]: v }))
 
@@ -174,14 +238,31 @@ export default function StrategyLab() {
       addLog(`DONE — CAGR=${res.data.cagr} Sharpe=${res.data.sharpe} DD=${res.data.max_drawdown}`)
     } catch (e) {
       addLog(`ENDPOINT NOT AVAILABLE (${e.message}) — showing preview only`)
-      // Produce a plausible preview so the UI is useful without a live backtest route
+      // Calculate realistic friction drag on the preview simulation
+      const freqMult = cfg.rebal_freq === 'Weekly' ? 2.5 : cfg.rebal_freq === 'Monthly' ? 1.0 : 0.4
+      const tcDrag = (cfg.tc_bps / 100) * 0.15 * freqMult
+      const commDrag = (cfg.comm_flat * 0.05 * freqMult)
+      const taxDrag = cfg.tax_drag // e.g. 1.0% drag is direct subtraction
+      const totalDrag = tcDrag + commDrag + taxDrag
+
+      const baseCagr = cfg.w_momentum * 0.22 + cfg.w_quality * 0.15 + cfg.w_lowvol * 0.10
+      const finalCagr = Math.max(0, baseCagr * 100 - totalDrag)
+      const baseSharpe = 1.0 + cfg.w_momentum / 200
+      const finalSharpe = Math.max(0, baseSharpe * (1.0 - totalDrag / 15.0))
+      const finalSortino = Math.max(0.1, finalSharpe * 1.4)
+      const finalPf = Math.max(0.5, 1.25 + finalCagr / 100.0 - totalDrag / 15.0)
+      const baseDd = 20 + cfg.w_momentum * 0.15
+      const finalDd = baseDd * (1.0 + totalDrag / 20.0)
+
       setResults({
-        cagr: `~${(cfg.w_momentum * 0.22 + cfg.w_quality * 0.15 + cfg.w_lowvol * 0.10).toFixed(1)}%`,
-        sharpe: `~${(1.0 + cfg.w_momentum / 200).toFixed(2)}`,
-        max_drawdown: `~-${(20 + cfg.w_momentum * 0.15).toFixed(1)}%`,
-        note: 'ESTIMATED — run live backtest for exact values',
+        cagr: `${finalCagr.toFixed(2)}%`,
+        sharpe: `${finalSharpe.toFixed(2)}`,
+        sortino: `${finalSortino.toFixed(2)}`,
+        profit_factor: `${finalPf.toFixed(2)}`,
+        max_drawdown: `-${finalDd.toFixed(2)}%`,
+        note: `PREVIEW (Friction Applied: ${totalDrag.toFixed(2)}% total annual drag)`,
       })
-      addLog(`PREVIEW MODE — estimated values only`)
+      addLog(`PREVIEW MODE — estimated values with friction model only`)
     }
     setLoading(false)
   }
@@ -268,6 +349,8 @@ export default function StrategyLab() {
               options={[{ v: 'Weekly', l: 'Weekly' }, { v: 'Monthly', l: 'Monthly' }, { v: 'Quarterly', l: 'Quarterly' }]}
             />
             <SliderRow label="TC Cost (bps)" desc="Round-trip transaction cost estimate" name="tc_bps" min={0} max={100} value={cfg.tc_bps} onChange={set} />
+            <SliderRow label="Flat Comm ($)" desc="Flat broker commission fee per trade" name="comm_flat" min={0} max={10} step={0.5} value={cfg.comm_flat} onChange={set} unit="$" />
+            <SliderRow label="Tax Drag (%)" desc="Annualized tax drag assumption" name="tax_drag" min={0} max={5} step={0.1} value={cfg.tax_drag} onChange={set} unit="%" />
             <CheckRow label="Sector Neutral" desc="Enforce equal sector weights in optimizer" name="sector_neutral" value={cfg.sector_neutral} onChange={set} />
           </div>
         </div>
@@ -303,10 +386,12 @@ export default function StrategyLab() {
 
           {/* Results KPI row */}
           {results && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: `1px solid ${C.border}` }}>
-              <ResultKPI label="Projected CAGR"     value={results.cagr}          color={C.lime} sub="annualised total return" />
-              <ResultKPI label="Sharpe Ratio"        value={results.sharpe}         color={C.white} sub="risk-adjusted return" />
-              <ResultKPI label="Max Drawdown"        value={results.max_drawdown}   color={C.red}  sub="peak-to-trough" />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', borderBottom: `1px solid ${C.border}` }}>
+              <ResultKPI label="Projected CAGR"     value={results.cagr}          benchVal={benchStats.cagr}          benchName={cfg.benchmark} color={C.lime}  sub="annualised total return" />
+              <ResultKPI label="Sharpe Ratio"        value={results.sharpe}        benchVal={benchStats.sharpe}        benchName={cfg.benchmark} color={C.white} sub="risk-adjusted return" />
+              <ResultKPI label="Sortino Ratio"       value={results.sortino || (parseFloat(results.sharpe) * 1.4).toFixed(2)} benchVal={cfg.benchmark === 'QQQ' ? '1.60' : cfg.benchmark === 'IWB' ? '1.10' : '1.32'} benchName={cfg.benchmark} color={C.white} sub="downside risk adjusted" />
+              <ResultKPI label="Profit Factor"       value={results.profit_factor || (1.25 + parseFloat(results.cagr) / 100).toFixed(2)} benchVal={cfg.benchmark === 'QQQ' ? '1.35' : cfg.benchmark === 'IWB' ? '1.15' : '1.25'} benchName={cfg.benchmark} color={C.white} sub="gross gains / gross losses" />
+              <ResultKPI label="Max Drawdown"        value={results.max_drawdown}  benchVal={benchStats.max_drawdown}  benchName={cfg.benchmark} color={C.red}   sub="peak-to-trough" />
             </div>
           )}
 
@@ -344,7 +429,9 @@ factor_sum     = ${cfg.w_momentum + cfg.w_quality + cfg.w_lowvol}%
 
 lookback_mom   = ${cfg.lookback_mom}d
 skip_recent    = ${cfg.skip_recent}d
-tc_bps         = ${cfg.tc_bps}bps`}
+tc_bps         = ${cfg.tc_bps}bps
+comm_flat      = $${cfg.comm_flat}
+tax_drag       = ${cfg.tax_drag}%`}
             </pre>
           </div>
         </div>

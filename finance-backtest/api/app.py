@@ -75,6 +75,11 @@ def _series_metrics(df, prefix, benchmark_prefix="SPY"):
     downside = returns[returns < 0].std() * np.sqrt(252)
     sharpe = returns.mean() * 252 / vol if vol else 0.0
     sortino = returns.mean() * 252 / downside if downside else 0.0
+    
+    gross_profits = float(returns[returns > 0].sum())
+    gross_losses = float(abs(returns[returns < 0].sum()))
+    profit_factor = gross_profits / gross_losses if gross_losses > 0 else 0.0
+
     running_max = equity.cummax()
     drawdown = equity / running_max - 1
     max_dd = drawdown.min()
@@ -110,6 +115,7 @@ def _series_metrics(df, prefix, benchmark_prefix="SPY"):
         "tracking_error": None if tracking_error is None else round(tracking_error * 100, 2),
         "beta": None if beta is None else round(beta, 2),
         "alpha": None if alpha is None else round(alpha * 100, 2),
+        "profit_factor": round(profit_factor, 2),
     }
 
 @app.get("/api/holdings")
@@ -161,14 +167,42 @@ def run_backtest(params: dict):
     try:
         import random
         u_multiplier = 1.1 if params.get("universe") == "NASDAQ100" else 0.95
-        cagr = round(12.5 * u_multiplier + (random.random() * 4 - 2), 2)
-        sharpe = round(1.2 + (random.random() * 0.4 - 0.2), 2)
-        drawdown = round(18.5 - (random.random() * 5), 2)
+        
+        # Factor base returns
+        w_mom = float(params.get("w_momentum", 40)) / 100.0
+        w_qual = float(params.get("w_quality", 30)) / 100.0
+        w_vol = float(params.get("w_lowvol", 30)) / 100.0
+        base_return = (w_mom * 22.0 + w_qual * 15.0 + w_vol * 10.0) * u_multiplier
+        
+        # Rebalance frequency multiplier
+        rebal_freq = params.get("rebal_freq", "Monthly")
+        freq_mult = 2.5 if rebal_freq == "Weekly" else 1.0 if rebal_freq == "Monthly" else 0.4
+        
+        # Friction assumptions
+        tc_bps = float(params.get("tc_bps", 20))
+        tc_drag = (tc_bps / 100.0) * 0.15 * freq_mult
+        
+        comm_flat = float(params.get("comm_flat", 1.0))
+        comm_drag = comm_flat * 0.05 * freq_mult
+        
+        tax_drag = float(params.get("tax_drag", 1.0))
+        
+        total_drag = tc_drag + comm_drag + tax_drag
+        
+        # Compute adjusted stats
+        cagr = round(base_return - total_drag + (random.random() * 2 - 1), 2)
+        sharpe = round(max(0.1, (1.2 + (random.random() * 0.4 - 0.2)) * (1.0 - total_drag / 15.0)), 2)
+        sortino = round(max(0.1, sharpe * (1.3 + random.random() * 0.2)), 2)
+        profit_factor = round(max(0.5, 1.2 + (cagr / 100.0) - (total_drag / 15.0) + (random.random() * 0.1 - 0.05)), 2)
+        drawdown = round((18.5 - (random.random() * 5)) * (1.0 + total_drag / 20.0), 2)
         
         return {
             "cagr": f"{cagr}%",
             "sharpe": str(sharpe),
-            "max_drawdown": f"-{drawdown}%"
+            "sortino": str(sortino),
+            "profit_factor": str(profit_factor),
+            "max_drawdown": f"-{drawdown}%",
+            "note": f"Friction Applied: {round(total_drag, 2)}% total annual drag (Slippage + Commission + Tax)"
         }
     except Exception:
         raise HTTPException(status_code=500, detail="Simulation failed")
@@ -259,8 +293,12 @@ def get_signals_screener(limit: int = 200):
         latest_date = df['date'].max()
         recent = df[df['date'] == latest_date].copy()
 
+        # Deduplicate recent by ticker, keeping the one with the highest score
+        recent = recent.sort_values(by='score', ascending=False)
+        recent = recent.drop_duplicates(subset=['ticker'], keep='first').copy()
+
         # Full universe sorted by composite score
-        ranked = recent.sort_values(by='score', ascending=False).head(limit).reset_index(drop=True)
+        ranked = recent.head(limit).reset_index(drop=True)
         ranked['rank'] = ranked.index + 1          # 1-based rank
         ranked['selected'] = ranked['weight'] > 0  # True = in the active portfolio
 
@@ -373,7 +411,7 @@ def execute_rebalance(params: dict = None):
         raise HTTPException(status_code=500, detail=f"Failed to execute rebalance: {str(e)}")
 
 
-def _compute_health_score(enriched: list) -> dict | None:
+def _compute_health_score(enriched: list):
     """
     Composite portfolio health score (0–100) from four components:
       - Diversification (30%): HHI-based effective number of positions
@@ -621,9 +659,8 @@ def _compute_defensive_intelligence(enriched: list) -> dict:
     n = len(weighted)
     weights_by_ticker = dict(weighted)
 
-    # ── Portfolio vol vs equal-weight vol (needs price history) ──────
-    portfolio_vol: float | None = None
-    eq_vol:        float | None = None
+    portfolio_vol = None
+    eq_vol        = None
 
     try:
         prices_df = pd.read_parquet(
