@@ -5,6 +5,7 @@ import {
   SlidersHorizontal, Eye, Settings2, Activity,
   Radio, GitCommit, ClipboardList, Briefcase,
   Search, ClipboardCheck, ChevronDown, ChevronRight,
+  Moon, Sun,
 } from 'lucide-react'
 import './App.css'
 
@@ -81,12 +82,18 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [view, setView]       = useState('dashboard')
   const [isDemoMode, setIsDemoMode] = useState(false)
+  const [theme, setTheme]     = useState(() => localStorage.getItem('phineus-theme') || 'light')
   const [expandedSections, setExpandedSections] = useState({
     'Analysis': true,
     'Research': true,
     'Strategy Lab': true,
     'Trade': true,
   })
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('phineus-theme', theme)
+  }, [theme])
 
   const toggleSection = (sec) => {
     setExpandedSections(prev => ({ ...prev, [sec]: !prev[sec] }))
@@ -229,6 +236,13 @@ export default function App() {
             <Search size={14} />
             <span>Search tickers</span>
           </div>
+          <button
+            className="top-icon-button"
+            onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
+            title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          >
+            {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
+          </button>
           <div className="top-bar-status">
             <div style={{ width: 7, height: 7, background: 'var(--green)', borderRadius: '50%', animation: 'pulse 2s ease infinite' }} />
             <span>Live</span>

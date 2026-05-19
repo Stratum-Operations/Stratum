@@ -1431,7 +1431,7 @@ body {
 }
 
 .grid-col-value {
-  color: var(--white) !important;
+  color: var(--text-strong) !important;
   font-weight: 700;
   font-size: 12px;
 }
@@ -1572,6 +1572,13 @@ button:hover, .btn:hover {
   gap: 20px;
 }
 
+.loading-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+
 /* ─── Misc ───────────────────────────────────────────────────────── */
 .main-grid {
   display: grid;
@@ -1591,79 +1598,97 @@ button:hover, .btn:hover {
   .b-panel, .glass-panel { background: #fff !important; border: 1px solid #ccc !important; }
 }
 
-@media (max-width: 1180px) {
-  .top-search {
-    display: none;
-  }
-
-  .portfolio-summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .dashboard-layout {
-    grid-template-columns: 1fr;
-  }
+/* ─── Dark Theme ─────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg:         #080a0f;
+  --surface:    #0e1117;
+  --surface-2:  #141820;
+  --surface-3:  #1c2130;
+  --surface-4:  #eef2ff;
+  --border:     #1e2435;
+  --border-2:   #283044;
+  --border-3:   #3d4d6a;
+  --text:       #c8d3e8;
+  --text-strong:#eef2ff;
+  --text-2:     #7a8aaa;
+  --text-3:     #4a5570;
+  --white:      #eef2ff;
+  --green:      #22c55e;
+  --green-dim:  rgba(34, 197, 94, 0.12);
+  --red:        #ef4444;
+  --red-dim:    rgba(239, 68, 68, 0.12);
+  --amber:      #f59e0b;
+  --blue:       #60a5fa;
+  --blue-dim:   rgba(96, 165, 250, 0.12);
+  --teal:       #2dd4bf;
+  --ink:        #eef2ff;
 }
 
-@media (max-width: 900px) {
-  .app-body {
-    flex-direction: column;
-  }
+[data-theme="dark"] body {
+  background: linear-gradient(180deg, #080a0f 0%, #0c1020 100%) !important;
+  color: var(--text) !important;
+}
 
-  .sidebar {
-    width: 100%;
-    min-width: 0;
-    height: auto;
-    max-height: 210px;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
+[data-theme="dark"] .top-bar {
+  background: rgba(14, 17, 23, 0.94) !important;
+  border-bottom-color: var(--border) !important;
+  box-shadow: 0 1px 20px rgba(0, 0, 0, 0.5) !important;
+}
 
-  .sidebar-section {
-    padding: 12px;
-  }
+[data-theme="dark"] .sidebar {
+  background: rgba(14, 17, 23, 0.92) !important;
+  border-right-color: var(--border) !important;
+}
 
-  .sidebar-bottom {
-    display: none;
-  }
+[data-theme="dark"] .metric-card,
+[data-theme="dark"] .glass-panel,
+[data-theme="dark"] .b-panel,
+[data-theme="dark"] .side-card,
+[data-theme="dark"] .dashboard-panel-wrap,
+[data-theme="dark"] .table-wrapper {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+}
 
-  .top-bar {
-    flex-wrap: wrap;
-  }
+[data-theme="dark"] .data-table th,
+[data-theme="dark"] .data-table td {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+}
 
-  .top-bar-logo {
-    width: auto;
-    flex: 1;
-  }
+[data-theme="dark"] .data-table tr:hover td { background: var(--surface-2) !important; }
 
-  .top-bar-kpis {
-    order: 3;
-    width: 100%;
-    overflow-x: auto;
-    border-top: 1px solid var(--border);
-  }
+[data-theme="dark"] .chart-header { background: var(--surface) !important; border-bottom-color: var(--border) !important; }
 
-  .top-bar-actions {
-    border-left: none;
-  }
+[data-theme="dark"] .toggle-btn.active { background: var(--surface-2) !important; }
 
-  .content-scroll {
-    padding: 16px;
-  }
+[data-theme="dark"] .sidebar-item:hover { background: var(--surface) !important; border-color: var(--border) !important; }
+[data-theme="dark"] .sidebar-item.active { background: var(--surface) !important; border-color: var(--border-2) !important; }
 
-  .header-grid,
-  .portfolio-summary-grid {
-    grid-template-columns: 1fr;
-  }
+[data-theme="dark"] .loading-screen { background: var(--bg) !important; }
 
-  .portfolio-hero-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+  border-color: var(--border-2) !important;
+}
 
-  .portfolio-hero-actions {
-    flex-wrap: wrap;
-  }
+[data-theme="dark"] .allocation-log-card,
+[data-theme="dark"] .portfolio-hero {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+}
+
+[data-theme="dark"] .ticker-cloud span {
+  background: var(--surface-2) !important;
+  border-color: var(--border) !important;
+}
+
+[data-theme="dark"] .status-list span {
+  background: var(--surface-2) !important;
+  border-color: var(--border) !important;
 }
 
 /* Demo Warning Banner */

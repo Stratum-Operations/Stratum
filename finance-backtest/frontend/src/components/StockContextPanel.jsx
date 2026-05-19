@@ -41,7 +41,7 @@ export default function StockContextPanel({ ticker }) {
            <AlertTriangle size={16} color="#ffab00" style={{marginTop: '2px'}} />
            <div>
               <span style={{ color: '#ffab00', fontWeight: 700, fontSize: '0.8rem' }}>MACRO EVENT ALERT</span>
-              <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', opacity: 0.8 }}>Earnings call in **{data.earningsIn} days**. Binary volatility event detected.</p>
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', opacity: 0.8 }}>Earnings call in <strong>{data.earningsIn} days</strong>. Binary volatility event detected.</p>
            </div>
         </div>
       )}

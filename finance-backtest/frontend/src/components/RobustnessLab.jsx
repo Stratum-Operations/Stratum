@@ -11,11 +11,11 @@ const SENSITIVITY_DATA = [
 ]
 
 const TT_STYLE = {
-  background: '#141414',
-  border: '1px solid #2e2e2e',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   fontFamily: 'JetBrains Mono, monospace',
   fontSize: '11px',
-  color: '#d0d0d0',
+  color: 'var(--text)',
 }
 
 export default function RobustnessLab({ perf }) {
@@ -30,9 +30,9 @@ export default function RobustnessLab({ perf }) {
   const splitDate = walkForwardData[Math.floor(walkForwardData.length * 0.7)]?.date
 
   const selectStyle = {
-    background: '#141414',
-    border: '1px solid #2e2e2e',
-    color: '#d0d0d0',
+    background: 'var(--surface-2)',
+    border: '1px solid var(--border-2)',
+    color: 'var(--text)',
     padding: '5px 10px',
     fontSize: '11px',
     fontFamily: 'JetBrains Mono, monospace',
@@ -41,11 +41,11 @@ export default function RobustnessLab({ perf }) {
   }
 
   return (
-    <div style={{ background: '#070707', display: 'flex', flexDirection: 'column', gap: 0 }}>
+    <div style={{ background: 'var(--bg)', display: 'flex', flexDirection: 'column', gap: 0 }}>
       {/* Header */}
       <div className="chart-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <ShieldCheck size={16} color="#888888" />
+          <ShieldCheck size={16} color="var(--text-2)" />
           <span className="chart-title">Walk-Forward Validation Lab</span>
         </div>
       </div>
@@ -53,8 +53,8 @@ export default function RobustnessLab({ perf }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 1.1fr) 2fr', gap: 0 }}>
 
         {/* Left: Config panel */}
-        <div style={{ background: '#0e0e0e', borderRight: '1px solid #1c1c1c', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <span style={{ fontSize: '9px', color: '#888888', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ background: 'var(--surface)', borderRight: '1px solid var(--border)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <span style={{ fontSize: '9px', color: 'var(--text-2)', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Database size={12} /> Sensitivity Parameters
           </span>
 
@@ -76,66 +76,66 @@ export default function RobustnessLab({ perf }) {
           </div>
           <div className="parameter-row">
             <label>Sector Neutral</label>
-            <input type="checkbox" checked={config.sectorNeutral} onChange={e => setConfig({ ...config, sectorNeutral: e.target.checked })} style={{ accentColor: '#22c55e', width: '16px', height: '16px' }} />
+            <input type="checkbox" checked={config.sectorNeutral} onChange={e => setConfig({ ...config, sectorNeutral: e.target.checked })} style={{ accentColor: 'var(--accent-green)', width: '16px', height: '16px' }} />
           </div>
 
-          <div style={{ marginTop: 'auto', padding: '14px', background: '#141414', border: '1px solid #1c1c1c' }}>
-            <span style={{ fontSize: '9px', color: '#4a4a4a', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
+          <div style={{ marginTop: 'auto', padding: '14px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+            <span style={{ fontSize: '9px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
               Sensitivity Outlook
             </span>
-            <div style={{ fontSize: '11px', color: '#888888', lineHeight: 1.6 }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-2)', lineHeight: 1.6 }}>
               Strategy shows high stability when expanding from 10 to 20 assets. Sharpe ratio improves with Monthly rebalancing.
             </div>
           </div>
         </div>
 
         {/* Right: Walk-forward chart */}
-        <div style={{ background: '#070707', padding: '20px' }}>
-          <span style={{ fontSize: '9px', color: '#888888', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        <div style={{ background: 'var(--bg)', padding: '20px' }}>
+          <span style={{ fontSize: '9px', color: 'var(--text-2)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
             <History size={12} /> In-Sample vs. Out-of-Sample Performance
           </span>
           <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={walkForwardData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1c1c1c" vertical={false} />
-                <XAxis dataKey="date" stroke="#1c1c1c" tick={{ fontSize: 9, fill: '#4a4a4a', fontFamily: 'JetBrains Mono, monospace' }} />
-                <YAxis stroke="#1c1c1c" tick={{ fontSize: 9, fill: '#4a4a4a', fontFamily: 'JetBrains Mono, monospace' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="date" stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} />
+                <YAxis stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} />
                 <Tooltip contentStyle={TT_STYLE} />
                 <ReferenceArea
                   x1={walkForwardData[0]?.date}
                   x2={splitDate}
-                  fill="#0e0e0e"
-                  label={{ position: 'insideTopLeft', value: 'IS', fill: '#4a4a4a', fontSize: 9, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
+                  fill="var(--surface)"
+                  label={{ position: 'insideTopLeft', value: 'IS', fill: 'var(--text-3)', fontSize: 9, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
                 />
                 <ReferenceArea
                   x1={splitDate}
                   x2={walkForwardData[walkForwardData.length - 1]?.date}
                   fill="transparent"
-                  label={{ position: 'insideTopLeft', value: 'OOS', fill: '#888888', fontSize: 9, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
+                  label={{ position: 'insideTopLeft', value: 'OOS', fill: 'var(--text-2)', fontSize: 9, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
                 />
-                <Line type="monotone" dataKey="Strategy_Equity" stroke="#ffffff" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="SPY_Equity" stroke="#3d3d3d" strokeWidth={1} strokeDasharray="3 3" dot={false} />
+                <Line type="monotone" dataKey="Strategy_Equity" stroke="var(--teal)" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="SPY_Equity" stroke="var(--border-3)" strokeWidth={1} strokeDasharray="3 3" dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px' }}>
-            <div style={{ background: '#0e0e0e', padding: '14px', border: '1px solid #1c1c1c' }}>
-              <span style={{ fontSize: '8px', color: '#4a4a4a', textTransform: 'uppercase', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>
+            <div style={{ background: 'var(--surface)', padding: '14px', border: '1px solid var(--border)' }}>
+              <span style={{ fontSize: '8px', color: 'var(--text-3)', textTransform: 'uppercase', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>
                 In-Sample
               </span>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#d0d0d0', fontFamily: 'JetBrains Mono, monospace' }}>
-                <span>Sharpe: <strong style={{ color: '#ffffff' }}>1.35</strong></span>
-                <span>Win: <strong style={{ color: '#22c55e' }}>62%</strong></span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace' }}>
+                <span>Sharpe: <strong style={{ color: 'var(--text-strong)' }}>1.35</strong></span>
+                <span>Win: <strong style={{ color: 'var(--accent-green)' }}>62%</strong></span>
               </div>
             </div>
-            <div style={{ background: '#0e0e0e', padding: '14px', border: '1px solid #1c1c1c' }}>
-              <span style={{ fontSize: '8px', color: '#4a4a4a', textTransform: 'uppercase', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>
+            <div style={{ background: 'var(--surface)', padding: '14px', border: '1px solid var(--border)' }}>
+              <span style={{ fontSize: '8px', color: 'var(--text-3)', textTransform: 'uppercase', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>
                 Out-of-Sample
               </span>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#d0d0d0', fontFamily: 'JetBrains Mono, monospace' }}>
-                <span>Sharpe: <strong style={{ color: '#ffffff' }}>1.22</strong></span>
-                <span>Win: <strong style={{ color: '#22c55e' }}>58%</strong></span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace' }}>
+                <span>Sharpe: <strong style={{ color: 'var(--text-strong)' }}>1.22</strong></span>
+                <span>Win: <strong style={{ color: 'var(--accent-green)' }}>58%</strong></span>
               </div>
             </div>
           </div>
@@ -143,8 +143,8 @@ export default function RobustnessLab({ perf }) {
       </div>
 
       {/* Sensitivity Matrix */}
-      <div style={{ background: '#0e0e0e', borderTop: '1px solid #1c1c1c', padding: '16px 20px' }}>
-        <span style={{ fontSize: '9px', color: '#888888', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+      <div style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: '16px 20px' }}>
+        <span style={{ fontSize: '9px', color: 'var(--text-2)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
           <Zap size={12} /> Parameter Sensitivity Matrix
         </span>
         <div className="table-wrapper">
@@ -163,11 +163,11 @@ export default function RobustnessLab({ perf }) {
               {SENSITIVITY_DATA.map(d => (
                 <tr key={d.id} style={{ opacity: String(d.size) === String(config.size) ? 1 : 0.4 }}>
                   <td>{d.size} Assets</td>
-                  <td style={{ color: '#888888' }}>{d.freq}</td>
-                  <td style={{ color: '#22c55e', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>{d.cagr}</td>
+                  <td>{d.freq}</td>
+                  <td className="signal-green" style={{ fontFamily: 'JetBrains Mono, monospace' }}>{d.cagr}</td>
                   <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{d.sharpe}</td>
-                  <td style={{ color: '#ef4444', fontFamily: 'JetBrains Mono, monospace' }}>{d.drawdown}</td>
-                  <td style={{ color: '#888888', fontFamily: 'JetBrains Mono, monospace' }}>{d.turnover}</td>
+                  <td className="signal-red" style={{ fontFamily: 'JetBrains Mono, monospace' }}>{d.drawdown}</td>
+                  <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{d.turnover}</td>
                 </tr>
               ))}
             </tbody>

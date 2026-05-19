@@ -40,8 +40,6 @@ PERF_PATH = os.path.join(BASE_DIR, "outputs", "performance.csv")
 LOG_PATH = os.path.join(BASE_DIR, "outputs", "rebalance_log_v7.csv")
 METRICS_PATH = os.path.join(BASE_DIR, "outputs", "metrics.csv")
 
-<<<<<<< Updated upstream
-
 def _safe_float(value, default=0.0):
     try:
         if value is None:
@@ -86,7 +84,7 @@ def _series_metrics(df, prefix, benchmark_prefix="SPY"):
     downside = returns[returns < 0].std() * np.sqrt(252)
     sharpe = returns.mean() * 252 / vol if vol else 0.0
     sortino = returns.mean() * 252 / downside if downside else 0.0
-    
+
     gross_profits = float(returns[returns > 0].sum())
     gross_losses = float(abs(returns[returns < 0].sum()))
     profit_factor = gross_profits / gross_losses if gross_losses > 0 else 0.0
@@ -129,7 +127,7 @@ def _series_metrics(df, prefix, benchmark_prefix="SPY"):
         "profit_factor": round(profit_factor, 2),
     }
 
-=======
+
 # Mount frontend production build assets if they exist
 DIST_DIR = os.path.join(BASE_DIR, "frontend", "dist")
 ASSETS_DIR = os.path.join(DIST_DIR, "assets")
@@ -143,9 +141,6 @@ def serve_index():
     if os.path.exists(index_path):
         return FileResponse(index_path)
     return {"message": "Quant Backtest API is running. Build the frontend to serve the UI here."}
-
-
->>>>>>> Stashed changes
 @app.get("/api/holdings")
 def get_holdings():
     try:
