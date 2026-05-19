@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 import os
 import json
@@ -16,8 +18,16 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
         "http://localhost:5173",
-        "http://127.0.0.1:5173"
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:8001",
+        "http://127.0.0.1:8001",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -30,6 +40,7 @@ PERF_PATH = os.path.join(BASE_DIR, "outputs", "performance.csv")
 LOG_PATH = os.path.join(BASE_DIR, "outputs", "rebalance_log_v7.csv")
 METRICS_PATH = os.path.join(BASE_DIR, "outputs", "metrics.csv")
 
+<<<<<<< Updated upstream
 
 def _safe_float(value, default=0.0):
     try:
@@ -118,6 +129,23 @@ def _series_metrics(df, prefix, benchmark_prefix="SPY"):
         "profit_factor": round(profit_factor, 2),
     }
 
+=======
+# Mount frontend production build assets if they exist
+DIST_DIR = os.path.join(BASE_DIR, "frontend", "dist")
+ASSETS_DIR = os.path.join(DIST_DIR, "assets")
+
+if os.path.exists(ASSETS_DIR):
+    app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
+
+@app.get("/")
+def serve_index():
+    index_path = os.path.join(DIST_DIR, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"message": "Quant Backtest API is running. Build the frontend to serve the UI here."}
+
+
+>>>>>>> Stashed changes
 @app.get("/api/holdings")
 def get_holdings():
     try:
