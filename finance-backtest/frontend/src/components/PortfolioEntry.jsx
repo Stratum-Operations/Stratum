@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
+import { ClipboardPaste, UploadCloud } from 'lucide-react'
 
 const API_BASE = 'http://127.0.0.1:8001/api'
-const MONO = 'JetBrains Mono, monospace'
+const MONO = 'Roboto Mono, monospace'
+const SANS = 'IBM Plex Sans, Inter, system-ui, sans-serif'
 
 const TH_STYLE = {
   padding: '10px 12px',
@@ -24,25 +26,161 @@ let _uid = 1
 function uid() { return _uid++ }
 function newRow() { return { id: uid(), ticker: '', shares: '', cost_basis: '' } }
 
-function parsePasteText(text) {
-  const lines = text.trim().split('\n').filter(l => l.trim())
-  const out = []
-  for (const line of lines) {
-    let parts
-    if (line.includes('\t'))       parts = line.split('\t')
-    else if (line.includes(','))   parts = line.split(',')
-    else                           parts = line.trim().split(/\s+/)
+const HEADER_ALIASES = {
+  ticker: [
+    'ticker', 'symbol', 'symbols', 'security symbol', 'security', 'asset', 'holding',
+    'instrument', 'instrument symbol', 'stock', 'stock symbol',
+  ],
+  shares: [
+    'shares', 'share', 'quantity', 'qty', 'units', 'position', 'position quantity',
+    'current quantity', 'holding quantity',
+  ],
+  cost_basis: [
+    'avg cost', 'average cost', 'avg price', 'average price', 'cost basis',
+    'cost basis/share', 'cost basis per share', 'unit cost', 'price paid',
+    'average cost basis',
+  ],
+}
 
-    parts = parts.map(p => p.trim().replace(/^["']|["']$/g, '').replace(/^\$/, '').replace(/,/g, ''))
+function cleanCell(value) {
+  return String(value ?? '')
+    .trim()
+    .replace(/^["']|["']$/g, '')
+    .replace(/^\$/, '')
+    .replace(/,/g, '')
+}
 
-    const ticker = (parts[0] || '').toUpperCase().replace(/[^A-Z.]/g, '')
-    const shares = parseFloat(parts[1])
-    if (!ticker || isNaN(shares)) continue
+function normalizeHeader(value) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[$()]/g, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+}
 
-    const cb = parseFloat(parts[2])
-    out.push({ id: uid(), ticker, shares: String(shares), cost_basis: !isNaN(cb) ? String(cb) : '' })
+function splitCsvLine(line) {
+  const cells = []
+  let current = ''
+  let inQuotes = false
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i]
+    const next = line[i + 1]
+
+    if (char === '"' && inQuotes && next === '"') {
+      current += '"'
+      i += 1
+    } else if (char === '"') {
+      inQuotes = !inQuotes
+    } else if (char === ',' && !inQuotes) {
+      cells.push(current)
+      current = ''
+    } else {
+      current += char
+    }
   }
-  return out
+
+  cells.push(current)
+  return cells
+}
+
+function splitDelimitedLine(line) {
+  if (line.includes(',')) return splitCsvLine(line)
+  if (line.includes('\t')) return line.split('\t')
+  return line.trim().split(/\s+/)
+}
+
+function findColumn(headers, type) {
+  const aliases = HEADER_ALIASES[type]
+  for (const alias of aliases) {
+    const idx = headers.findIndex(h => h === alias)
+    if (idx >= 0) return idx
+  }
+  for (const alias of aliases) {
+    const idx = headers.findIndex(h => h.includes(alias))
+    if (idx >= 0) return idx
+  }
+  return -1
+}
+
+function looksLikeHeader(cells) {
+  const headers = cells.map(normalizeHeader)
+  return findColumn(headers, 'ticker') >= 0 && findColumn(headers, 'shares') >= 0
+}
+
+function normalizeTicker(value) {
+  return cleanCell(value).toUpperCase().replace(/[^A-Z0-9.-]/g, '')
+}
+
+function parsePortfolioImport(text) {
+  const rawLines = text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+
+  if (!rawLines.length) return { rows: [], rejected: [] }
+
+  const firstCells = splitDelimitedLine(rawLines[0]).map(cleanCell)
+  const hasHeader = looksLikeHeader(firstCells)
+  const headers = hasHeader ? firstCells.map(normalizeHeader) : []
+  const tickerIdx = hasHeader ? findColumn(headers, 'ticker') : 0
+  const sharesIdx = hasHeader ? findColumn(headers, 'shares') : 1
+  const costIdx = hasHeader ? findColumn(headers, 'cost_basis') : 2
+  const dataLines = hasHeader ? rawLines.slice(1) : rawLines
+
+  const parsed = []
+  const rejected = []
+
+  dataLines.forEach((line, index) => {
+    const cells = splitDelimitedLine(line).map(cleanCell)
+    const ticker = normalizeTicker(cells[tickerIdx])
+    const shares = parseFloat(cells[sharesIdx])
+    const cost = costIdx >= 0 ? parseFloat(cells[costIdx]) : NaN
+
+    if (!ticker || Number.isNaN(shares) || shares <= 0) {
+      rejected.push({ line: index + 1 + (hasHeader ? 1 : 0), raw: line })
+      return
+    }
+
+    parsed.push({
+      ticker,
+      shares,
+      cost_basis: Number.isNaN(cost) || cost <= 0 ? '' : cost,
+    })
+  })
+
+  const byTicker = new Map()
+  parsed.forEach(row => {
+    const existing = byTicker.get(row.ticker)
+    if (!existing) {
+      byTicker.set(row.ticker, { ...row })
+      return
+    }
+
+    const nextShares = existing.shares + row.shares
+    const existingCost = parseFloat(existing.cost_basis)
+    const rowCost = parseFloat(row.cost_basis)
+    const hasBothCosts = !Number.isNaN(existingCost) && !Number.isNaN(rowCost)
+
+    byTicker.set(row.ticker, {
+      ticker: row.ticker,
+      shares: nextShares,
+      cost_basis: hasBothCosts
+        ? ((existingCost * existing.shares) + (rowCost * row.shares)) / nextShares
+        : existing.cost_basis || row.cost_basis || '',
+    })
+  })
+
+  return {
+    rows: [...byTicker.values()].map(row => ({
+      id: uid(),
+      ticker: row.ticker,
+      shares: String(Number(row.shares.toFixed(6))),
+      cost_basis: row.cost_basis === '' ? '' : String(Number(row.cost_basis.toFixed(4))),
+    })),
+    rejected,
+  }
 }
 
 /* ── Focusable input cell ───────────────────────────────────────── */
@@ -97,6 +235,128 @@ function TBtn({ onClick, disabled, primary, children }) {
     >
       {children}
     </button>
+  )
+}
+
+function ImportCard({ active, icon: Icon, title, children }) {
+  return (
+    <div style={{
+      background: active ? 'var(--surface)' : 'var(--surface-2)',
+      border: `1px solid ${active ? 'var(--border-2)' : 'var(--border)'}`,
+      borderRadius: 14,
+      padding: 16,
+      minWidth: 0,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <Icon size={18} color="var(--teal)" />
+        <strong style={{ fontFamily: SANS, fontSize: 15, color: 'var(--text-strong)' }}>{title}</strong>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function ImportPreview({ rows, rejected, onImport, loading }) {
+  const canImport = rows.length > 0 && !loading
+
+  return (
+    <div style={{
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: 14,
+      overflow: 'hidden',
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        padding: '14px 16px',
+        borderBottom: '1px solid var(--border)',
+      }}>
+        <strong style={{ fontFamily: SANS, fontSize: 16, color: 'var(--text-strong)' }}>Preview</strong>
+        <button
+          onClick={onImport}
+          disabled={!canImport}
+          style={{
+            background: canImport ? 'var(--ink)' : 'var(--surface-2)',
+            color: canImport ? '#fff' : 'var(--text-3)',
+            border: '1px solid var(--border)',
+            borderRadius: 10,
+            padding: '9px 14px',
+            fontFamily: SANS,
+            fontSize: 13,
+            fontWeight: 800,
+            cursor: canImport ? 'pointer' : 'not-allowed',
+          }}
+        >
+          {loading ? 'Importing...' : 'Import portfolio'}
+        </button>
+      </div>
+
+      {rows.length > 0 ? (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                {['Ticker', 'Shares', 'Avg cost'].map((h, i) => (
+                  <th
+                    key={h}
+                    style={{
+                      padding: '10px 14px',
+                      textAlign: i === 0 ? 'left' : 'right',
+                      color: 'var(--text-2)',
+                      fontFamily: SANS,
+                      fontSize: 13,
+                      borderBottom: '1px solid var(--border)',
+                      background: 'var(--surface-2)',
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.slice(0, 12).map(row => (
+                <tr key={row.id}>
+                  <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontFamily: MONO, fontWeight: 800, color: 'var(--text-strong)' }}>
+                    {row.ticker}
+                  </td>
+                  <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', textAlign: 'right', fontFamily: MONO }}>
+                    {Number(row.shares).toLocaleString()}
+                  </td>
+                  <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', textAlign: 'right', fontFamily: MONO, color: row.cost_basis ? 'var(--text)' : 'var(--text-3)' }}>
+                    {row.cost_basis ? `$${Number(row.cost_basis).toFixed(2)}` : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {rows.length > 12 && (
+            <div style={{ padding: '10px 14px', color: 'var(--text-2)', fontFamily: SANS, fontSize: 13 }}>
+              {rows.length - 12} more rows will be imported.
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ padding: 18, color: 'var(--text-2)', fontFamily: SANS, fontSize: 14 }}>
+          Add a CSV or paste holdings to preview them here.
+        </div>
+      )}
+
+      {rejected.length > 0 && (
+        <div style={{
+          padding: '10px 14px',
+          borderTop: '1px solid var(--border)',
+          color: 'var(--amber)',
+          fontFamily: SANS,
+          fontSize: 13,
+        }}>
+          Skipped {rejected.length} row{rejected.length !== 1 ? 's' : ''} without a ticker and share count.
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -870,8 +1130,13 @@ export default function PortfolioEntry() {
   const [result, setResult]     = useState(null)
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState(null)
-  const [showPaste, setShowPaste] = useState(false)
   const [pasteText, setPasteText] = useState('')
+  const [importText, setImportText] = useState('')
+  const [importName, setImportName] = useState('')
+  const [dragActive, setDragActive] = useState(false)
+  const fileRef = useRef(null)
+
+  const parsedImport = parsePortfolioImport(importText || pasteText)
 
   function update(id, field, value) {
     setRows(r => r.map(row => row.id === id ? { ...row, [field]: value } : row))
@@ -885,19 +1150,8 @@ export default function PortfolioEntry() {
     setRows(r => r.filter(row => row.id !== id))
   }
 
-  function importPaste() {
-    const parsed = parsePasteText(pasteText)
-    if (!parsed.length) return
-    setRows(prev => {
-      const filled = prev.filter(r => r.ticker.trim())
-      return [...filled, ...parsed]
-    })
-    setPasteText('')
-    setShowPaste(false)
-  }
-
-  async function analyze() {
-    const positions = rows
+  function buildPositions(inputRows = rows) {
+    return inputRows
       .filter(r => r.ticker.trim() && r.shares)
       .map(r => ({
         ticker: r.ticker.trim().toUpperCase(),
@@ -905,6 +1159,10 @@ export default function PortfolioEntry() {
         cost_basis: r.cost_basis ? parseFloat(r.cost_basis) : null,
       }))
       .filter(p => p.shares > 0)
+  }
+
+  async function analyze(inputRows = rows) {
+    const positions = buildPositions(inputRows)
 
     if (!positions.length) {
       setError('Enter at least one position with a ticker and share count.')
@@ -919,6 +1177,38 @@ export default function PortfolioEntry() {
       setError(e.response?.data?.detail || 'Failed to fetch portfolio data. Ensure the API server is running.')
     }
     setLoading(false)
+  }
+
+  function importPortfolio() {
+    if (!parsedImport.rows.length) return
+    setRows(parsedImport.rows)
+    analyze(parsedImport.rows)
+  }
+
+  function loadImportText(text, name = '') {
+    setImportText(text)
+    setImportName(name)
+    setPasteText('')
+    setError(null)
+  }
+
+  function handleFile(file) {
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.csv') && file.type && !file.type.includes('csv')) {
+      setError('Upload a CSV file.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = event => loadImportText(String(event.target?.result || ''), file.name)
+    reader.onerror = () => setError('Could not read that file.')
+    reader.readAsText(file)
+  }
+
+  function handleDrop(event) {
+    event.preventDefault()
+    setDragActive(false)
+    handleFile(event.dataTransfer.files?.[0])
   }
 
   if (result) {
@@ -936,70 +1226,106 @@ export default function PortfolioEntry() {
         background: 'var(--bg)',
       }}>
         <div style={{
-          fontSize: '9px', fontWeight: 800, letterSpacing: '0.2em',
-          textTransform: 'uppercase', color: 'var(--text-3)', fontFamily: MONO,
+          fontSize: '20px', fontWeight: 800, color: 'var(--text-strong)', fontFamily: SANS,
         }}>
-          Portfolio Input
+          Import portfolio
         </div>
 
         <div style={{
           marginLeft: 8,
-          fontSize: '10px', color: 'var(--text-3)', fontFamily: MONO,
+          fontSize: '14px', color: 'var(--text-2)', fontFamily: SANS,
         }}>
           {rows.filter(r => r.ticker.trim()).length > 0
             ? `${rows.filter(r => r.ticker.trim() && r.shares).length} position${rows.filter(r => r.ticker.trim() && r.shares).length !== 1 ? 's' : ''} ready`
-            : 'Enter your holdings below'}
+            : 'Upload, paste, or enter holdings'}
         </div>
 
         <div style={{ flex: 1 }} />
 
-        <TBtn onClick={() => setShowPaste(v => !v)}>
-          {showPaste ? 'Close Paste' : 'Paste CSV'}
-        </TBtn>
         <TBtn onClick={analyze} disabled={loading} primary>
-          {loading ? 'Fetching Prices...' : 'Fetch & Analyze →'}
+          {loading ? 'Analyzing...' : 'Analyze manual rows'}
         </TBtn>
       </div>
 
-      {/* ── Paste panel ─────────────────────────────────────────── */}
-      {showPaste && (
-        <div style={{
-          padding: '16px 20px',
-          borderBottom: '1px solid var(--border)',
-          background: 'var(--surface-3)',
-        }}>
-          <div style={{
-            fontSize: '9px', color: 'var(--text-3)', fontFamily: MONO,
-            letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
-          }}>
-            Paste positions — one per line: &nbsp;TICKER &nbsp;SHARES &nbsp;AVG_COST
-            &nbsp;&nbsp;·&nbsp;&nbsp; comma, tab, or space delimited &nbsp;&nbsp;·&nbsp;&nbsp; $ signs and quotes are stripped automatically
-          </div>
-          <textarea
-            value={pasteText}
-            onChange={e => setPasteText(e.target.value)}
-            placeholder={'AAPL  100  155.00\nMSFT  50   280.00\nNVDA  25   400.00\n\n— or paste directly from your brokerage CSV —'}
-            style={{
-              width: '100%',
-              minHeight: 130,
-              background: 'var(--bg)',
-              border: '1px solid var(--border-2)',
-              color: 'var(--text)',
-              fontFamily: MONO,
-              fontSize: '12px',
-              padding: 12,
-              resize: 'vertical',
-              boxSizing: 'border-box',
-              outline: 'none',
-              lineHeight: 1.6,
-            }}
-          />
-          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-            <TBtn onClick={importPaste} primary>Import</TBtn>
-            <TBtn onClick={() => { setPasteText(''); setShowPaste(false) }}>Cancel</TBtn>
-          </div>
+      {/* ── Import panel ─────────────────────────────────────────── */}
+      <div style={{
+        padding: 20,
+        display: 'grid',
+        gridTemplateColumns: 'minmax(280px, 0.9fr) minmax(320px, 1.1fr)',
+        gap: 16,
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--bg)',
+      }}>
+        <div style={{ display: 'grid', gap: 16 }}>
+          <ImportCard active={dragActive || !!importName} icon={UploadCloud} title="Drop CSV">
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".csv,text/csv"
+              onChange={e => handleFile(e.target.files?.[0])}
+              style={{ display: 'none' }}
+            />
+            <div
+              onClick={() => fileRef.current?.click()}
+              onDragOver={e => { e.preventDefault(); setDragActive(true) }}
+              onDragLeave={() => setDragActive(false)}
+              onDrop={handleDrop}
+              style={{
+                minHeight: 128,
+                border: `1px dashed ${dragActive ? 'var(--teal)' : 'var(--border-3)'}`,
+                borderRadius: 12,
+                background: dragActive ? 'var(--surface-3)' : 'var(--surface)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                padding: 18,
+                cursor: 'pointer',
+                color: 'var(--text-2)',
+                fontFamily: SANS,
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              {importName || 'Choose a CSV or drag it here'}
+            </div>
+          </ImportCard>
+
+          <ImportCard active={!!pasteText} icon={ClipboardPaste} title="Paste holdings">
+            <textarea
+              value={pasteText}
+              onChange={e => {
+                setPasteText(e.target.value)
+                setImportText('')
+                setImportName('')
+              }}
+              placeholder={'AAPL, 100, 155.00\nMSFT, 50, 280.00\nNVDA, 25, 400.00'}
+              style={{
+                width: '100%',
+                minHeight: 126,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                color: 'var(--text)',
+                fontFamily: MONO,
+                fontSize: 13,
+                padding: 12,
+                resize: 'vertical',
+                boxSizing: 'border-box',
+                outline: 'none',
+                lineHeight: 1.7,
+              }}
+            />
+          </ImportCard>
         </div>
-      )}
+
+        <ImportPreview
+          rows={parsedImport.rows}
+          rejected={parsedImport.rejected}
+          onImport={importPortfolio}
+          loading={loading}
+        />
+      </div>
 
       {/* ── Error banner ────────────────────────────────────────── */}
       {error && (

@@ -4,6 +4,7 @@ import {
   LayoutDashboard, BarChart2, FileText,
   SlidersHorizontal, Eye, Settings2, Activity,
   Radio, GitCommit, ClipboardList, Briefcase,
+  Search, ClipboardCheck,
 } from 'lucide-react'
 import './App.css'
 
@@ -22,6 +23,8 @@ import TradeBlotter        from './components/TradeBlotter'
 import WatchlistManager    from './components/WatchlistManager'
 import ReportingEngine     from './components/ReportingEngine'
 import PortfolioEntry      from './components/PortfolioEntry'
+import EvaluatorAudit      from './components/EvaluatorAudit'
+import { Button } from './components/ui/button'
 
 const API_BASE = 'http://127.0.0.1:8001/api'
 
@@ -34,40 +37,40 @@ const NAV = [
     ],
   },
   {
-    section: 'Command Center',
+    section: 'Analyze',
     items: [
       { id: 'dashboard',  label: 'Dashboard',        icon: LayoutDashboard },
       { id: 'analytics',  label: 'Analytics',        icon: BarChart2       },
+      { id: 'audit',      label: 'Evaluator Audit',  icon: ClipboardCheck  },
       { id: 'reporting',  label: 'Reporting',        icon: FileText        },
     ],
   },
   {
-    section: 'Signal Lab',
+    section: 'Research',
     items: [
-      { id: 'screener',   label: 'Alpha Screener',   icon: SlidersHorizontal },
+      { id: 'screener',   label: 'Screener',         icon: SlidersHorizontal },
       { id: 'watchlist',  label: 'Watchlist',        icon: Eye               },
-      { id: 'builder',    label: 'Strategy Builder', icon: Settings2         },
-      { id: 'robustness', label: 'Robustness Lab',   icon: Activity          },
+      { id: 'builder',    label: 'Build Strategy',   icon: Settings2         },
+      { id: 'robustness', label: 'Stress Test',      icon: Activity          },
     ],
   },
   {
-    section: 'Execution Desk',
+    section: 'Trade',
     items: [
-      { id: 'tracker',    label: 'Live Tracker',     icon: Radio             },
-      { id: 'rebalance',  label: 'Rebalance Journal',icon: GitCommit         },
-      { id: 'blotter',    label: 'Trade Blotter',    icon: ClipboardList     },
+      { id: 'tracker',    label: 'Live Positions',   icon: Radio             },
+      { id: 'rebalance',  label: 'Rebalance',        icon: GitCommit         },
+      { id: 'blotter',    label: 'Orders',           icon: ClipboardList     },
     ],
   },
 ]
 
 /* ── Compact top-bar KPI stat ────────────────────────────────── */
-function TopKPI({ label, value, sub, isPositive, isNegative }) {
+function TopKPI({ label, value, isPositive, isNegative }) {
   const cls = isPositive ? 'positive' : isNegative ? 'negative' : ''
   return (
     <div className="top-bar-kpi">
       <span className="top-bar-kpi-label">{label}</span>
       <span className={`top-bar-kpi-value ${cls}`}>{value}</span>
-      {sub && <span className="top-bar-kpi-sub">{sub}</span>}
     </div>
   )
 }
@@ -118,16 +121,7 @@ export default function App() {
     return (
       <div className="loading-screen">
         <div className="spinner" />
-        <span style={{
-          fontFamily: 'JetBrains Mono, monospace',
-          fontSize: '9px',
-          letterSpacing: '0.25em',
-          color: 'var(--text-2)',
-          textTransform: 'uppercase',
-          fontWeight: 700,
-        }}>
-          Initializing Phineus OS...
-        </span>
+        <span className="loading-label">Loading portfolio</span>
       </div>
     )
   }
@@ -148,19 +142,16 @@ export default function App() {
           <TopKPI
             label="CAGR"
             value={cagr}
-            sub={`SPY ${spy?.CAGR ?? '—'}`}
             isPositive={cagrNum > 0}
           />
           <TopKPI
             label="Max Drawdown"
             value={dd}
-            sub={`SPY ${spy?.['Max Drawdown'] ?? '—'}`}
             isNegative={ddNum < 0}
           />
           <TopKPI
             label="Sharpe Ratio"
             value={sharpe}
-            sub={`${data.perf?.length?.toLocaleString() ?? '—'} days`}
             isPositive={shNum > 1}
           />
           <TopKPI
@@ -172,9 +163,15 @@ export default function App() {
         </div>
 
         {/* Status indicator */}
-        <div className="top-bar-status">
-          <div style={{ width: 7, height: 7, background: 'var(--green)', borderRadius: '50%', animation: 'pulse 2s ease infinite' }} />
-          <span>API:8001 · LIVE</span>
+        <div className="top-bar-actions">
+          <div className="top-search">
+            <Search size={14} />
+            <span>Search tickers</span>
+          </div>
+          <div className="top-bar-status">
+            <div style={{ width: 7, height: 7, background: 'var(--green)', borderRadius: '50%', animation: 'pulse 2s ease infinite' }} />
+            <span>Live</span>
+          </div>
         </div>
       </header>
 
@@ -204,17 +201,9 @@ export default function App() {
 
           {/* Sidebar footer */}
           <div className="sidebar-bottom">
-            <div style={{
-              fontSize: '8px',
-              fontFamily: 'JetBrains Mono, monospace',
-              color: 'var(--text-3)',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              lineHeight: 1.8,
-            }}>
-              Phineus OS v7.0<br />
-              QP Optimizer<br />
-              {data.holdings?.holdings?.length ?? '—'} Active Positions
+            <div className="sidebar-help-card">
+              <span>Evaluate holdings</span>
+              <Button size="sm" variant="outline" onClick={() => setView('portfolio')}>Start</Button>
             </div>
           </div>
         </aside>
@@ -230,7 +219,7 @@ export default function App() {
 
             {/* ── Command Center ─────────────────────────────────── */}
             {view === 'dashboard' && (
-              <DashboardView perf={data.perf} holdings={data.holdings} />
+              <DashboardView perf={data.perf} holdings={data.holdings} winRate={winRate} />
             )}
             {view === 'analytics' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -238,6 +227,7 @@ export default function App() {
                 <BenchmarkSuite     perf={data.perf} holdings={data.holdings} />
               </div>
             )}
+            {view === 'audit' && <EvaluatorAudit />}
             {view === 'reporting' && (
               <ReportingEngine
                 metrics={data.metrics}
@@ -278,149 +268,77 @@ function KpiHeader({ strat, spy, winRate, perf }) {
     const neutral = Math.abs(v) < 0.01
     const sign = v > 0 ? '+' : ''
     if (neutral) return <span className="neutral">—</span>
-    return <span className={pos ? 'up' : 'down'}>{sign}{v.toFixed(2)}{suffix} vs SPY</span>
+    return <span className={pos ? 'up' : 'down'}>{sign}{v.toFixed(2)}{suffix}</span>
   }
 
   return (
     <div className="header-grid">
       <div className="metric-card">
-        <span className="metric-label">CAGR — Strategy</span>
+        <span className="metric-label">CAGR</span>
         <span className="metric-value">{strat?.CAGR ?? '—'}</span>
         <div className="metric-benchmark"><Delta v={cagrDelta} /></div>
-        <div style={{ fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-2)' }}>
-          SPY {spy?.CAGR ?? '—'}
-        </div>
       </div>
       <div className="metric-card">
         <span className="metric-label">Max Drawdown</span>
         <span className="metric-value">{strat?.['Max Drawdown'] ?? '—'}</span>
         <div className="metric-benchmark"><Delta v={ddDelta} invert /></div>
-        <div style={{ fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-2)' }}>
-          SPY {spy?.['Max Drawdown'] ?? '—'}
-        </div>
       </div>
       <div className="metric-card">
         <span className="metric-label">Sharpe Ratio</span>
         <span className="metric-value">{strat?.Sharpe ?? '—'}</span>
         <div className="metric-benchmark"><Delta v={sharpeDelta} suffix="x" /></div>
-        <div style={{ fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-2)' }}>
-          {perf?.length?.toLocaleString() ?? '—'} days · {winRate.toFixed(1)}% win rate
-        </div>
       </div>
     </div>
   )
 }
 
 /* ── Dashboard view ─────────────────────────────────────────────── */
-function DashboardView({ perf, holdings }) {
+function DashboardView({ perf, holdings, winRate }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
+    <div className="dashboard-view">
       <LivePortfolio />
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
-        gap: 0,
-        borderTop: '1px solid var(--border-2)',
-      }}>
+      <div className="dashboard-layout">
         {/* Left: Chart + Sector */}
-        <div style={{ borderRight: '1px solid var(--border-2)' }}>
+        <div className="dashboard-main-column">
           <MainChart perf={perf} />
-          <div style={{ borderTop: '1px solid var(--border-2)' }}>
+          <div className="dashboard-panel-wrap">
             <SectorExposure holdings={holdings} />
           </div>
         </div>
 
-        {/* Right: System overview + positions */}
-        <div style={{ background: 'var(--surface)' }}>
-          {/* System overview */}
-          <div style={{ padding: '24px', borderBottom: '1px solid var(--border-2)' }}>
-            <div style={{
-              fontSize: '9px', fontWeight: 800, letterSpacing: '0.2em',
-              textTransform: 'uppercase', color: 'var(--text-3)',
-              fontFamily: 'JetBrains Mono, monospace', marginBottom: '12px',
-            }}>System Overview</div>
-            <p style={{ fontSize: '12px', color: 'var(--text-2)', lineHeight: 1.8 }}>
-              Phineus OS quant engine is active. QP allocations are continuously re-optimized relative to sector bounds and S&P 500 drift metrics.
-            </p>
+        <div className="dashboard-side-column">
+          <div className="side-card">
+            <h3>Portfolio status</h3>
+            <div className="status-list">
+              <span><strong>{holdings?.holdings?.length ?? '—'}</strong> holdings</span>
+              <span><strong>{winRate.toFixed(0)}%</strong> win rate</span>
+              <span><strong>SPY</strong> base</span>
+            </div>
           </div>
 
-          {/* Active tickers */}
-          <div style={{ padding: '20px' }}>
-            <div style={{
-              fontSize: '9px', fontWeight: 700, color: 'var(--text-3)',
-              textTransform: 'uppercase', letterSpacing: '0.15em',
-              fontFamily: 'JetBrains Mono, monospace', marginBottom: '12px',
-            }}>
-              Active Optimizer Tickers
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+          <div className="side-card">
+            <h3>Active tickers</h3>
+            <div className="ticker-cloud">
               {holdings?.holdings?.slice(0, 15).map(h => (
-                <span key={h.ticker} style={{
-                  fontSize: '10px',
-                  fontFamily: 'JetBrains Mono, monospace',
-                  background: 'var(--surface-2)',
-                  border: '1px solid var(--border-2)',
-                  padding: '4px 8px',
-                  fontWeight: 700,
-                  color: 'var(--text)',
-                }}>
+                <span key={h.ticker}>
                   {h.ticker}
                 </span>
               ))}
             </div>
           </div>
 
-          {/* Top holdings mini-table */}
           {holdings?.holdings && (
-            <div style={{ borderTop: '1px solid var(--border)' }}>
-              <div style={{
-                padding: '12px 20px 8px',
-                fontSize: '9px', fontWeight: 700, letterSpacing: '0.15em',
-                textTransform: 'uppercase', color: 'var(--text-3)',
-                fontFamily: 'JetBrains Mono, monospace',
-                borderBottom: '1px solid var(--border)',
-              }}>
-                Top Holdings
-              </div>
+            <div className="side-card holdings-card">
+              <h3>Top holdings</h3>
               {holdings.holdings.slice(0, 8).map(h => (
-                <div key={h.ticker} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '8px 20px',
-                  borderBottom: '1px solid var(--border)',
-                  cursor: 'default',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{
-                      fontFamily: 'JetBrains Mono, monospace',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: 'var(--white)',
-                      minWidth: '48px',
-                    }}>{h.ticker}</span>
-                    <span style={{
-                      fontSize: '10px', color: 'var(--text-3)',
-                      fontFamily: 'JetBrains Mono, monospace',
-                    }}>{h.sector || 'N/A'}</span>
+                <div key={h.ticker} className="holding-row">
+                  <div>
+                    <strong>{h.ticker}</strong>
+                    <span>{h.sector || 'N/A'}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{
-                      height: '3px',
-                      width: `${Math.round(h.weight * 300)}px`,
-                      background: 'var(--border-3)',
-                      maxWidth: '60px',
-                    }} />
-                    <span style={{
-                      fontFamily: 'JetBrains Mono, monospace',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: 'var(--text)',
-                      minWidth: '42px',
-                      textAlign: 'right',
-                    }}>
-                      {(h.weight * 100).toFixed(1)}%
-                    </span>
+                  <div className="holding-weight">
+                    <div><span style={{ width: `${Math.round(h.weight * 260)}px` }} /></div>
+                    <strong>{(h.weight * 100).toFixed(1)}%</strong>
                   </div>
                 </div>
               ))}

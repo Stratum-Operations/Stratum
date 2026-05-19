@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -28,6 +29,88 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PERF_PATH = os.path.join(BASE_DIR, "outputs", "performance.csv")
 LOG_PATH = os.path.join(BASE_DIR, "outputs", "rebalance_log_v7.csv")
 METRICS_PATH = os.path.join(BASE_DIR, "outputs", "metrics.csv")
+
+
+def _safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+        if isinstance(value, str):
+            value = value.replace("%", "").replace(",", "").strip()
+        return float(value)
+    except Exception:
+        return default
+
+
+def _load_performance_frame():
+    if not os.path.exists(PERF_PATH):
+        raise HTTPException(status_code=404, detail="Performance CSV does not exist")
+    df = pd.read_csv(PERF_PATH)
+    if "Date" in df.columns:
+        df = df.rename(columns={"Date": "date"})
+    elif "Unnamed: 0" in df.columns:
+        df = df.rename(columns={"Unnamed: 0": "date"})
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        df = df.sort_values("date")
+    return df.apply(lambda col: pd.to_numeric(col, errors="ignore"))
+
+
+def _series_metrics(df, prefix, benchmark_prefix="SPY"):
+    ret_col = f"{prefix}_Return"
+    eq_col = f"{prefix}_Equity"
+    if ret_col not in df.columns or eq_col not in df.columns or df.empty:
+        return {}
+
+    returns = pd.to_numeric(df[ret_col], errors="coerce").fillna(0.0)
+    equity = pd.to_numeric(df[eq_col], errors="coerce").replace(0, np.nan).ffill().dropna()
+    if equity.empty:
+        return {}
+
+    days = max(len(returns), 1)
+    years = days / 252.0
+    total_return = equity.iloc[-1] / equity.iloc[0] - 1 if equity.iloc[0] else 0.0
+    cagr = (equity.iloc[-1] / equity.iloc[0]) ** (1 / years) - 1 if years > 0 and equity.iloc[0] else 0.0
+    vol = returns.std() * np.sqrt(252)
+    downside = returns[returns < 0].std() * np.sqrt(252)
+    sharpe = returns.mean() * 252 / vol if vol else 0.0
+    sortino = returns.mean() * 252 / downside if downside else 0.0
+    running_max = equity.cummax()
+    drawdown = equity / running_max - 1
+    max_dd = drawdown.min()
+    calmar = cagr / abs(max_dd) if max_dd else 0.0
+
+    underwater = drawdown < 0
+    groups = (underwater != underwater.shift()).cumsum()
+    dd_duration = int(underwater.groupby(groups).sum().max() or 0)
+
+    bench_ret_col = f"{benchmark_prefix}_Return"
+    info_ratio = tracking_error = beta = alpha = None
+    if bench_ret_col in df.columns and prefix != benchmark_prefix:
+        bench_returns = pd.to_numeric(df[bench_ret_col], errors="coerce").fillna(0.0)
+        active = returns - bench_returns
+        tracking_error = active.std() * np.sqrt(252)
+        info_ratio = active.mean() * 252 / tracking_error if tracking_error else 0.0
+        covariance = np.cov(returns, bench_returns)[0, 1] if len(returns) > 1 else 0.0
+        bench_var = np.var(bench_returns)
+        beta = covariance / bench_var if bench_var else 0.0
+        alpha = (returns.mean() * 252) - beta * (bench_returns.mean() * 252)
+
+    return {
+        "total_return": round(total_return * 100, 2),
+        "cagr": round(cagr * 100, 2),
+        "volatility": round(vol * 100, 2),
+        "sharpe": round(sharpe, 2),
+        "sortino": round(sortino, 2),
+        "max_drawdown": round(max_dd * 100, 2),
+        "calmar": round(calmar, 2),
+        "drawdown_duration_days": dd_duration,
+        "win_rate": round((returns > 0).mean() * 100, 1),
+        "information_ratio": None if info_ratio is None else round(info_ratio, 2),
+        "tracking_error": None if tracking_error is None else round(tracking_error * 100, 2),
+        "beta": None if beta is None else round(beta, 2),
+        "alpha": None if alpha is None else round(alpha * 100, 2),
+    }
 
 @app.get("/api/holdings")
 def get_holdings():
@@ -847,6 +930,158 @@ def portfolio_analyst(body: dict):
         return {"response": resp.choices[0].message.content}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Analyst error: {str(e)}")
+
+
+@app.get("/api/portfolio/evaluator_audit")
+def get_portfolio_evaluator_audit():
+    """
+    Returns a research-backed evaluator audit for the current portfolio workflow.
+    The endpoint mixes live computed evidence with a structured implementation
+    backlog so the UI can show what is strong, missing, and worth fixing next.
+    """
+    try:
+        perf_df = _load_performance_frame()
+        strategy_metrics = _series_metrics(perf_df, "Strategy")
+        benchmark_metrics = {
+            prefix: _series_metrics(perf_df, prefix)
+            for prefix in ["SPY", "QQQ", "MTUM", "QUAL"]
+            if f"{prefix}_Return" in perf_df.columns
+        }
+
+        metric_file_columns = []
+        if os.path.exists(METRICS_PATH):
+            raw_metrics = pd.read_csv(METRICS_PATH)
+            metric_file_columns = [c for c in raw_metrics.columns if c not in ["Unnamed: 0", "Metric"]]
+
+        latest_holdings = []
+        position_count = 0
+        latest_date = None
+        if os.path.exists(LOG_PATH):
+            log_df = pd.read_csv(LOG_PATH)
+            latest_date = log_df["date"].max()
+            latest_holdings = log_df[log_df["date"] == latest_date].copy().to_dict(orient="records")
+            position_count = len([h for h in latest_holdings if _safe_float(h.get("weight")) > 0])
+
+        advanced_metrics = [
+            "Sortino", "Calmar", "Information Ratio", "Tracking Error", "Beta",
+            "Alpha", "Drawdown Duration", "Upside Capture", "Downside Capture",
+            "VaR", "CVaR", "Ulcer Index", "Skew", "Kurtosis", "Tail Ratio",
+            "Hit Rate by Month", "Best/Worst Month", "Exposure-adjusted Return",
+        ]
+        present_metric_text = " ".join(metric_file_columns)
+        missing_metrics = [m for m in advanced_metrics if m.lower() not in present_metric_text.lower()]
+
+        evaluator_gaps = [
+            {
+                "area": "Performance appraisal",
+                "severity": "high",
+                "missing": missing_metrics[:8],
+                "why": "The current metrics file centers on CAGR, volatility, Sharpe, drawdown, and turnover. That is useful, but it under-explains downside asymmetry, benchmark-relative skill, tail risk, and path pain.",
+                "procedure": "Compute an evaluator packet after every run: absolute metrics, benchmark-relative metrics, downside metrics, rolling metrics, and drawdown episode tables.",
+            },
+            {
+                "area": "Backtest truthfulness",
+                "severity": "high",
+                "missing": ["Deterministic /api/backtest", "Run manifest", "Parameter provenance", "Data vintage stamp"],
+                "why": "The live /api/backtest route returns randomized placeholder values, which makes the UI feel responsive but breaks evaluator trust.",
+                "procedure": "Replace placeholders with a real job result, persist inputs and output artifacts, and show users whether they are seeing simulated, cached, or fresh results.",
+            },
+            {
+                "area": "Robustness and overfit control",
+                "severity": "medium",
+                "missing": ["Deflated Sharpe", "Probability of Backtest Overfitting", "Purged/embargoed validation", "Regime slices"],
+                "why": "Bootstrap, perturbation, and walk-forward logic exist, but the product does not surface enough confidence context or regime-specific failure modes.",
+                "procedure": "Promote robustness outputs into API artifacts and compare static vs. walk-forward degradation beside the headline score.",
+            },
+            {
+                "area": "Portfolio construction constraints",
+                "severity": "medium",
+                "missing": ["Sector caps", "Liquidity caps", "Turnover budget", "Tax/lot awareness", "Cash policy"],
+                "why": "The optimizer is long-only with max position weight and covariance risk, but practical allocator constraints are only partially represented.",
+                "procedure": "Add explicit constraint controls, infeasibility reasons, and a pre-trade constraint report before orders are generated.",
+            },
+            {
+                "area": "Data quality and survivorship",
+                "severity": "high",
+                "missing": ["Universe membership by date", "Corporate action audit", "Missing data report", "Delisting handling"],
+                "why": "Evaluation quality depends on knowing whether the universe, prices, and fundamentals were available at the time of each decision.",
+                "procedure": "Add a data audit step that records coverage, stale fields, look-ahead checks, and per-date universe membership.",
+            },
+        ]
+
+        ux_recommendations = [
+            {
+                "title": "Create an evaluator command center",
+                "component": "21.dev financial dashboard hub + shadcn Card/Button/Badge",
+                "impact": "Put score, current gaps, next actions, and benchmark-relative health in the first screen instead of scattering them across Analytics, Reporting, and Stress Test.",
+            },
+            {
+                "title": "Use tabs for evaluation modes",
+                "component": "shadcn Tabs",
+                "impact": "Separate Performance, Risk, Robustness, Construction, and Data Quality without forcing a long scroll.",
+            },
+            {
+                "title": "Use chart config + accessible tooltips",
+                "component": "shadcn Chart pattern over Recharts",
+                "impact": "Standardize legends, colors, labels, and responsive min-heights across MainChart, BenchmarkSuite, and PortfolioAnalytics.",
+            },
+            {
+                "title": "Turn missing metrics into checklist rows",
+                "component": "shadcn Table / Accordion",
+                "impact": "Users can see what is missing, why it matters, and whether it is computed, planned, or blocked.",
+            },
+            {
+                "title": "Replace fake analytics with evidence states",
+                "component": "shadcn Skeleton, Badge, Tooltip",
+                "impact": "When data is unavailable, say so and show the next required input instead of rendering random factors or contributors.",
+            },
+        ]
+
+        implementation_order = [
+            "Replace randomized endpoints and random front-end analytics with deterministic computations or explicit demo badges.",
+            "Add benchmark-relative evaluator metrics: information ratio, tracking error, beta, alpha, capture ratios.",
+            "Add downside/tail metrics: Sortino, Calmar, drawdown duration, VaR/CVaR, ulcer index.",
+            "Persist robustness artifacts from bootstrap, perturbation, and walk-forward runs as API-readable CSV/JSON.",
+            "Add data-quality manifests for price/fundamental coverage, universe membership, and stale observations.",
+            "Refactor the website into a focused evaluator workflow with tabs, tables, chart cards, and an action backlog.",
+        ]
+
+        score = 100
+        score -= min(len(missing_metrics), 12) * 2
+        if position_count == 0:
+            score -= 15
+        if not benchmark_metrics:
+            score -= 10
+        score = max(35, min(92, score))
+
+        return {
+            "as_of": latest_date,
+            "score": score,
+            "summary": {
+                "headline": "Strong quant skeleton, incomplete evaluator product.",
+                "position_count": position_count,
+                "metrics_available": metric_file_columns,
+                "missing_metric_count": len(missing_metrics),
+            },
+            "computed": {
+                "strategy": strategy_metrics,
+                "benchmarks": benchmark_metrics,
+            },
+            "gaps": evaluator_gaps,
+            "ux_recommendations": ux_recommendations,
+            "implementation_order": implementation_order,
+            "research_basis": [
+                "CFA-style performance evaluation emphasizes return, risk, downside, benchmark-relative appraisal, and drawdown context.",
+                "PyPortfolioOpt-style construction practice separates alpha, risk model, objective functions, and constraints.",
+                "VectorBT and QuantStats-style analytics expose rolling metrics, drawdowns, and richer risk-adjusted ratios.",
+                "shadcn chart guidance favors Recharts composition with shared config, tooltips, legends, and stable responsive containers.",
+                "21.dev financial-dashboard components favor a central hub layout with quick actions and service/status cards.",
+            ],
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Evaluator audit failed: {str(e)}")
 
 
 @app.post("/api/portfolio/manual")
