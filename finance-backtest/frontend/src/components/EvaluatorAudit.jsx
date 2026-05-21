@@ -74,6 +74,7 @@ export default function EvaluatorAudit() {
   const [audit, setAudit] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [isSimulated, setIsSimulated] = useState(false)
   const [tab, setTab] = useState('gaps')
 
   useEffect(() => {
@@ -84,7 +85,14 @@ export default function EvaluatorAudit() {
         if (live) setAudit(res.data)
       } catch (err) {
         console.warn('API unreachable, loading mock evaluator audit data', err)
-        if (live) setAudit(mockEvaluatorAudit)
+        if (live) {
+          if (mockEvaluatorAudit) {
+            setAudit(mockEvaluatorAudit)
+            setIsSimulated(true)
+          } else {
+            setError('Failed to fetch evaluator audit data and mock data is unavailable.')
+          }
+        }
       } finally {
         if (live) setLoading(false)
       }
@@ -120,6 +128,24 @@ export default function EvaluatorAudit() {
 
   return (
     <section className="audit-shell">
+      {isSimulated && (
+        <div style={{
+          padding: '10px 16px',
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
+          color: 'var(--text-2)',
+          fontSize: '11px',
+          fontFamily: 'JetBrains Mono, monospace',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          borderRadius: '8px',
+        }}>
+          <CircleDot size={13} className="animate-pulse" style={{ color: 'var(--blue)' }} />
+          <span>SANDBOX MODE — Running local evaluator audit simulation.</span>
+        </div>
+      )}
       <div className="audit-hero">
         <div className="audit-hero-copy">
           <Badge variant="solid">Portfolio evaluator research</Badge>
@@ -146,20 +172,28 @@ export default function EvaluatorAudit() {
         <CardHeader className="audit-hub-header">
           <div>
             <CardTitle>Evaluator command center</CardTitle>
-            <CardDescription>Structured like a 21.dev financial dashboard hub: status, quick actions, service cards, and a prioritized work queue.</CardDescription>
+            <CardDescription>Access system status, prioritized implementation steps, and usability recommendations to enhance quantitative modeling precision.</CardDescription>
           </div>
           <Button variant="outline" size="sm" onClick={() => setTab('roadmap')}>View roadmap</Button>
         </CardHeader>
         <CardContent>
           <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="audit-tabs">
+            <TabsList className="audit-tabs flex gap-2 p-1.5 bg-surface-2 border border-border rounded-xl w-full md:w-auto mb-6">
               {[
                 ['gaps', 'Gaps'],
                 ['procedures', 'Procedures'],
                 ['ux', 'UX'],
                 ['research', 'Basis'],
               ].map(([value, label]) => (
-                <TabsTrigger key={value} value={value} currentValue={tab} onValueChange={setTab}>{label}</TabsTrigger>
+                <TabsTrigger 
+                  key={value} 
+                  value={value} 
+                  currentValue={tab} 
+                  onValueChange={setTab}
+                  className="flex-1 md:flex-initial px-6 py-2.5 min-h-10 text-[11px] font-extrabold uppercase tracking-wider transition-all duration-150 rounded-lg"
+                >
+                  {label}
+                </TabsTrigger>
               ))}
             </TabsList>
 

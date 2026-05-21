@@ -34,54 +34,58 @@ export default function StockContextPanel({ ticker }) {
   if (!data) return null
 
   return (
-    <div className="stock-context-panel" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="stock-context-panel flex flex-col gap-5">
       
       {data.isUpcoming && (
-        <div style={{ background: 'rgba(255, 171, 0, 0.1)', border: '1px solid rgba(255, 171, 0, 0.2)', padding: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', gap: '10px' }}>
-           <AlertTriangle size={16} color="#ffab00" style={{marginTop: '2px'}} />
+        <div className="bg-[rgba(255,171,0,0.1)] border border-[rgba(255,171,0,0.15)] p-3 rounded-[var(--radius-sm)] flex gap-2.5">
+           <AlertTriangle size={16} color="#ffab00" className="mt-0.5 flex-shrink-0" />
            <div>
-              <span style={{ color: '#ffab00', fontWeight: 700, fontSize: '0.8rem' }}>MACRO EVENT ALERT</span>
-              <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', opacity: 0.8 }}>Earnings call in <strong>{data.earningsIn} days</strong>. Binary volatility event detected.</p>
+              <span className="text-[#ffab00] font-bold text-[11px] tracking-wider">MACRO EVENT ALERT</span>
+              <p className="margin-0 mt-1 text-[11px] text-text-2 leading-snug">
+                Earnings call in <strong className="font-semibold text-text">{data.earningsIn} days</strong>. Binary volatility event detected.
+              </p>
            </div>
         </div>
       )}
 
-      <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--radius-sm)' }}>
-         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-           <Calendar size={14} /> Corporate Events
+      {/* Corporate Events Card */}
+      <div className="bg-surface-2 border border-border p-4 rounded-[var(--radius-sm)]">
+         <span className="text-[11px] text-text-2 font-semibold flex items-center gap-2 tracking-wider uppercase">
+           <Calendar size={14} className="text-text-3" /> Corporate Events
          </span>
-         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-               <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>Next Earnings</span>
-               <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{data.earningsDate}</span>
+         <div className="flex flex-col gap-3 mt-4">
+            <div className="flex justify-between items-center text-xs">
+               <span className="opacity-70 text-text">Next Earnings</span>
+               <span className="font-semibold text-text-strong">{data.earningsDate}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-               <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>Dividend Yield</span>
-               <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--accent-green)' }}>{data.dividend}</span>
+            <div className="flex justify-between items-center text-xs">
+               <span className="opacity-70 text-text">Dividend Yield</span>
+               <span className="font-semibold text-green">{data.dividend}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-               <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>Ex-Div Date</span>
-               <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{data.exDiv}</span>
+            <div className="flex justify-between items-center text-xs">
+               <span className="opacity-70 text-text">Ex-Div Date</span>
+               <span className="font-semibold text-text-strong">{data.exDiv}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-               <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>52W Range</span>
-               <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>${data.lo52} - ${data.hi52}</span>
+            <div className="flex justify-between items-center text-xs">
+               <span className="opacity-70 text-text">52W Range</span>
+               <span className="font-semibold text-text-strong">${data.lo52} - ${data.hi52}</span>
             </div>
          </div>
       </div>
 
-      <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--radius-sm)' }}>
-         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-           <Newspaper size={14} /> Intelligence Feed
+      {/* Intelligence Feed Card */}
+      <div className="bg-surface-2 border border-border p-4 rounded-[var(--radius-sm)]">
+         <span className="text-[11px] text-text-2 font-semibold flex items-center gap-2 tracking-wider uppercase">
+           <Newspaper size={14} className="text-text-3" /> Intelligence Feed
          </span>
-         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+         <div className="flex flex-col gap-3.5 mt-4">
             {data.news.map(n => (
-              <div key={n.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '10px' }}>
-                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '0.65rem', color: n.type === 'Analyst' ? 'var(--accent-purple)' : 'var(--accent-cyan)', textTransform: 'uppercase', fontWeight: 800 }}>{n.type}</span>
-                    <ExternalLink size={10} color="var(--text-muted)" />
+              <div key={n.id} className="border-b border-border pb-3 last:border-b-0 last:pb-0">
+                 <div className="flex justify-between items-center mb-1">
+                    <span className={`text-[10px] uppercase font-bold tracking-wider ${n.type === 'Analyst' ? 'text-teal' : 'text-blue'}`}>{n.type}</span>
+                    <ExternalLink size={11} className="text-text-3" />
                  </div>
-                 <p style={{ margin: 0, fontSize: '0.8rem', color: '#fff', lineHeight: 1.4 }}>{n.title}</p>
+                 <p className="margin-0 text-[12px] text-text-strong leading-relaxed font-medium">{n.title}</p>
               </div>
             ))}
          </div>

@@ -28,7 +28,7 @@ export default function RebalanceJournal({ holdings }) {
   if (!holdings?.holdings) return null
 
   const journalState = useMemo(() => {
-    let currentPool = [...holdings.holdings].sort((a, b) => b.weight - a.weight)
+    let currentPool = [...holdings.holdings].filter(h => Number(h.weight) > 0).sort((a, b) => b.weight - a.weight)
 
     if (offset > 0) {
       for (let step = 0; step < offset; step++) {
@@ -62,72 +62,74 @@ export default function RebalanceJournal({ holdings }) {
   }, [holdings, offset])
 
   return (
-    <div style={{ background: '#070707' }}>
+    <div className="bg-bg border border-border rounded-lg overflow-hidden flex flex-col">
       {/* Header */}
       <div className="chart-header">
         <span className="chart-title">Rebalance Ledger & Delta Journal</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#141414', padding: '5px 12px', border: '1px solid #2e2e2e' }}>
+        <div className="flex items-center gap-3 bg-surface-2 p-1.5 px-3 border border-border rounded">
           <button
             onClick={() => setOffset(o => o + 1)}
-            style={{ background: 'transparent', border: 'none', color: '#d0d0d0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', padding: '2px 4px' }}
+            className="bg-transparent border-none text-text hover:text-text-strong cursor-pointer flex items-center gap-0.5 text-[10px] font-mono p-1"
           >
             <ChevronLeft size={14} /> Prev
           </button>
-          <span style={{ fontSize: '11px', color: '#ffffff', fontWeight: 700, minWidth: '180px', textAlign: 'center', fontFamily: 'JetBrains Mono, monospace' }}>
+          <span className="text-[11px] text-text-strong font-bold min-width-[180px] text-center font-mono">
             {journalState.date}
           </span>
           <button
             onClick={() => setOffset(o => Math.max(0, o - 1))}
-            style={{ background: 'transparent', border: 'none', color: offset === 0 ? '#3d3d3d' : '#d0d0d0', cursor: offset === 0 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', padding: '2px 4px' }}
+            className="bg-transparent border-none cursor-pointer flex items-center gap-0.5 text-[10px] font-mono p-1"
+            style={{ color: offset === 0 ? 'var(--border-3)' : 'var(--text)' }}
+            disabled={offset === 0}
           >
             Next <ChevronRight size={14} />
           </button>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 2fr', gap: 0 }}>
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(300px,1fr)_2fr] gap-0">
 
         {/* Left: turnover + additions + removals */}
-        <div style={{ borderRight: '1px solid #1c1c1c', background: '#0e0e0e', display: 'flex', flexDirection: 'column', gap: 0 }}>
+        <div className="border-r border-border bg-surface flex flex-col gap-0">
 
           {/* Turnover */}
-          <div style={{ padding: '20px', borderBottom: '1px solid #1c1c1c' }}>
-            <span style={{ fontSize: '9px', color: '#888888', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace', display: 'block', marginBottom: '6px' }}>
+          <div className="p-5 border-b border-border">
+            <span className="text-[9px] text-text-2 font-bold tracking-widest uppercase font-mono block mb-1.5">
               Portfolio Turnover Rate
             </span>
-            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
+            <div className="text-4xl font-extrabold text-text-strong tracking-tight">
               {journalState.turnover}
             </div>
           </div>
 
           {/* New Additions */}
-          <div style={{ padding: '16px', borderBottom: '1px solid #1c1c1c' }}>
-            <span style={{ fontSize: '10px', color: '#22c55e', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          <div className="p-4 border-b border-border">
+            <span className="text-[10px] text-green font-bold flex items-center gap-1.5 mb-2.5 font-mono tracking-wider uppercase">
               <TrendingUp size={12} /> New Additions
             </span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="flex flex-col gap-2">
               {journalState.added.map(t => (
-                <div key={t} style={{ background: '#0a1a0f', borderLeft: '3px solid #22c55e', padding: '10px 12px', border: '1px solid #1c1c1c', borderLeftWidth: '3px' }}>
-                  <span style={{ fontWeight: 700, color: '#22c55e', fontSize: '12px', fontFamily: 'JetBrains Mono, monospace' }}>{t}</span>
-                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#888888', lineHeight: 1.5 }}>{getReason(t, true)}</p>
+                <div key={t} className="bg-[rgba(34,197,94,0.05)] border border-border border-l-green border-l-[3px] p-2.5 rounded">
+                  <span className="text-green font-bold text-xs font-mono">{t}</span>
+                  <p className="margin-0 mt-1 text-[11px] text-text leading-relaxed">{getReason(t, true)}</p>
                 </div>
               ))}
               {journalState.added.length === 0 && (
-                <span style={{ fontSize: '11px', color: '#4a4a4a' }}>No additions computed.</span>
+                <span className="text-text-2 text-[11px] font-mono">No additions computed.</span>
               )}
             </div>
           </div>
 
           {/* Liquidations */}
-          <div style={{ padding: '16px' }}>
-            <span style={{ fontSize: '10px', color: '#ef4444', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          <div className="p-4">
+            <span className="text-[10px] text-red font-bold flex items-center gap-1.5 mb-2.5 font-mono tracking-wider uppercase">
               <TrendingDown size={12} /> Liquidated Assets
             </span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="flex flex-col gap-2">
               {journalState.removed.map(t => (
-                <div key={t} style={{ background: '#1a0a0a', borderLeft: '3px solid #ef4444', padding: '10px 12px', border: '1px solid #1c1c1c', borderLeftWidth: '3px' }}>
-                  <span style={{ fontWeight: 700, color: '#ef4444', fontSize: '12px', fontFamily: 'JetBrains Mono, monospace' }}>{t}</span>
-                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#888888', lineHeight: 1.5 }}>{getReason(t, false)}</p>
+                <div key={t} className="bg-[rgba(239,68,68,0.05)] border border-border border-l-red border-l-[3px] p-2.5 rounded">
+                  <span className="text-red font-bold text-xs font-mono">{t}</span>
+                  <p className="margin-0 mt-1 text-[11px] text-text leading-relaxed">{getReason(t, false)}</p>
                 </div>
               ))}
             </div>
@@ -135,7 +137,7 @@ export default function RebalanceJournal({ holdings }) {
         </div>
 
         {/* Right: Holdings table */}
-        <div style={{ background: '#070707', overflowX: 'auto' }}>
+        <div className="bg-bg overflow-x-auto">
           <table className="data-table">
             <thead>
               <tr>
@@ -149,18 +151,18 @@ export default function RebalanceJournal({ holdings }) {
             <tbody>
               {journalState.pool.map((h, i) => (
                 <tr key={h.ticker}>
-                  <td style={{ color: '#4a4a4a', fontSize: '10px' }}>{i + 1}</td>
-                  <td style={{ color: '#ffffff', fontWeight: 700 }}>{h.ticker}</td>
-                  <td style={{ color: '#888888' }}>{h.sector || 'N/A'}</td>
+                  <td className="text-text-2 text-[10px]">{i + 1}</td>
+                  <td className="text-text-strong font-bold">{h.ticker}</td>
+                  <td className="text-text-strong font-semibold">{h.sector || 'N/A'}</td>
                   <td style={{ textAlign: 'right' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
-                      <div style={{ height: '3px', width: `${Math.min(h.weight * 200, 48)}px`, background: '#2e2e2e' }} />
-                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', fontWeight: 700, minWidth: '44px', textAlign: 'right' }}>
+                    <div className="flex items-center justify-end gap-2">
+                      <div className="h-1 bg-border-2 rounded-full" style={{ width: `${Math.min(h.weight * 200, 48)}px` }} />
+                      <span className="font-mono text-[11px] font-bold min-w-[44px] text-right">
                         {(h.weight * 100).toFixed(2)}%
                       </span>
                     </div>
                   </td>
-                  <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: h.score > 0.8 ? '#22c55e' : '#d0d0d0' }}>
+                  <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: h.score > 0.8 ? 'var(--green)' : 'var(--text)' }}>
                     {h.score.toFixed(3)}
                   </td>
                 </tr>

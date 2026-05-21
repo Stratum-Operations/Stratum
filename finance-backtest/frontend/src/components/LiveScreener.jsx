@@ -39,8 +39,8 @@ export default function LiveScreener({ holdings, onSelect }) {
   }, [holdings])
 
   return (
-    <div className="glass-panel" style={{ overflow: 'visible', position: 'relative', marginTop: '24px', background: '#ffffff', border: '1px solid #e5e7eb' }}>
-      <div className="chart-header" style={{ padding: '24px', borderBottom: '1px solid #e5e7eb' }}>
+    <div className="glass-panel mt-6" style={{ overflow: 'visible', position: 'relative' }}>
+      <div className="chart-header">
         <span className="chart-title">Quantitative Screener Engine</span>
       </div>
 
@@ -48,12 +48,12 @@ export default function LiveScreener({ holdings, onSelect }) {
         <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', padding: '15px 12px', borderBottom: '1px solid #e5e7eb', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Asset</th>
-              <th style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid #e5e7eb', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Rank</th>
-              <th style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid #e5e7eb', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Price</th>
-              <th style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid #e5e7eb', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Score</th>
-              <th style={{ textAlign: 'left', padding: '15px 12px', borderBottom: '1px solid #e5e7eb', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', width: '240px' }}>Factor Heatmap</th>
-              <th style={{ textAlign: 'center', padding: '15px 12px', borderBottom: '1px solid #e5e7eb', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Diagnostics</th>
+              <th style={{ textAlign: 'left', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-2)' }}>Asset</th>
+              <th style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-2)' }}>Rank</th>
+              <th style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-2)' }}>Price</th>
+              <th style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-2)' }}>Score</th>
+              <th style={{ textAlign: 'left', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', width: '240px', color: 'var(--text-2)' }}>Factor Heatmap</th>
+              <th style={{ textAlign: 'center', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-2)' }}>Diagnostics</th>
             </tr>
           </thead>
           <tbody>
@@ -65,29 +65,32 @@ export default function LiveScreener({ holdings, onSelect }) {
                   onClick={() => onSelect(h)} 
                   onMouseEnter={() => setHoveredTicker(h.ticker)} 
                   onMouseLeave={() => setHoveredTicker(null)}
-                  style={{ cursor: 'pointer', background: '#ffffff' }}
+                  className="hover:bg-surface-2 transition-colors duration-150"
+                  style={{ cursor: 'pointer' }}
                 >
-                  <td style={{ padding: '15px 12px', borderBottom: '1px solid #e5e7eb' }}>
-                    <div style={{ fontWeight: isTop15 ? 900 : 400, color: '#000000', fontSize: '11px', letterSpacing: '0.04em' }}>{h.ticker}</div>
-                    <div style={{ fontSize: '10px', color: '#9ca3af' }}>{h.name}</div>
+                  <td style={{ padding: '15px 12px', borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ fontWeight: isTop15 ? 900 : 400, color: 'var(--text-strong)', fontSize: '11px', letterSpacing: '0.04em' }}>{h.ticker}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-2)' }}>{h.name}</div>
                   </td>
-                  <td style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid #e5e7eb', fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: '#000000' }}>
+                  <td style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: 'var(--text-strong)' }}>
                     #{i + 1}
-                    <div style={{ fontSize: '9px', color: '#9ca3af' }}>
+                    <div style={{ fontSize: '9px', color: 'var(--text-2)' }}>
                       {h.rankChange > 0 ? '▲' : h.rankChange < 0 ? '▼' : '-'} {Math.abs(h.rankChange)}
                     </div>
                   </td>
-                  <td style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid #e5e7eb', fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: '#000000' }}>
+                  <td style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: 'var(--text-strong)' }}>
                     ${parseFloat(h.price).toFixed(2)}
                   </td>
-                  <td style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid #e5e7eb', fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', fontWeight: isTop15 ? 900 : 600, color: '#000000' }}>
+                  <td style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', fontWeight: isTop15 ? 900 : 600, color: 'var(--text-strong)' }}>
                     {parseFloat(h.score).toFixed(2)}
                   </td>
-                  <td style={{ padding: '15px 12px', borderBottom: '1px solid #e5e7eb' }}>
+                  <td style={{ padding: '15px 12px', borderBottom: '1px solid var(--border)' }}>
                     <FactorHeatmap h={h} deltas={h.deltas} />
                   </td>
-                  <td style={{ position: 'relative', textAlign: 'center', padding: '15px 12px', borderBottom: '1px solid #e5e7eb' }}>
-                    <Info size={16} color={hoveredTicker === h.ticker ? "#000000" : "#9ca3af"} style={{ cursor: 'pointer', transition: 'color 0.2s' }} />
+                  <td style={{ position: 'relative', textAlign: 'center', padding: '15px 12px', borderBottom: '1px solid var(--border)' }}>
+                    <div className="flex justify-center">
+                      <Info size={16} color={hoveredTicker === h.ticker ? "var(--text-strong)" : "var(--text-3)"} style={{ cursor: 'pointer', transition: 'color 0.2s' }} />
+                    </div>
                     {hoveredTicker === h.ticker && (
                       <ExplainabilityTooltip h={h} rank={i + 1} />
                     )}

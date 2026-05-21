@@ -10,9 +10,9 @@ function seededRandom(str, salt) {
 }
 
 const TT_STYLE = {
-  background: '#141414',
-  border: '1px solid #2e2e2e',
-  color: '#d0d0d0',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border-2)',
+  color: 'var(--text)',
   fontFamily: 'JetBrains Mono, monospace',
   fontSize: '11px',
 }
@@ -22,16 +22,16 @@ const LiveLedgerItem = ({ ticker, entry, current, weight }) => {
   const positive = pl >= 0
 
   return (
-    <div className="ledger-item" style={{ borderLeftColor: positive ? '#22c55e' : '#ef4444' }}>
+    <div className="ledger-item" style={{ borderLeftColor: positive ? 'var(--green)' : 'var(--red)', padding: '6px 12px' }}>
       <div className="ledger-info">
-        <strong style={{ color: '#ffffff', fontSize: '11px', fontFamily: 'JetBrains Mono, monospace' }}>{ticker}</strong>
-        <span style={{ fontSize: '10px', color: '#888888', fontFamily: 'JetBrains Mono, monospace' }}>{weight}% Alloc.</span>
+        <strong style={{ color: 'var(--text-strong)', fontSize: '11px', fontFamily: 'JetBrains Mono, monospace' }}>{ticker}</strong>
+        <span style={{ fontSize: '10px', color: 'var(--text-2)', fontFamily: 'JetBrains Mono, monospace' }}>{weight}% Alloc.</span>
       </div>
-      <div className="ledger-prices">
-        <span>${entry.toFixed(2)} Ent.</span>
-        <span>${current.toFixed(2)} Cur.</span>
+      <div className="ledger-prices" style={{ display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '9px', fontFamily: 'JetBrains Mono, monospace' }}>
+        <span style={{ color: 'var(--text-3)' }}>Entry: <strong style={{ color: 'var(--text-strong)' }}>${entry.toFixed(2)}</strong></span>
+        <span style={{ color: 'var(--text-3)' }}>Current: <strong style={{ color: 'var(--text-strong)' }}>${current.toFixed(2)}</strong></span>
       </div>
-      <div className={`ledger-pl ${positive ? 'positive' : 'negative'}`}>
+      <div className={`ledger-pl ${positive ? 'positive' : 'negative'}`} style={{ fontSize: '11px', fontWeight: 600 }}>
         {positive ? '+' : ''}{pl.toFixed(2)}%
       </div>
     </div>
@@ -61,68 +61,80 @@ export default function LivePortfolioTracker({ holdings, perf }) {
   }, [perf])
 
   return (
-    <div style={{ background: '#070707', display: 'flex', flexDirection: 'column', gap: 0 }}>
+    <div className="bg-bg flex flex-col gap-0 border border-border rounded-lg overflow-hidden">
       {/* Header */}
       <div className="chart-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="flex items-center gap-2.5">
           <div className="live-indicator-pulse" />
           <span className="chart-title">Direct Live Paper Ledger</span>
         </div>
-        <div style={{ display: 'flex', gap: '20px', fontSize: '11px', color: '#888888', fontFamily: 'JetBrains Mono, monospace' }}>
-          <span>Portfolio Alpha: <strong style={{ color: '#22c55e', fontWeight: 800 }}>+2.45%</strong></span>
-          <span>Tracking Error: <strong style={{ color: '#d0d0d0', fontWeight: 700 }}>1.82%</strong></span>
+        <div className="flex gap-5 text-[11px] text-text-2 font-mono">
+          <span>Portfolio Alpha: <strong className="text-green font-extrabold">+2.45%</strong></span>
+          <span>Tracking Error: <strong className="text-text-strong font-bold">1.82%</strong></span>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1fr) 2fr', gap: 0 }}>
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(280px,1fr)_2fr] gap-0">
 
         {/* Live Ledger list */}
-        <div style={{ background: '#0e0e0e', borderRight: '1px solid #1c1c1c' }}>
-          <div style={{ padding: '12px 14px', borderBottom: '1px solid #1c1c1c' }}>
-            <span style={{ fontSize: '10px', color: '#888888', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        <div className="bg-surface border-r border-border flex flex-col min-w-0">
+          <div className="p-3.5 border-b border-border">
+            <span className="text-[10px] text-text-2 font-bold flex items-center gap-2 font-mono tracking-wider uppercase">
               <ShoppingCart size={12} /> Current Positions
             </span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {liveData.slice(0, 10).map(d => (
-              <LiveLedgerItem
-                key={d.ticker}
-                ticker={d.ticker}
-                entry={d.entryPrice}
-                current={d.currentPrice}
-                weight={6.6}
-              />
-            ))}
+          <div className="flex flex-col overflow-y-auto" style={{ maxHeight: '350px' }}>
+            {liveData && liveData.length > 0 ? (
+              liveData.map(d => (
+                <LiveLedgerItem
+                  key={d.ticker}
+                  ticker={d.ticker}
+                  entry={d.entryPrice}
+                  current={d.currentPrice}
+                  weight={d.weight ? (d.weight * 100).toFixed(1) : '0.0'}
+                />
+              ))
+            ) : (
+              <div className="p-8 text-center font-mono text-[10px] tracking-wider uppercase text-text-3">
+                No active positions.
+              </div>
+            )}
           </div>
         </div>
 
         {/* Expectation vs Reality chart */}
-        <div style={{ background: '#0e0e0e', padding: '20px' }}>
-          <span style={{ fontSize: '10px', color: '#888888', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        <div className="bg-surface p-5 min-w-0">
+          <span className="text-[10px] text-text-2 font-bold flex items-center gap-2 mb-3 font-mono tracking-wider uppercase">
             <TrendingUp size={12} /> Expectation vs. Reality (Live Drift)
           </span>
-          <div style={{ height: '280px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1c1c1c" vertical={false} />
-                <XAxis dataKey="month" stroke="#1c1c1c" tick={{ fontSize: 9, fill: '#4a4a4a', fontFamily: 'JetBrains Mono, monospace' }} />
-                <YAxis stroke="#1c1c1c" tick={{ fontSize: 9, fill: '#4a4a4a', fontFamily: 'JetBrains Mono, monospace' }} domain={['auto', 'auto']} />
-                <Tooltip contentStyle={TT_STYLE} />
-                <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '8px', color: '#888888', fontFamily: 'JetBrains Mono, monospace' }} />
-                <Line type="monotone" dataKey="Expected" stroke="#3d3d3d" strokeDasharray="5 5" strokeWidth={1} dot={false} />
-                <Line type="monotone" dataKey="Realized"  stroke="#ffffff" strokeWidth={2}   dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="h-[280px]">
+            {chartData && chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="month" stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} />
+                  <YAxis stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} domain={['auto', 'auto']} />
+                  <Tooltip contentStyle={TT_STYLE} />
+                  <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '8px', color: 'var(--text-2)', fontFamily: 'JetBrains Mono, monospace' }} />
+                  <Line type="monotone" dataKey="Expected" stroke="var(--border-3)" strokeDasharray="5 5" strokeWidth={1} dot={false} />
+                  <Line type="monotone" dataKey="Realized"  stroke="var(--text-strong)" strokeWidth={2}   dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-text-3 font-mono text-[10px] tracking-wider uppercase">
+                No performance data available to track drift.
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Rank Drift Monitor */}
-      <div style={{ background: '#0e0e0e', borderTop: '1px solid #1c1c1c', padding: '16px 20px' }}>
-        <span style={{ fontSize: '10px', color: '#888888', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+      <div className="bg-surface border-t border-border p-4 px-5">
+        <span className="text-[10px] text-text-2 font-bold flex items-center gap-2 mb-3 font-mono tracking-wider uppercase">
           <AlertCircle size={12} /> Live Rank Drift Monitor (Factor Signal Decay)
         </span>
-        <div className="table-wrapper">
+        <div className="table-wrapper" style={{ maxHeight: '250px', overflowY: 'auto' }}>
           <table className="data-table">
             <thead>
               <tr>
@@ -134,23 +146,31 @@ export default function LivePortfolioTracker({ holdings, perf }) {
               </tr>
             </thead>
             <tbody>
-              {liveData.slice(0, 10).map(d => (
-                <tr key={d.ticker}>
-                  <td>{d.ticker}</td>
-                  <td style={{ textAlign: 'right', color: '#888888' }}>{d.score.toFixed(2)}</td>
-                  <td style={{ textAlign: 'right', color: '#888888' }}>{d.currentScore.toFixed(2)}</td>
-                  <td style={{ textAlign: 'right', color: d.drift > 8 ? '#ef4444' : '#888888', fontWeight: d.drift > 8 ? 800 : 400 }}>
-                    -{d.drift.toFixed(2)}%
-                  </td>
-                  <td>
-                    {d.drift > 8 ? (
-                      <span className="drift-alert">Signal Deterioration</span>
-                    ) : (
-                      <span style={{ color: '#22c55e', fontWeight: 600, fontSize: '11px' }}>Stable</span>
-                    )}
+              {liveData && liveData.length > 0 ? (
+                liveData.map(d => (
+                  <tr key={d.ticker}>
+                    <td>{d.ticker}</td>
+                    <td style={{ textAlign: 'right', color: 'var(--text-2)' }}>{d.score.toFixed(2)}</td>
+                    <td style={{ textAlign: 'right', color: 'var(--text-2)' }}>{d.currentScore.toFixed(2)}</td>
+                    <td style={{ textAlign: 'right', color: d.drift > 8 ? 'var(--red)' : 'var(--text-2)', fontWeight: d.drift > 8 ? 800 : 400 }}>
+                      -{d.drift.toFixed(2)}%
+                    </td>
+                    <td>
+                      {d.drift > 8 ? (
+                        <span className="drift-alert">Signal Deterioration</span>
+                      ) : (
+                        <span style={{ color: 'var(--green)', fontWeight: 600, fontSize: '11px' }}>Stable</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-3)', padding: '24px 0', fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    No active positions to monitor.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

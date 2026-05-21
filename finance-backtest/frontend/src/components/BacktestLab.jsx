@@ -77,45 +77,69 @@ export default function BacktestLab({ perf, metrics }) {
   }
 
   return (
-    <div className="glass-panel" style={{ marginTop: '24px' }}>
+    <div className="glass-panel mt-6">
       <div className="chart-header">
         <span className="chart-title">Backtest Laboratory</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 1fr) 3fr', gap: '24px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--radius-sm)' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(250px,1fr)_3fr] gap-6 p-5">
+        {/* Controls Card */}
+        <div className="flex flex-col gap-4 bg-surface-2 p-4 rounded-[var(--radius-sm)] border border-border">
            <div>
-             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Simulation Constraints</span>
+             <span className="text-[11px] text-text-2 font-bold tracking-wider uppercase font-mono">Simulation Constraints</span>
            </div>
            
            <div>
-             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Universe</span>
-             <select value={universe} onChange={e => setUniverse(e.target.value)} style={{ width: '100%', padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', color: '#fff', marginTop: '4px', borderRadius: '4px', cursor: 'pointer' }}>
+             <span className="text-xs text-text-2">Universe</span>
+             <select 
+               value={universe} 
+               onChange={e => setUniverse(e.target.value)} 
+               className="w-full p-2 bg-surface border border-border text-text mt-1 rounded cursor-pointer outline-none focus:border-border-3 text-[11px] font-mono"
+             >
                {UNIVERSES.map(u => <option key={u} value={u}>{u}</option>)}
              </select>
            </div>
            
            <div>
-             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Top N Holdings</span>
-             <select value={topN} onChange={e => setTopN(e.target.value)} style={{ width: '100%', padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', color: '#fff', marginTop: '4px', borderRadius: '4px', cursor: 'pointer' }}>
+             <span className="text-xs text-text-2">Top N Holdings</span>
+             <select 
+               value={topN} 
+               onChange={e => setTopN(e.target.value)} 
+               className="w-full p-2 bg-surface border border-border text-text mt-1 rounded cursor-pointer outline-none focus:border-border-3 text-[11px] font-mono"
+             >
                {TOP_N_OPTS.map(u => <option key={u} value={u}>{u}</option>)}
              </select>
            </div>
 
            <div>
-             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Compare Versions</span>
-             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-               {VERSIONS.map(v => (
-                 <div key={v} onClick={() => toggleVersion(v)} style={{ padding: '6px 12px', fontSize: '0.8rem', border: '1px solid var(--glass-border)', borderRadius: '12px', cursor: 'pointer', background: selectedVersions.includes(v) ? colors[v] : 'transparent', color: selectedVersions.includes(v) ? '#000' : '#fff', fontWeight: selectedVersions.includes(v) ? 600 : 400, transition: 'all 0.2s ease' }}>
-                   {v}
-                 </div>
-               ))}
+             <span className="text-xs text-text-2">Compare Versions</span>
+             <div className="flex flex-wrap gap-2 mt-2">
+                {VERSIONS.map(v => (
+                  <div 
+                    key={v} 
+                    onClick={() => toggleVersion(v)} 
+                    style={{ 
+                      padding: '6px 12px', 
+                      fontSize: '0.8rem', 
+                      border: '1px solid var(--border-2)', 
+                      borderRadius: '12px', 
+                      cursor: 'pointer', 
+                      background: selectedVersions.includes(v) ? colors[v] : 'transparent', 
+                      color: selectedVersions.includes(v) ? '#000' : 'var(--text)', 
+                      fontWeight: selectedVersions.includes(v) ? 600 : 400, 
+                      transition: 'all 0.2s ease' 
+                    }}
+                  >
+                    {v}
+                  </div>
+                ))}
              </div>
            </div>
         </div>
 
-        <div className="table-wrapper" style={{ overflowX: 'auto', background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--radius-sm)' }}>
-          <table className="data-table" style={{ marginTop: '-8px' }}>
+        {/* Metrics Table */}
+        <div className="table-wrapper bg-surface-2 p-4 rounded-[var(--radius-sm)] border border-border overflow-x-auto">
+          <table className="data-table mt-[-8px]">
              <thead>
                <tr>
                  <th>Metric</th>
@@ -125,7 +149,7 @@ export default function BacktestLab({ perf, metrics }) {
              <tbody>
                <tr>
                  <td>CAGR</td>
-                 {tableData.map(t => <td key={t.version} style={{color: 'var(--accent-cyan)'}}>{t.cagr}</td>)}
+                 {tableData.map(t => <td key={t.version} className="text-teal font-mono font-semibold">{t.cagr}</td>)}
                </tr>
                <tr>
                  <td>Volatility</td>
@@ -137,7 +161,7 @@ export default function BacktestLab({ perf, metrics }) {
                </tr>
                <tr>
                  <td>Max Drawdown</td>
-                 {tableData.map(t => <td key={t.version} style={{color: 'var(--accent-red)'}}>{t.drawdown}</td>)}
+                 {tableData.map(t => <td key={t.version} className="text-red font-mono font-semibold">{t.drawdown}</td>)}
                </tr>
                <tr>
                  <td>Win Rate</td>
@@ -148,22 +172,22 @@ export default function BacktestLab({ perf, metrics }) {
         </div>
       </div>
 
-      <div style={{ marginTop: '24px', height: '400px' }}>
+      {/* Chart */}
+      <div className="mt-6 h-[400px] p-5">
          <ResponsiveContainer width="100%" height="100%">
            <LineChart data={chartData}>
-             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-             <XAxis dataKey="date" stroke="#8a9fc2" tick={{fontSize: 10}} tickFormatter={t => t.substring(0,4)} minTickGap={30}/>
-             <YAxis stroke="#8a9fc2" tick={{fontSize: 10}} domain={['auto', 'auto']} />
-             <Tooltip contentStyle={{background: '#0a0e17', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-sm)'}} />
-             <Legend wrapperStyle={{fontSize: '0.85rem'}} />
-             <Line type="monotone" dataKey="SPY" name="SPY Benchmark" stroke="#8a9fc2" strokeWidth={1.5} dot={false} strokeDasharray="5 5" />
+             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+             <XAxis dataKey="date" stroke="var(--border-3)" tick={{fontSize: 10, fill: 'var(--text-2)'}} tickFormatter={t => t.substring(0,4)} minTickGap={30}/>
+             <YAxis stroke="var(--border-3)" tick={{fontSize: 10, fill: 'var(--text-2)'}} domain={['auto', 'auto']} />
+             <Tooltip contentStyle={{background: 'var(--surface-2)', border: '1px solid var(--border-2)', borderRadius: 'var(--radius-sm)', color: 'var(--text)'}} />
+             <Legend wrapperStyle={{fontSize: '0.85rem', color: 'var(--text-2)'}} />
+             <Line type="monotone" dataKey="SPY" name="SPY Benchmark" stroke="var(--text-3)" strokeWidth={1.5} dot={false} strokeDasharray="5 5" />
              {selectedVersions.map(v => (
                <Line key={v} type="monotone" dataKey={v} name={`Strategy ${v}`} stroke={colors[v]} strokeWidth={2.5} dot={false} />
              ))}
            </LineChart>
          </ResponsiveContainer>
       </div>
-
     </div>
   )
 }

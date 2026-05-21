@@ -83,7 +83,7 @@ function TH({ col, sortKey, sortDir, onSort }) {
   )
 }
 
-export default function AlphaScreener() {
+export default function AlphaScreener({ globalDate }) {
   const [rows, setRows]                 = useState([])
   const [date, setDate]                 = useState('')
   const [total, setTotal]               = useState(0)
@@ -96,6 +96,12 @@ export default function AlphaScreener() {
   const [activeTab, setActiveTab]       = useState('TABLE')
   const [expandedRows, setExpandedRows] = useState(new Set())
   const [selectedTicker, setSelectedTicker] = useState(null)
+
+  useEffect(() => {
+    if (globalDate) {
+      setDate(globalDate)
+    }
+  }, [globalDate])
 
   useEffect(() => {
     const deduplicateRows = (screenerRows) => {
@@ -114,20 +120,20 @@ export default function AlphaScreener() {
         const r = await axios.get(`${API_BASE}/signals/screener`)
         const cleanRows = deduplicateRows(r.data.screener)
         setRows(cleanRows)
-        setDate(r.data.date)
+        setDate(globalDate || r.data.date)
         setTotal(cleanRows.length)
         setLoading(false)
       } catch (e) {
         console.warn('API unreachable, loading mock screener data', e)
         const cleanRows = deduplicateRows(mockScreener.screener)
         setRows(cleanRows)
-        setDate(mockScreener.date + ' (Simulated)')
+        setDate(globalDate || (mockScreener.date + ' (Simulated)'))
         setTotal(cleanRows.length)
         setLoading(false)
       }
     }
     load()
-  }, [])
+  }, [globalDate])
 
   const sectors = useMemo(() => {
     const s = new Set(rows.map(r => r.sector).filter(Boolean))
@@ -148,8 +154,6 @@ export default function AlphaScreener() {
     })
     return d
   }, [rows, filterSector, search, sortKey, sortDir])
-
-  const top15Tickers = useMemo(() => new Set(rows.slice(0, 15).map(r => r.ticker)), [rows])
 
   const top15Rows = useMemo(() => {
     const selected = rows.filter(r => r.selected || r.weight > 0)
@@ -176,18 +180,18 @@ export default function AlphaScreener() {
   }
 
   if (loading) return (
-    <div style={{ background: 'var(--bg)', padding: '60px', textAlign: 'center', color: 'var(--text-2)', letterSpacing: '0.15em', fontFamily: 'JetBrains Mono, monospace', fontSize: '10px' }}>
+    <div className="bg-bg p-[60px] text-center text-text-2 tracking-widest font-mono text-[10px]">
       LOADING SCREENER DATA...
     </div>
   )
 
   if (error) return (
-    <div style={{ background: 'var(--bg)', padding: '40px', textAlign: 'center', color: 'var(--red)', letterSpacing: '0.1em', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontSize: '11px' }}>
+    <div className="bg-bg p-10 text-center text-red tracking-wider font-extrabold font-mono text-[11px]">
       ERROR: {error}
     </div>
   )
 
-  const selectedCount = rows.filter(r => r.selected).length
+  const selectedCount = rows.filter(r => r.selected || r.weight > 0).length
   const inputStyle = {
     background: 'var(--surface-2)',
     border: '1px solid var(--border-2)',
@@ -213,60 +217,60 @@ export default function AlphaScreener() {
   const EXPAND_COL_WIDTH = 28
 
   return (
-    <div style={{ background: 'var(--bg)', fontFamily: 'Inter, sans-serif', fontSize: '11px', color: 'var(--text)', display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="bg-bg font-sans text-xs text-text flex flex-col h-full">
 
       {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', gap: '16px', flexWrap: 'wrap', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--text-strong)', fontFamily: 'JetBrains Mono, monospace' }}>
+      <div className="flex items-center justify-between p-3 px-5 border-b border-border bg-surface gap-4 flex-wrap flex-shrink-0">
+        <div className="flex items-center gap-5 flex-wrap">
+          <span className="text-[10px] font-extrabold tracking-widest uppercase text-text-strong font-mono">
             Alpha Screener
           </span>
-          <span style={{ fontSize: '10px', color: 'var(--text-2)', letterSpacing: '0.05em', fontFamily: 'JetBrains Mono, monospace' }}>
+          <span className="text-[10px] text-text-2 tracking-wider font-mono">
             {date} · {total} ASSETS
           </span>
 
-          <div style={{ display: 'flex', border: '1px solid var(--border-2)', borderRadius: '4px', overflow: 'hidden', marginLeft: '10px' }}>
+          <div className="flex border border-border-2 rounded overflow-hidden ml-2.5">
             <button onClick={() => setActiveTab('TABLE')} style={tabBtnStyle(activeTab === 'TABLE')}>SCREENER TABLE</button>
             <button onClick={() => setActiveTab('HEATMAP')} style={tabBtnStyle(activeTab === 'HEATMAP')}>CORRELATION MATRIX</button>
           </div>
 
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '9px', color: 'var(--text-2)', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>SECTOR:</span>
+          <span className="flex items-center gap-2">
+            <span className="text-[9px] text-text-2 tracking-wider uppercase font-bold">SECTOR:</span>
             <select value={filterSector} onChange={e => setFilterSector(e.target.value)} style={{ ...inputStyle, cursor: 'pointer', width: 'auto' }}>
               {sectors.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </span>
 
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '9px', color: 'var(--text-2)', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>SEARCH:</span>
+          <span className="flex items-center gap-2">
+            <span className="text-[9px] text-text-2 tracking-wider uppercase font-bold">SEARCH:</span>
             <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="TICKER..." style={{ ...inputStyle, width: '120px' }} />
           </span>
         </div>
-        <span style={{ fontSize: '9px', color: 'var(--text-2)', flexShrink: 0, fontFamily: 'JetBrains Mono, monospace' }}>
+        <span className="text-[9px] text-text-2 flex-shrink-0 font-mono">
           {displayed.length} / {total} &nbsp;·&nbsp; {selectedCount} SELECTED
         </span>
       </div>
 
       {activeTab === 'TABLE' ? (
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div className="flex flex-1 overflow-hidden">
           {/* Table area */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div className="flex-grow flex flex-col overflow-hidden">
             {/* Legend */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '8px 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', fontSize: '9px', color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', flexShrink: 0 }}>
-              <span style={{ color: 'var(--green)', fontWeight: 900 }}>Z</span>
+            <div className="flex items-center gap-4 p-2 px-5 border-b border-border bg-surface text-[9px] text-text-3 tracking-wider uppercase font-bold font-mono flex-shrink-0">
+              <span className="text-green font-black">Z</span>
               <span>COMPOSITE &gt; +1.0</span>
-              <span style={{ color: 'var(--red)', fontWeight: 900 }}>Z</span>
+              <span className="text-red font-black">Z</span>
               <span>COMPOSITE &lt; −1.0</span>
-              <span style={{ marginLeft: '12px', color: 'var(--text-strong)', fontWeight: 900 }}>█</span>
-              <span>TOP 15 SELECTED</span>
-              <span style={{ marginLeft: 'auto', color: 'var(--border-3)' }}>
+              <span className="ml-3 text-green font-black">█</span>
+              <span>ACTIVE PORTFOLIO</span>
+              <span className="ml-auto text-border-3 text-[8px]">
                 ▶ EXPAND ROW FOR FACTOR DETAIL &nbsp;·&nbsp; CLICK ROW FOR STOCK INTEL
               </span>
             </div>
 
             {/* Table */}
-            <div style={{ overflowX: 'auto', overflowY: 'auto', flex: 1 }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+            <div className="overflow-x-auto overflow-y-auto flex-1">
+              <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
                 <colgroup>
                   <col style={{ width: EXPAND_COL_WIDTH }} />
                   {VISIBLE_COLS.map(c => <col key={c.key} style={{ width: c.width }} />)}
@@ -281,7 +285,7 @@ export default function AlphaScreener() {
                 </thead>
                 <tbody>
                   {displayed.map(row => {
-                    const isTop15   = top15Tickers.has(row.ticker)
+                    const isActiveHolding = row.weight > 0
                     const isExpanded = expandedRows.has(row.ticker)
                     const isSelected = selectedTicker === row.ticker
 
@@ -289,9 +293,10 @@ export default function AlphaScreener() {
                       <React.Fragment key={row.ticker}>
                         <tr
                           onClick={() => handleRowClick(row.ticker)}
+                          className={`hover:bg-surface-2 border-l-2 transition-all duration-100 ${
+                            isSelected ? 'bg-blue-dim border-l-blue shadow-inner' : isActiveHolding ? 'bg-surface border-l-green' : 'bg-bg border-l-transparent'
+                          }`}
                           style={{
-                            background: isSelected ? 'var(--blue-dim)' : isTop15 ? 'var(--surface)' : 'var(--bg)',
-                            borderLeft: isTop15 ? '2px solid var(--green)' : '2px solid transparent',
                             cursor: 'pointer',
                             outline: isSelected ? '1px solid var(--blue)' : 'none',
                             outlineOffset: '-1px',
@@ -300,23 +305,15 @@ export default function AlphaScreener() {
                           {/* Expand toggle */}
                           <td
                             onClick={e => toggleExpand(e, row.ticker)}
-                            style={{
-                              padding: '0 4px',
-                              textAlign: 'center',
-                              borderBottom: '1px solid var(--border)',
-                              cursor: 'pointer',
-                              color: 'var(--text-3)',
-                              verticalAlign: 'middle',
-                            }}
+                            className="p-1 text-center border-b border-border cursor-pointer text-text-3 align-middle"
                           >
                             <ChevronRight
                               size={11}
                               style={{
                                 transform: isExpanded ? 'rotate(90deg)' : 'none',
                                 transition: 'transform 0.15s',
-                                display: 'block',
-                                margin: 'auto',
                               }}
+                              className="block mx-auto"
                             />
                           </td>
 
@@ -336,9 +333,9 @@ export default function AlphaScreener() {
                                   whiteSpace: 'nowrap',
                                   background: 'transparent',
                                   fontFamily: col.key === 'ticker' ? 'JetBrains Mono, monospace' : 'inherit',
-                                  fontWeight: col.key === 'ticker' ? (isTop15 ? 900 : 600) :
+                                  fontWeight: col.key === 'ticker' ? (isActiveHolding ? 900 : 600) :
                                               isZ ? (Math.abs(zVal) > 1.0 ? 800 : 400) : 400,
-                                  color: col.key === 'ticker' ? (isTop15 ? 'var(--green)' : 'var(--text)') :
+                                  color: col.key === 'ticker' ? (isActiveHolding ? 'var(--green)' : 'var(--text)') :
                                          col.key === 'weight' ? (parseFloat(raw) > 0 ? 'var(--text)' : 'var(--text-3)') :
                                          isZ ? zColor(raw) : 'var(--text)',
                                   fontSize: col.key === 'rank' ? '10px' : '11px',
@@ -350,13 +347,14 @@ export default function AlphaScreener() {
                           })}
                         </tr>
 
+
                         {/* Factor Detail expansion row */}
                         {isExpanded && (
-                          <tr style={{ background: 'var(--surface-2)' }}>
+                          <tr className="bg-surface-2">
                             <td />
-                            <td colSpan={VISIBLE_COLS.length} style={{ padding: '10px 14px 12px', borderBottom: '1px solid var(--border)' }}>
-                              <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
-                                <span style={{ fontSize: '8px', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: 'JetBrains Mono, monospace' }}>
+                            <td colSpan={VISIBLE_COLS.length} className="p-2.5 px-3.5 border-b border-border">
+                              <div className="flex gap-6 flex-wrap items-center">
+                                <span className="text-[8px] font-bold text-text-3 uppercase tracking-wider font-mono">
                                   Factor Detail
                                 </span>
                                 {DETAIL_COLS.map(col => {
@@ -364,11 +362,11 @@ export default function AlphaScreener() {
                                   const label = col.fmt ? fmt(raw, col.fmt) : (raw ?? '—')
                                   const color = col.zscore ? zColor(raw) : 'var(--text-2)'
                                   return (
-                                    <div key={col.key} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                      <span style={{ fontSize: '8px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}>
+                                    <div key={col.key} className="flex flex-col gap-0.5">
+                                      <span className="text-[8px] color-[var(--text-3)] text-text-3 uppercase tracking-wider font-mono font-bold">
                                         {col.label}
                                       </span>
-                                      <span style={{ fontSize: '11px', color, fontFamily: 'JetBrains Mono, monospace', fontWeight: col.zscore ? 700 : 400 }}>
+                                      <span style={{ color }} className="text-[11px] font-mono font-medium">
                                         {String(label)}
                                       </span>
                                     </div>
@@ -388,45 +386,43 @@ export default function AlphaScreener() {
 
           {/* Stock detail side panel */}
           {selectedTicker && (
-            <div style={{
-              width: '300px',
-              flexShrink: 0,
-              borderLeft: '1px solid var(--border)',
-              background: 'var(--surface)',
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 5 }}>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-strong)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.08em' }}>
+            <div className="w-[300px] flex-shrink-0 border-l border-border bg-surface overflow-y-auto flex flex-col">
+              <div className="flex items-center justify-between p-3 px-4 border-b border-border sticky top-0 bg-surface z-[5]">
+                <span className="text-xs font-extrabold text-text-strong font-mono tracking-wide">
                   {selectedTicker}
                 </span>
                 <button
                   onClick={() => setSelectedTicker(null)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-2)', padding: '2px', display: 'flex' }}
+                  className="bg-transparent border-none cursor-pointer text-text-2 hover:text-text p-0.5 flex"
                 >
                   <X size={14} />
                 </button>
               </div>
-              <div style={{ padding: '16px' }}>
+              <div className="p-4">
                 <StockContextPanel ticker={selectedTicker} />
               </div>
             </div>
           )}
         </div>
       ) : (
-        <div style={{ overflowY: 'auto', flex: 1, background: 'var(--bg)', padding: '16px' }}>
+        <div className="overflow-y-auto flex-1 bg-bg p-4">
           <CorrelationHeatmap top15Rows={top15Rows} />
         </div>
       )}
 
       {/* Status bar */}
-      <div style={{ padding: '8px 20px', borderTop: '1px solid var(--border)', fontSize: '9px', color: 'var(--text-3)', letterSpacing: '0.08em', display: 'flex', gap: '28px', background: 'var(--surface)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, flexShrink: 0 }}>
-        <span>SORT: {sortKey.toUpperCase()} {sortDir.toUpperCase()}</span>
-        <span>FILTER: {filterSector}</span>
-        <span>DATE: {date}</span>
-        <span>Z-SCORES: CROSS-SECTIONAL</span>
-        <span style={{ marginLeft: 'auto', color: 'var(--border-3)' }}>PHINEUS OS · QP OPTIMIZER V7</span>
+      <div className="p-2.5 px-5 border-t border-border text-[10px] text-text-2 tracking-wider flex justify-between bg-surface font-mono font-medium flex-shrink-0">
+        <div className="flex gap-4">
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse"></span>
+            <span>Signal Date: {date}</span>
+          </span>
+          <span>·</span>
+          <span>Z-Score Baseline: Cross-Sectional</span>
+        </div>
+        <div className="text-text-3 font-semibold">
+          PHINEUS OS · QP OPTIMIZER V7
+        </div>
       </div>
     </div>
   )
@@ -492,44 +488,44 @@ function CorrelationHeatmap({ top15Rows }) {
   const isWarning = avgCorrelation > 0.60 || highCorrPairs.length > 3
 
   return (
-    <div style={{ padding: '20px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '20px', fontFamily: 'Inter, sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+    <div className="p-5 bg-surface rounded-xl border border-border flex flex-col gap-5 font-sans">
+      <div className="flex justify-between items-center gap-4 flex-wrap">
         <div>
-          <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: 'var(--text-strong)', letterSpacing: '0.05em' }}>Portfolio Correlation Heatmap</h3>
-          <span style={{ fontSize: '10px', color: 'var(--text-2)' }}>Visual covariance matrix analyzing overlapping exposure risks among top {top15Rows.length} assets</span>
+          <h3 className="margin-0 text-sm font-extrabold text-text-strong tracking-wide">Portfolio Correlation Heatmap</h3>
+          <span className="text-[10px] text-text-2">Visual covariance matrix analyzing overlapping exposure risks among top {top15Rows.length} assets</span>
         </div>
-        <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border-2)', padding: '6px 12px', borderRadius: '6px', textAlign: 'right' }}>
-          <span style={{ display: 'block', fontSize: '8px', color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Avg Correlation</span>
-          <span style={{ fontSize: '14px', fontWeight: 900, color: isWarning ? 'var(--red)' : 'var(--green)', fontFamily: 'JetBrains Mono, monospace' }}>{avgCorrelation.toFixed(2)}</span>
+        <div className="bg-surface-2 border border-border-2 p-1.5 px-3 rounded text-right">
+          <span className="block text-[8px] text-text-2 uppercase tracking-widest font-mono">Avg Correlation</span>
+          <span className="text-sm font-black text-green font-mono" style={{ color: isWarning ? 'var(--red)' : 'var(--green)' }}>{avgCorrelation.toFixed(2)}</span>
         </div>
       </div>
 
       {isWarning ? (
-        <div style={{ background: 'var(--red-dim)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '8px', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--red)', letterSpacing: '0.05em' }}>⚠️ HIGH CONCENTRATION RISK DETECTED</span>
-          <span style={{ fontSize: '10px', color: 'var(--text)', lineHeight: 1.4 }}>
+        <div className="bg-red-dim border border-[rgba(239,68,68,0.2)] rounded-lg p-3 px-4 flex flex-col gap-1">
+          <span className="text-[10px] font-extrabold text-red tracking-wider font-mono">⚠️ HIGH CONCENTRATION RISK DETECTED</span>
+          <span className="text-[10px] text-text leading-relaxed font-mono">
             Your top positions are highly correlated (Average: {avgCorrelation.toFixed(2)}).
             {highCorrPairs.length > 0 && ` Specifically, pairs like ${highCorrPairs.slice(0, 3).map(p => `${p.a}/${p.b} (${p.corr.toFixed(2)})`).join(', ')} increase vulnerability to broad sector drawdowns.`}
           </span>
         </div>
       ) : (
-        <div style={{ background: 'var(--green-dim)', border: '1px solid rgba(34, 197, 94, 0.25)', borderRadius: '8px', padding: '12px 16px' }}>
-          <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--green)', letterSpacing: '0.05em' }}>✓ HEALTHY RISK DIVERSIFICATION</span>
-          <span style={{ display: 'block', fontSize: '10px', color: 'var(--text)', marginTop: '4px', lineHeight: 1.4 }}>
+        <div className="bg-green-dim border border-[rgba(34,197,94,0.2)] rounded-lg p-3 px-4 font-mono">
+          <span className="text-[10px] font-extrabold text-green tracking-wider">✓ HEALTHY RISK DIVERSIFICATION</span>
+          <span className="block text-[10px] text-text mt-1 leading-relaxed">
             Holdings show low-to-moderate covariance (Average: {avgCorrelation.toFixed(2)}). Low overlapping volatility suggests clean sector diversification.
           </span>
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+      <div className="flex gap-6 flex-wrap">
         {/* The Matrix */}
-        <div style={{ overflowX: 'auto', flex: 1, padding: '4px', background: 'var(--bg)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${top15Rows.length + 1}, minmax(32px, 1fr))`, gap: '2px', padding: '6px' }}>
-            <div style={{ width: '32px', height: '32px' }} />
+        <div className="overflow-x-auto flex-grow p-1 bg-bg rounded-lg border border-border">
+          <div className="grid gap-0.5 p-1.5" style={{ gridTemplateColumns: `repeat(${top15Rows.length + 1}, minmax(32px, 1fr))` }}>
+            <div className="w-8 h-8" />
             {top15Rows.map((row, c) => {
               const active = hoveredCell && (hoveredCell.c === c || hoveredCell.r === c)
               return (
-                <div key={row.ticker} style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: active ? 900 : 600, color: active ? 'var(--text-strong)' : 'var(--text-2)', fontFamily: 'JetBrains Mono, monospace', transition: 'all 0.15s' }}>
+                <div key={row.ticker} className={`h-8 flex items-center justify-center text-[9px] font-mono transition-all duration-150 ${active ? 'font-black text-text-strong' : 'font-semibold text-text-2'}`}>
                   {row.ticker}
                 </div>
               )
@@ -539,7 +535,7 @@ function CorrelationHeatmap({ top15Rows }) {
               const rowActive = hoveredCell && hoveredCell.r === r
               return (
                 <div key={rowA.ticker} style={{ display: 'contents' }}>
-                  <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', fontSize: '9px', fontWeight: rowActive ? 900 : 600, color: rowActive ? 'var(--text-strong)' : 'var(--text-2)', fontFamily: 'JetBrains Mono, monospace', transition: 'all 0.15s' }}>
+                  <div className={`h-8 flex items-center justify-start text-[9px] font-mono transition-all duration-150 ${rowActive ? 'font-black text-text-strong' : 'font-semibold text-text-2'}`}>
                     {rowA.ticker}
                   </div>
 
@@ -561,7 +557,11 @@ function CorrelationHeatmap({ top15Rows }) {
                         key={rowB.ticker}
                         onMouseEnter={() => setHoveredCell({ r, c })}
                         onMouseLeave={() => setHoveredCell(null)}
-                        style={{ height: '32px', background: bg, border: directHover ? '1px solid var(--text-strong)' : cellActive ? '1px solid var(--border-3)' : '1px solid transparent', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 800, color: isDiag ? 'var(--text-2)' : 'var(--white)', fontFamily: 'JetBrains Mono, monospace', cursor: 'crosshair', transition: 'all 0.15s' }}
+                        style={{ 
+                          background: bg, 
+                          border: directHover ? '1px solid var(--text-strong)' : cellActive ? '1px solid var(--border-3)' : '1px solid transparent'
+                        }}
+                        className="h-8 rounded-sm flex items-center justify-center text-[8px] font-extrabold font-mono cursor-crosshair transition-all duration-150"
                         title={`${rowA.ticker} vs ${rowB.ticker}: ${corr > 0 ? '+' : ''}${corr.toFixed(2)}`}
                       >
                         {isDiag ? '1.0' : (corr > 0 ? '+' : '') + corr.toFixed(2)}
@@ -575,38 +575,38 @@ function CorrelationHeatmap({ top15Rows }) {
         </div>
 
         {/* Legend Panel */}
-        <div style={{ minWidth: '220px', flex: '0 0 240px', display: 'flex', flexDirection: 'column', gap: '16px', background: 'var(--surface-2)', border: '1px solid var(--border-2)', borderRadius: '8px', padding: '16px' }}>
-          <span style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-strong)', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace' }}>Risk Gradient</span>
+        <div className="min-w-[220px] flex-[0_0_240px] flex flex-col gap-4 bg-surface-2 border border-border-2 rounded-lg p-4 font-mono">
+          <span className="text-[9px] font-extrabold text-text-strong tracking-wider uppercase font-mono">Risk Gradient</span>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="flex flex-col gap-2.5">
             {[
               { bg: 'rgba(34, 197, 94, 0.8)', label: 'Strong Positive (0.7 to 1.0)' },
               { bg: 'rgba(34, 197, 94, 0.3)', label: 'Moderate Positive (0.3 to 0.7)' },
               { bg: 'var(--border)',           label: 'Independent / Diagonal' },
               { bg: 'rgba(239, 68, 68, 0.4)', label: 'Negative (< -0.1)' },
             ].map(({ bg, label }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '14px', height: '14px', borderRadius: '2px', background: bg, flexShrink: 0 }} />
-                <span style={{ fontSize: '10px', color: 'var(--text-2)' }}>{label}</span>
+              <div key={label} className="flex items-center gap-2.5">
+                <div style={{ backgroundColor: bg }} className="w-3.5 h-3.5 rounded-sm flex-shrink-0" />
+                <span className="text-[10px] text-text-2">{label}</span>
               </div>
             ))}
           </div>
 
           {hoveredCell ? (
-            <div style={{ borderTop: '1px solid var(--border-2)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '8px', color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Focused Covariance</span>
-              <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-strong)' }}>
+            <div className="border-t border-border-2 pt-3 flex flex-col gap-1">
+              <span className="text-[8px] text-text-2 uppercase tracking-wide">Focused Covariance</span>
+              <span className="text-[11px] font-extrabold text-text-strong">
                 {top15Rows[hoveredCell.r]?.ticker} × {top15Rows[hoveredCell.c]?.ticker}
               </span>
-              <span style={{ fontSize: '10px', color: 'var(--green)', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>
+              <span className="text-[10px] text-green font-bold font-mono">
                 Correlation: {matrix[hoveredCell.r][hoveredCell.c] > 0 ? '+' : ''}{matrix[hoveredCell.r][hoveredCell.c].toFixed(2)}
               </span>
-              <span style={{ fontSize: '9px', color: 'var(--text-2)', marginTop: '2px', lineHeight: 1.3 }}>
+              <span className="text-[9px] text-text-2 mt-0.5 leading-relaxed">
                 {top15Rows[hoveredCell.r]?.ticker} ({top15Rows[hoveredCell.r]?.sector}) and {top15Rows[hoveredCell.c]?.ticker} ({top15Rows[hoveredCell.c]?.sector}).
               </span>
             </div>
           ) : (
-            <div style={{ borderTop: '1px solid var(--border-2)', paddingTop: '12px', fontSize: '9px', color: 'var(--text-2)', lineHeight: 1.4 }}>
+            <div className="border-t border-border-2 pt-3 text-[9px] text-text-2 leading-relaxed">
               Hover over covariance grid cells to inspect specific asset-to-asset correlations.
             </div>
           )}

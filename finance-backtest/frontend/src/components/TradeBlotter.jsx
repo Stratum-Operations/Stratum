@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import axios from 'axios'
+import { RefreshCw } from 'lucide-react'
 import { mockAlpacaPositions, mockHoldings } from '../data/mockFallbackData'
 
 const API = 'http://127.0.0.1:8001/api'
@@ -62,6 +63,7 @@ export default function TradeBlotter() {
 
   const load = async () => {
     setLoading(true); setError(null); setOrders(null); setConfirmed(false)
+    const startTime = Date.now()
     try {
       const [pR, wR] = await Promise.all([
         axios.get(`${API}/portfolio/alpaca_positions`),
@@ -76,11 +78,16 @@ export default function TradeBlotter() {
       setWeights(mockHoldings.holdings)
       setRebalDate(mockHoldings.date + ' (Simulated)')
     }
-    setLoading(false)
+    const elapsed = Date.now() - startTime
+    const delay = Math.max(0, 600 - elapsed)
+    setTimeout(() => {
+      setLoading(false)
+    }, delay)
   }
   useEffect(() => { load() }, [])
 
   const diff = useMemo(() => buildDiff(weights, positions, aum), [weights, positions, aum])
+  const isInitialLoad = loading && positions.length === 0 && weights.length === 0
 
   const handleExecute = async () => {
     if (!confirmed) { setConfirmed(true); return }
@@ -132,19 +139,33 @@ export default function TradeBlotter() {
           </div>
           <button
             onClick={load}
-            style={{ background: 'none', border: `1px solid ${C.border}`, color: C.muted, padding: '3px 10px', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}
+            disabled={loading}
+            style={{
+              background: 'none',
+              border: `1px solid ${C.border}`,
+              color: loading ? C.white : C.muted,
+              padding: '4px 10px',
+              fontSize: '9px',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
           >
-            ↺ REFRESH
+            <RefreshCw size={10} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+            {loading ? 'REFRESHING…' : 'REFRESH'}
           </button>
         </div>
       </div>
 
-      {loading ? (
+      {isInitialLoad ? (
         <div style={{ padding: '60px', textAlign: 'center', color: C.muted, letterSpacing: '0.2em', fontSize: '10px' }}>LOADING…</div>
       ) : error ? (
         <div style={{ padding: '40px', color: C.red, letterSpacing: '0.1em', fontSize: '11px', borderLeft: `4px solid ${C.red}`, margin: '24px' }}>{error}</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', minHeight: 'calc(100vh - 300px)' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] min-h-[calc(100vh-300px)]">
 
           {/* ── Left: Authorization Terminal ────────────────────────── */}
           <div style={{ borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', background: C.base }}>
@@ -153,7 +174,7 @@ export default function TradeBlotter() {
             <div style={{ padding: '16px', borderBottom: `1px solid ${C.border}` }}>
               <div style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: C.muted, marginBottom: '8px' }}>Account AUM</div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                <span style={{ fontSize: '13px', color: C.muted }}>$</span>
+                <span style={{ fontSize: '12px', color: C.muted }}>$</span>
                 <input
                   type="number"
                   value={aum}
@@ -163,9 +184,9 @@ export default function TradeBlotter() {
                     border: 'none',
                     borderBottom: `1px solid ${C.borderHi}`,
                     color: C.white,
-                    fontSize: '22px',
+                    fontSize: '15px',
                     fontFamily: 'JetBrains Mono, monospace',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     width: '100%',
                     outline: 'none',
                     padding: '2px 0',
@@ -251,7 +272,7 @@ export default function TradeBlotter() {
                 Discrepancy Tickets — sorted by dollar delta
               </div>
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '11px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto', fontSize: '11px' }}>
                   <thead>
                     <tr style={{ background: C.raised }}>
                       {['SYMBOL', 'SIDE', 'CURR WT', 'TARGET WT', 'Δ WT', '$ DELTA', 'CUR QTY', 'PRICE'].map(h => (

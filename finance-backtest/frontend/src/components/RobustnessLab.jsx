@@ -42,11 +42,10 @@ export default function RobustnessLab({ perf }) {
 
   return (
     <div style={{ background: 'var(--bg)', display: 'flex', flexDirection: 'column', gap: 0 }}>
-      {/* Header */}
       <div className="chart-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <ShieldCheck size={16} color="var(--text-2)" />
-          <span className="chart-title">Walk-Forward Validation Lab</span>
+          <span className="chart-title">Stress Test & Backtest Lab</span>
         </div>
       </div>
 
@@ -90,33 +89,39 @@ export default function RobustnessLab({ perf }) {
         </div>
 
         {/* Right: Walk-forward chart */}
-        <div style={{ background: 'var(--bg)', padding: '20px' }}>
+        <div style={{ background: 'var(--bg)', padding: '20px', minWidth: 0 }}>
           <span style={{ fontSize: '9px', color: 'var(--text-2)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
             <History size={12} /> In-Sample vs. Out-of-Sample Performance
           </span>
           <div style={{ height: '300px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={walkForwardData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="date" stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} />
-                <YAxis stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} />
-                <Tooltip contentStyle={TT_STYLE} />
-                <ReferenceArea
-                  x1={walkForwardData[0]?.date}
-                  x2={splitDate}
-                  fill="var(--surface)"
-                  label={{ position: 'insideTopLeft', value: 'IS', fill: 'var(--text-3)', fontSize: 9, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
-                />
-                <ReferenceArea
-                  x1={splitDate}
-                  x2={walkForwardData[walkForwardData.length - 1]?.date}
-                  fill="transparent"
-                  label={{ position: 'insideTopLeft', value: 'OOS', fill: 'var(--text-2)', fontSize: 9, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
-                />
-                <Line type="monotone" dataKey="Strategy_Equity" stroke="var(--teal)" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="SPY_Equity" stroke="var(--border-3)" strokeWidth={1} strokeDasharray="3 3" dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
+            {walkForwardData && walkForwardData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={walkForwardData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="date" stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} />
+                  <YAxis stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} />
+                  <Tooltip contentStyle={TT_STYLE} />
+                  <ReferenceArea
+                    x1={walkForwardData[0]?.date}
+                    x2={splitDate}
+                    fill="var(--surface)"
+                    label={{ position: 'insideTopLeft', value: 'IS', fill: 'var(--text-3)', fontSize: 9, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
+                  />
+                  <ReferenceArea
+                    x1={splitDate}
+                    x2={walkForwardData[walkForwardData.length - 1]?.date}
+                    fill="transparent"
+                    label={{ position: 'insideTopLeft', value: 'OOS', fill: 'var(--text-2)', fontSize: 9, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
+                  />
+                  <Line type="monotone" dataKey="Strategy_Equity" stroke="var(--teal)" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="SPY_Equity" stroke="var(--border-3)" strokeWidth={1} strokeDasharray="3 3" dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-text-3 font-mono text-[10px] tracking-wider uppercase">
+                Loading backtest performance data...
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px' }}>

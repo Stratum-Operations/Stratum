@@ -381,7 +381,7 @@ export default function StrategyLab() {
               textAlign:     'left',    // asymmetric: label is left-aligned
             }}
           >
-            {loading ? 'SIMULATING…' : !weightOk ? `WEIGHTS ≠ 100%` : '▶  RUN SIMULATION'}
+            {loading ? 'SIMULATING…' : !weightOk ? `FACTOR WEIGHTS MUST EQUAL 100%` : 'RUN STRATEGY SIMULATION'}
           </button>
 
           {/* Results KPI row */}
@@ -401,38 +401,8 @@ export default function StrategyLab() {
             </div>
           )}
 
-          {/* Active configuration readout — raw text dump */}
-          <div style={{ padding: '16px 24px', flex: 1 }}>
-            <div style={{ ...MONO, fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: C.muted, marginBottom: '12px' }}>
-              Active Config Readout
-            </div>
-            <pre style={{
-              ...MONO,
-              fontSize: '10px',
-              color: C.sub,
-              lineHeight: 1.8,
-              margin: 0,
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-            }}>
-{`universe       = ${cfg.universe}
-top_n          = ${cfg.topN}
-max_weight     = ${(cfg.max_weight * 100).toFixed(0)}%
-rebal_freq     = ${cfg.rebal_freq}
-sector_neutral = ${cfg.sector_neutral}
-benchmark      = ${cfg.benchmark}
-
-w_momentum     = ${cfg.w_momentum}%
-w_quality      = ${cfg.w_quality}%
-w_lowvol       = ${cfg.w_lowvol}%
-factor_sum     = ${cfg.w_momentum + cfg.w_quality + cfg.w_lowvol}%
-
-lookback_mom   = ${cfg.lookback_mom}d
-skip_recent    = ${cfg.skip_recent}d
-tc_bps         = ${cfg.tc_bps}bps
-comm_flat      = $${cfg.comm_flat}
-tax_drag       = ${cfg.tax_drag}%`}
-            </pre>
+          <div style={{ padding: '16px 24px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: C.muted, fontSize: '11px', textAlign: 'center' }}>
+            <div>Configure parameters in the left panel and click RUN to execute the strategy simulation.</div>
           </div>
         </div>
 

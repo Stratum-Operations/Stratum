@@ -37,7 +37,7 @@ const NAV = [
     items: [
       { id: 'portfolio',  label: 'Evaluate Holdings', icon: Briefcase       },
       { id: 'dashboard',  label: 'Dashboard',         icon: LayoutDashboard },
-      { id: 'analytics',  label: 'Analytics',         icon: BarChart2       },
+      { id: 'analytics',  label: 'Advanced Analytics',icon: BarChart2       },
       { id: 'audit',      label: 'Evaluator Audit',   icon: ClipboardCheck  },
       { id: 'reporting',  label: 'Reporting',         icon: FileText        },
     ],
@@ -66,16 +66,7 @@ const NAV = [
   },
 ]
 
-/* ── Compact top-bar KPI stat ────────────────────────────────── */
-function TopKPI({ label, value, isPositive, isNegative }) {
-  const cls = isPositive ? 'positive' : isNegative ? 'negative' : ''
-  return (
-    <div className="top-bar-kpi">
-      <span className="top-bar-kpi-label">{label}</span>
-      <span className={`top-bar-kpi-value ${cls}`}>{value}</span>
-    </div>
-  )
-}
+
 
 export default function App() {
   const [data, setData]       = useState({ perf: null, metrics: null, holdings: null })
@@ -157,8 +148,15 @@ export default function App() {
 
     let currentStreak = 0
     let maxStreak = 0
+    let stratMax = 0
     for (const d of data.perf) {
-      if (d.Strategy_Drawdown < -0.0001) {
+      let drawdown = d.Strategy_Drawdown
+      if (drawdown === undefined || drawdown === null) {
+        const equity = d.Strategy_Equity ?? 0
+        if (equity > stratMax) stratMax = equity
+        drawdown = stratMax > 0 ? (equity / stratMax) - 1 : 0
+      }
+      if (drawdown < -0.0001) {
         currentStreak++
         if (currentStreak > maxStreak) {
           maxStreak = currentStreak
@@ -190,45 +188,7 @@ export default function App() {
           <span>Phineus OS</span>
         </div>
 
-        {/* Live KPIs */}
-        <div className="top-bar-kpis">
-          <TopKPI
-            label="CAGR"
-            value={cagr}
-            isPositive={cagrNum > 0}
-          />
-          <TopKPI
-            label="Max Drawdown"
-            value={dd}
-            isNegative={ddNum < 0}
-          />
-          <TopKPI
-            label="Sharpe"
-            value={sharpe}
-            isPositive={shNum > 1}
-          />
-          <TopKPI
-            label="Sortino"
-            value={sortino}
-            isPositive={sortinoNum > 1}
-          />
-          <TopKPI
-            label="Profit Factor"
-            value={profitFactor}
-            isPositive={pfNum > 1}
-          />
-          <TopKPI
-            label="Expectancy"
-            value={expPct}
-            isPositive={expectancy > 0}
-            isNegative={expectancy < 0}
-          />
-          <TopKPI
-            label="Max DD Streak"
-            value={maxConsecutiveDdDays > 0 ? `${maxConsecutiveDdDays} Days` : '—'}
-            isNegative={maxConsecutiveDdDays > 40}
-          />
-        </div>
+
 
         {/* Status indicator */}
         <div className="top-bar-actions">
@@ -287,13 +247,7 @@ export default function App() {
             )
           })}
 
-          {/* Sidebar footer */}
-          <div className="sidebar-bottom">
-            <div className="sidebar-help-card">
-              <span>Evaluate holdings</span>
-              <Button size="sm" variant="outline" onClick={() => setView('portfolio')}>Start</Button>
-            </div>
-          </div>
+
         </aside>
 
         {/* ── Main Content ─────────────────────────────────────── */}
@@ -305,19 +259,23 @@ export default function App() {
                 <span><strong>SANDBOX DEMO MODE</strong> — Backend API is currently unreachable. Displaying local simulated data.</span>
               </div>
             )}
-            {/* KPI Header — always visible inside each view */}
-            <KpiHeader strat={strat} spy={spy} perf={data.perf} />
-
             {/* ── Portfolio ──────────────────────────────────────── */}
             {view === 'portfolio' && <PortfolioEntry />}
 
             {/* ── Command Center ─────────────────────────────────── */}
             {view === 'dashboard' && (
-              <DashboardView perf={data.perf} holdings={data.holdings} expectancy={expPct} maxConsecutiveDdDays={maxConsecutiveDdDays} />
+              <DashboardView perf={data.perf} holdings={data.holdings} expectancy={expPct} maxConsecutiveDdDays={maxConsecutiveDdDays} strat={strat} spy={spy} />
             )}
             {view === 'analytics' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                <PortfolioAnalytics perf={data.perf} holdings={data.holdings} />
+                <PortfolioAnalytics
+                  perf={data.perf}
+                  holdings={data.holdings}
+                  strat={strat}
+                  spy={spy}
+                  expectancy={expPct}
+                  maxConsecutiveDdDays={maxConsecutiveDdDays}
+                />
                 <BenchmarkSuite     perf={data.perf} holdings={data.holdings} />
               </div>
             )}
@@ -351,97 +309,168 @@ export default function App() {
   )
 }
 
-/* ── Persistent KPI strip below top bar ────────────────────────── */
-function KpiHeader({ strat, spy, perf }) {
-  const cagrDelta   = (parseFloat(strat?.CAGR) || 0) - (parseFloat(spy?.CAGR) || 0)
-  const ddDelta     = (parseFloat(strat?.['Max Drawdown']) || 0) - (parseFloat(spy?.['Max Drawdown']) || 0)
-  const sharpeDelta = (parseFloat(strat?.Sharpe) || 0) - (parseFloat(spy?.Sharpe) || 0)
-  const sortinoDelta = (parseFloat(strat?.Sortino) || 0) - (parseFloat(spy?.Sortino) || 0)
-  const pfDelta      = (parseFloat(strat?.profit_factor || strat?.['Profit Factor'] || 1.65) || 0) - (parseFloat(spy?.profit_factor || spy?.['Profit Factor'] || 1.25) || 0)
+/* ── Strategic Diagnostics Panel ────────────────────────────────── */
+function StrategicDiagnostics({ strat, spy, holdings, expectancy, maxConsecutiveDdDays }) {
+  const activeHoldings = (holdings?.holdings ?? []).filter(h => Number(h.weight) > 0)
+  const sectorCount = new Set(activeHoldings.map(h => h.sector).filter(Boolean)).size
 
-  const Delta = ({ v, invert = false, suffix = '%' }) => {
-    const pos = invert ? v < 0 : v > 0
-    const neutral = Math.abs(v) < 0.01
-    const sign = v > 0 ? '+' : ''
-    if (neutral) return <span className="neutral">—</span>
-    return <span className={pos ? 'up' : 'down'}>{sign}{v.toFixed(2)}{suffix}</span>
+  const cagr = parseFloat(strat?.CAGR) || 0
+  const spyCagr = parseFloat(spy?.CAGR) || 0
+  const dd = Math.abs(parseFloat(strat?.['Max Drawdown']) || 0)
+  const spyDd = Math.abs(parseFloat(spy?.['Max Drawdown']) || 0)
+  const sharpe = parseFloat(strat?.Sharpe) || 0
+  const spySharpe = parseFloat(spy?.Sharpe) || 0
+  const sortino = parseFloat(strat?.Sortino) || 0
+
+  const insights = []
+
+  // 1. Recovery profile
+  if (maxConsecutiveDdDays > 180) {
+    insights.push({
+      type: 'warning',
+      title: 'Extended Recovery Profile',
+      text: `Peak drawdown recovery takes ${maxConsecutiveDdDays} days. This points to a slow mean-reversion process. Consider adding uncorrelated assets to shorten recovery cycles.`
+    })
+  } else if (maxConsecutiveDdDays > 0) {
+    insights.push({
+      type: 'success',
+      title: 'Efficient Recovery Cycle',
+      text: `Portfolio rebounds in under ${maxConsecutiveDdDays} days. Reversion profile shows resilient recovery.`
+    })
+  }
+
+  // 2. Diversification
+  if (activeHoldings.length > 0 && sectorCount <= 2) {
+    insights.push({
+      type: 'caution',
+      title: 'High Sector Concentration',
+      text: `Assets clustered in only ${sectorCount} sector${sectorCount > 1 ? 's' : ''}. High risk of sector-specific shocks. Consider broader sector diversification.`
+    })
+  } else if (activeHoldings.length > 12) {
+    insights.push({
+      type: 'info',
+      title: 'Broad Asset Diversification',
+      text: `Allocated across ${activeHoldings.length} assets, reducing idiosyncratic risk. Monitor for potential alpha dilution.`
+    })
+  }
+
+  // 3. Performance vs SPY
+  if (cagr > spyCagr && sharpe > spySharpe) {
+    insights.push({
+      type: 'success',
+      title: 'Benchmark Outperformance',
+      text: `Strategy CAGR (${cagr.toFixed(2)}%) and Sharpe (${sharpe.toFixed(2)}) beat S&P 500 (${spyCagr.toFixed(2)}% / ${spySharpe.toFixed(2)}). Risk-adjusted return is highly efficient.`
+    })
+  } else if (cagr > 0 && cagr < spyCagr) {
+    insights.push({
+      type: 'warning',
+      title: 'Lagging Market Return',
+      text: `CAGR of ${cagr.toFixed(2)}% lags the benchmark S&P 500 (${spyCagr.toFixed(2)}%). Assess if the current factor tilt justifies the performance gap.`
+    })
+  }
+
+  // 4. Downside safety
+  if (sortino > 1.5) {
+    insights.push({
+      type: 'success',
+      title: 'Strong Downside Protection',
+      text: `Sortino of ${sortino.toFixed(2)} reflects high reward relative to downside risk. Downside volatility is well-mitigated.`
+    })
+  } else if (dd > 25) {
+    insights.push({
+      type: 'caution',
+      title: 'Heavy Drawdown Vulnerability',
+      text: `Peak drawdown of -${dd.toFixed(2)}% is elevated. Consider tail hedging or dynamic scaling to protect capital.`
+    })
+  }
+
+  if (insights.length === 0) {
+    insights.push({
+      type: 'info',
+      title: 'Baseline Performance',
+      text: 'Performance metrics are aligned with benchmark expectations. No abnormal factor risks detected.'
+    })
   }
 
   return (
-    <div className="header-grid">
-      <div className="metric-card" style={{ cursor: 'help' }} title="Compound Annual Growth Rate: The simulated geometric mean rate of return that the strategy generates per year. Benchmark comparison displays outperformance relative to SPY.">
-        <span className="metric-label">CAGR <span style={{ opacity: 0.5, fontSize: '9px' }}>ⓘ</span></span>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="metric-value">{strat?.CAGR ?? '—'}</span>
-          <span style={{ fontSize: '11px', color: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>vs SPY: {spy?.CAGR ?? '—'}</span>
-        </div>
-        <div className="metric-benchmark">Delta: <Delta v={cagrDelta} /></div>
-      </div>
-      <div className="metric-card" style={{ cursor: 'help' }} title="Max Drawdown: The peak-to-trough maximum drop in portfolio value. Benchmark comparison displays risk reduction relative to SPY.">
-        <span className="metric-label">Max Drawdown <span style={{ opacity: 0.5, fontSize: '9px' }}>ⓘ</span></span>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="metric-value">{strat?.['Max Drawdown'] ?? '—'}</span>
-          <span style={{ fontSize: '11px', color: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>vs SPY: {spy?.['Max Drawdown'] ?? '—'}</span>
-        </div>
-        <div className="metric-benchmark">Delta: <Delta v={ddDelta} invert /></div>
-      </div>
-      <div className="metric-card" style={{ cursor: 'help' }} title="Sharpe Ratio: Risk-adjusted return measure (excess return over risk-free rate per unit of volatility). Benchmark comparison displays improvement over SPY.">
-        <span className="metric-label">Sharpe Ratio <span style={{ opacity: 0.5, fontSize: '9px' }}>ⓘ</span></span>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="metric-value">{strat?.Sharpe ?? '—'}</span>
-          <span style={{ fontSize: '11px', color: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>vs SPY: {spy?.Sharpe ?? '—'}</span>
-        </div>
-        <div className="metric-benchmark">Delta: <Delta v={sharpeDelta} suffix="x" /></div>
-      </div>
-      <div className="metric-card" style={{ cursor: 'help' }} title="Sortino Ratio: Risk-adjusted return measure focusing only on downside volatility. Benchmark comparison displays outperformance relative to SPY.">
-        <span className="metric-label">Sortino Ratio <span style={{ opacity: 0.5, fontSize: '9px' }}>ⓘ</span></span>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="metric-value">{strat?.Sortino ?? '—'}</span>
-          <span style={{ fontSize: '11px', color: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>vs SPY: {spy?.Sortino ?? '—'}</span>
-        </div>
-        <div className="metric-benchmark">Delta: <Delta v={sortinoDelta} suffix="x" /></div>
-      </div>
-      <div className="metric-card" style={{ cursor: 'help' }} title="Profit Factor: The ratio of gross profits to gross losses. A value greater than 1.0 indicates a profitable strategy.">
-        <span className="metric-label">Profit Factor <span style={{ opacity: 0.5, fontSize: '9px' }}>ⓘ</span></span>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="metric-value">{strat?.profit_factor || strat?.['Profit Factor'] || '—'}</span>
-          <span style={{ fontSize: '11px', color: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>vs SPY: {spy?.profit_factor || spy?.['Profit Factor'] || '—'}</span>
-        </div>
-        <div className="metric-benchmark">Delta: <Delta v={pfDelta} suffix="x" /></div>
+    <div className="side-card diagnostics-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <h3 style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 800, color: 'var(--text-strong)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Strategic Diagnostics & Insights
+      </h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+        {insights.map((ins, i) => {
+          const typeColors = {
+            success: { bg: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.15)', text: 'var(--green)', dotBg: 'var(--green)' },
+            warning: { bg: 'rgba(239, 68, 68, 0.06)', border: '1px solid rgba(239, 68, 68, 0.15)', text: 'var(--red)', dotBg: 'var(--red)' },
+            caution: { bg: 'rgba(245, 158, 11, 0.06)', border: '1px solid rgba(245, 158, 11, 0.15)', text: 'var(--amber)', dotBg: 'var(--amber)' },
+            info: { bg: 'rgba(59, 130, 246, 0.06)', border: '1px solid rgba(59, 130, 246, 0.15)', text: 'var(--blue)', dotBg: 'var(--blue)' }
+          }
+          const theme = typeColors[ins.type] || typeColors.info
+
+          return (
+            <div key={i} style={{
+              background: theme.bg,
+              border: theme.border,
+              borderRadius: '8px',
+              padding: '12px 14px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: theme.text, fontSize: '12px' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: theme.dotBg }} />
+                {ins.title}
+              </div>
+              <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-2)', lineHeight: '1.45' }}>
+                {ins.text}
+              </p>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
 }
 
 /* ── Dashboard view ─────────────────────────────────────────────── */
-function DashboardView({ perf, holdings, expectancy, maxConsecutiveDdDays }) {
+function DashboardView({ perf, holdings, expectancy, maxConsecutiveDdDays, strat, spy }) {
+  const activeHoldings = (holdings?.holdings ?? []).filter(h => Number(h.weight) > 0)
+  const sortedTopHoldings = [...activeHoldings].sort((a, b) => (b.weight || 0) - (a.weight || 0)).slice(0, 8)
+
   return (
     <div className="dashboard-view">
-      <LivePortfolio />
+      <LivePortfolio strat={strat} spy={spy} />
       <div className="dashboard-layout">
-        {/* Left: Chart + Sector */}
+        {/* Left: Chart + Sector + Strategic Insights */}
         <div className="dashboard-main-column">
           <MainChart perf={perf} />
           <div className="dashboard-panel-wrap">
             <SectorExposure holdings={holdings} />
           </div>
+          <StrategicDiagnostics
+            strat={strat}
+            spy={spy}
+            holdings={holdings}
+            expectancy={expectancy}
+            maxConsecutiveDdDays={maxConsecutiveDdDays}
+          />
         </div>
 
         <div className="dashboard-side-column">
           <div className="side-card">
-            <h3>Portfolio status</h3>
+            <h3>Portfolio Status</h3>
             <div className="status-list">
-              <span><strong>{holdings?.holdings?.length ?? '—'}</strong> holdings</span>
-              <span><strong>{expectancy}</strong> expectancy</span>
-              <span><strong>{maxConsecutiveDdDays} Days</strong> DD streak</span>
-              <span><strong>SPY</strong> base</span>
+              <span><strong>{activeHoldings.length}</strong> active assets</span>
+              <span><strong>{strat?.CAGR ?? '—'}</strong> CAGR</span>
+              <span><strong>{strat?.['Max Drawdown'] ?? '—'}</strong> Max Drawdown</span>
+              <span><strong>SPY</strong> benchmark</span>
             </div>
           </div>
 
           <div className="side-card">
             <h3>Active tickers</h3>
             <div className="ticker-cloud">
-              {holdings?.holdings?.slice(0, 15).map(h => (
+              {activeHoldings.slice(0, 15).map(h => (
                 <span key={h.ticker}>
                   {h.ticker}
                 </span>
@@ -449,10 +478,10 @@ function DashboardView({ perf, holdings, expectancy, maxConsecutiveDdDays }) {
             </div>
           </div>
 
-          {holdings?.holdings && (
+          {sortedTopHoldings.length > 0 && (
             <div className="side-card holdings-card">
               <h3>Top holdings</h3>
-              {holdings.holdings.slice(0, 8).map(h => (
+              {sortedTopHoldings.map(h => (
                 <div key={h.ticker} className="holding-row">
                   <div>
                     <strong>{h.ticker}</strong>

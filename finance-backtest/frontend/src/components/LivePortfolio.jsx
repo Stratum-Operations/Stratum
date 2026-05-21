@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
-import { ChevronDown, ChevronUp, PieChart, ShieldCheck, Sparkles, TrendingUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, Layers, Scale, LayoutGrid, ShieldCheck } from 'lucide-react'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { mockHoldings } from '../data/mockFallbackData'
 
-export default function LivePortfolio() {
+export default function LivePortfolio({ strat, spy }) {
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
@@ -65,35 +65,72 @@ export default function LivePortfolio() {
     {
       label: 'Holdings',
       value: summary.activeCount || '—',
-      icon: PieChart,
+      icon: Layers,
       tone: 'blue',
     },
     {
       label: 'Largest',
       value: summary.topWeight ? `${summary.topWeight.toFixed(1)}%` : '—',
-      icon: ShieldCheck,
+      icon: Scale,
       tone: summary.topWeight > 10 ? 'amber' : 'green',
     },
     {
       label: 'Sectors',
       value: summary.sectorCount || '—',
-      icon: Sparkles,
+      icon: LayoutGrid,
       tone: 'teal',
     },
     {
       label: 'Score',
       value: Number.isFinite(summary.avgScore) ? summary.avgScore.toFixed(2) : '—',
-      icon: TrendingUp,
+      icon: ShieldCheck,
       tone: 'blue',
     },
   ]
 
+  const cagr = parseFloat(strat?.CAGR) || 0
+  const spyCagr = parseFloat(spy?.CAGR) || 0
+  const isOnTrack = cagr >= spyCagr
+
   return (
     <section className="portfolio-overview">
-      <Card className="portfolio-hero">
-        <CardContent className="portfolio-hero-content">
-          <div>
-            <h1>Your portfolio, simplified.</h1>
+      <Card 
+        className="portfolio-hero" 
+        style={{ 
+          borderLeft: isOnTrack ? '4px solid var(--green)' : '4px solid var(--amber)',
+          background: isOnTrack ? 'rgba(16, 185, 129, 0.02)' : 'rgba(245, 158, 11, 0.02)',
+          padding: '24px'
+        }}
+      >
+        <CardContent className="portfolio-hero-content" style={{ padding: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ 
+                fontSize: '9px', 
+                fontWeight: 900, 
+                letterSpacing: '0.12em', 
+                textTransform: 'uppercase', 
+                padding: '3px 8px', 
+                borderRadius: '4px',
+                background: isOnTrack ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+                color: isOnTrack ? 'var(--green)' : 'var(--amber)',
+                fontFamily: 'JetBrains Mono, monospace'
+              }}>
+                {isOnTrack ? 'ON TRACK' : 'LAGGING BENCHMARK'}
+              </span>
+            </div>
+            <h1 style={{ fontSize: '18px', fontWeight: 850, color: 'var(--text-strong)', margin: '4px 0 0', letterSpacing: '-0.015em' }}>
+              {isOnTrack 
+                ? "Your capital is doing exactly what it's supposed to be doing right now." 
+                : "Your capital allocation is currently underperforming the market index."
+              }
+            </h1>
+            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-2)', lineHeight: '1.5' }}>
+              {isOnTrack 
+                ? `Active factor loading generates a +${cagr.toFixed(2)}% simulated CAGR, outperforming the benchmark S&P 500 (+${spyCagr.toFixed(2)}% CAGR) with managed downside risk.`
+                : `Active portfolio CAGR (+${cagr.toFixed(2)}%) lags behind S&P 500 (+${spyCagr.toFixed(2)}%). Consider reviewing sector and size factor weights.`
+              }
+            </p>
           </div>
           <div className="portfolio-hero-actions">
             <Button size="md" onClick={() => setShowLogs(true)}>Review allocations</Button>
@@ -129,7 +166,7 @@ export default function LivePortfolio() {
 
         {showLogs && data?.weights && (
           <div className="allocation-log-list">
-            {data.weights.map(w => (
+            {data.weights.filter(w => Number(w.weight) > 0).map(w => (
               <div key={w.ticker} className="allocation-row">
                 <div>
                   <strong>{w.ticker}</strong>

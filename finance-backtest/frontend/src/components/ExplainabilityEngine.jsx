@@ -20,7 +20,7 @@ export default function ExplainabilityTooltip({ h, rank }) {
   return (
     <div className="narrative-box">
       <div className="narrative-header">
-        <span className="narrative-sparkle">✦</span> AI Explainability Engine
+        <span className="narrative-sparkle">✦</span> Heuristic Factor Attribution
       </div>
       <div className="narrative-body">{narrative}</div>
     </div>
