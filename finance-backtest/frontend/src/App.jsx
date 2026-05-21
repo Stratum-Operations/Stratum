@@ -5,9 +5,10 @@ import {
   SlidersHorizontal, Eye, Settings2, Activity,
   Radio, GitCommit, ClipboardList, Briefcase,
   Search, ClipboardCheck, ChevronDown, ChevronRight,
-  Moon, Sun,
+  Moon, Sun, Sparkles,
 } from 'lucide-react'
 import './App.css'
+import AiAnalystDrawer from './components/AiAnalystDrawer'
 
 import MainChart           from './components/MainChart'
 import LivePortfolio       from './components/LivePortfolio'
@@ -25,7 +26,6 @@ import WatchlistManager    from './components/WatchlistManager'
 import ReportingEngine     from './components/ReportingEngine'
 import PortfolioEntry      from './components/PortfolioEntry'
 import EvaluatorAudit      from './components/EvaluatorAudit'
-import { Button } from './components/ui/button'
 import { mockPerf, mockMetrics, mockHoldings } from './data/mockFallbackData'
 
 const API_BASE = 'http://127.0.0.1:8001/api'
@@ -38,6 +38,7 @@ const NAV = [
       { id: 'portfolio',  label: 'Evaluate Holdings', icon: Briefcase       },
       { id: 'dashboard',  label: 'Dashboard',         icon: LayoutDashboard },
       { id: 'analytics',  label: 'Advanced Analytics',icon: BarChart2       },
+      { id: 'copilot',    label: 'AI Copilot',        icon: Sparkles        },
       { id: 'audit',      label: 'Evaluator Audit',   icon: ClipboardCheck  },
       { id: 'reporting',  label: 'Reporting',         icon: FileText        },
     ],
@@ -74,6 +75,9 @@ export default function App() {
   const [view, setView]       = useState('dashboard')
   const [isDemoMode, setIsDemoMode] = useState(false)
   const [theme, setTheme]     = useState(() => localStorage.getItem('phineus-theme') || 'light')
+  const [chatOpen, setChatOpen] = useState(false)
+  const [portfolioRows, setPortfolioRows] = useState([])
+  const [portfolioResult, setPortfolioResult] = useState(null)
   const [expandedSections, setExpandedSections] = useState({
     'Analysis': true,
     'Research': true,
@@ -104,15 +108,63 @@ export default function App() {
           return row
         })
         setData({ perf: perfData, metrics: mRes.data.metrics, holdings: hRes.data })
+        if (hRes.data?.holdings) {
+          setPortfolioRows(hRes.data.holdings.map((h, i) => ({
+            id: i + 1,
+            ticker: h.ticker,
+            shares: String(h.shares),
+            cost_basis: h.cost_basis != null ? String(h.cost_basis) : ''
+          })))
+          setPortfolioResult({
+            total_value: hRes.data.total_value,
+            positions: hRes.data.holdings,
+            health: hRes.data.health,
+            risk_radar: hRes.data.risk_radar,
+            defense: hRes.data.defense
+          })
+        }
         setIsDemoMode(false)
       } catch (e) {
         console.warn('API connection failed, starting in Sandbox Demo mode.', e)
         setIsDemoMode(true)
         setData({ perf: mockPerf, metrics: mockMetrics, holdings: mockHoldings })
+        if (mockHoldings?.holdings) {
+          setPortfolioRows(mockHoldings.holdings.map((h, i) => ({
+            id: i + 1,
+            ticker: h.ticker,
+            shares: String(h.shares),
+            cost_basis: h.cost_basis != null ? String(h.cost_basis) : ''
+          })))
+          setPortfolioResult({
+            total_value: mockHoldings.total_value,
+            positions: mockHoldings.holdings,
+            health: mockHoldings.health,
+            risk_radar: mockHoldings.risk_radar,
+            defense: mockHoldings.defense
+          })
+        }
       }
       setLoading(false)
     }
     fetchData()
+  }, [])
+
+  useEffect(() => {
+    const handleToggleChat = (e) => {
+      setChatOpen(e.detail?.open ?? true)
+    }
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setChatOpen(open => !open)
+      }
+    }
+    window.addEventListener('toggle-ai-chat', handleToggleChat)
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('toggle-ai-chat', handleToggleChat)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
   }, [])
 
   /* ── Derived KPI values for top bar ─────────────────────────── */
@@ -197,6 +249,15 @@ export default function App() {
             <span>Search tickers</span>
           </div>
           <button
+            className={`top-icon-button transition-colors duration-150 ${
+              chatOpen ? 'active text-green border-green' : ''
+            }`}
+            onClick={() => setChatOpen(!chatOpen)}
+            title="AI Analyst Copilot (⌘K)"
+          >
+            <Sparkles size={15} />
+          </button>
+          <button
             className="top-icon-button"
             onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
             title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
@@ -204,7 +265,7 @@ export default function App() {
             {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
           </button>
           <div className="top-bar-status">
-            <div style={{ width: 7, height: 7, background: 'var(--green)', borderRadius: '50%', animation: 'pulse 2s ease infinite' }} />
+            <div className="w-1.5 h-1.5 bg-green rounded-full animate-pulse" />
             <span>Live</span>
           </div>
         </div>
@@ -218,16 +279,16 @@ export default function App() {
           {NAV.map(group => {
             const isExpanded = expandedSections[group.section]
             return (
-              <div key={group.section} className="sidebar-section" style={{ padding: '12px 14px 4px' }}>
+              <div key={group.section} className="sidebar-section p-[12px_14px_4px]">
                 <div
                   className="sidebar-section-header"
                   onClick={() => toggleSection(group.section)}
                 >
                   <span className="sidebar-section-label">{group.section}</span>
-                  {isExpanded ? <ChevronDown size={11} style={{ opacity: 0.6 }} /> : <ChevronRight size={11} style={{ opacity: 0.6 }} />}
+                  {isExpanded ? <ChevronDown size={11} className="opacity-60" /> : <ChevronRight size={11} className="opacity-60" />}
                 </div>
                 {isExpanded && (
-                  <div className="sidebar-section-items" style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '2px 0' }}>
+                  <div className="sidebar-section-items flex flex-col gap-0.5 p-[2px_0]">
                     {group.items.map(item => {
                       const Icon = item.icon
                       return (
@@ -247,7 +308,12 @@ export default function App() {
             )
           })}
 
-
+          {/* Sidebar footer */}
+          <div className="sidebar-bottom flex justify-between items-center p-[16px_20px]">
+            <span className="text-[10px] text-text-3 font-mono tracking-wider font-semibold">
+              PHINEUS OS V1.2.0
+            </span>
+          </div>
         </aside>
 
         {/* ── Main Content ─────────────────────────────────────── */}
@@ -260,14 +326,30 @@ export default function App() {
               </div>
             )}
             {/* ── Portfolio ──────────────────────────────────────── */}
-            {view === 'portfolio' && <PortfolioEntry />}
+            {view === 'portfolio' && (
+              <PortfolioEntry
+                rows={portfolioRows}
+                setRows={setPortfolioRows}
+                result={portfolioResult}
+                setResult={setPortfolioResult}
+                onApplyPortfolio={(manualResult) => {
+                  setData(d => ({
+                    ...d,
+                    holdings: {
+                      ...manualResult,
+                      holdings: manualResult.positions
+                    }
+                  }))
+                }}
+              />
+            )}
 
             {/* ── Command Center ─────────────────────────────────── */}
             {view === 'dashboard' && (
               <DashboardView perf={data.perf} holdings={data.holdings} expectancy={expPct} maxConsecutiveDdDays={maxConsecutiveDdDays} strat={strat} spy={spy} />
             )}
             {view === 'analytics' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              <div className="flex flex-col gap-0">
                 <PortfolioAnalytics
                   perf={data.perf}
                   holdings={data.holdings}
@@ -280,6 +362,20 @@ export default function App() {
               </div>
             )}
             {view === 'audit' && <EvaluatorAudit />}
+            {view === 'copilot' && (
+              <AiAnalystDrawer
+                isOpen={true}
+                mode="immersive"
+                portfolioContext={{
+                  currentView: view,
+                  holdings: data.holdings?.holdings || [],
+                  metrics: data.metrics || {},
+                  strategyKPIs: strat || {},
+                  benchmarkKPIs: spy || {},
+                  performanceHistory: data.perf || [],
+                }}
+              />
+            )}
             {view === 'reporting' && (
               <ReportingEngine
                 metrics={data.metrics}
@@ -304,6 +400,21 @@ export default function App() {
             {view === 'blotter'   && <TradeBlotter holdings={data.holdings?.holdings} />}
           </div>
         </main>
+
+        {/* Global AI Copilot Drawer */}
+        <AiAnalystDrawer
+          isOpen={chatOpen}
+          onClose={() => setChatOpen(false)}
+          mode="drawer"
+          portfolioContext={{
+            currentView: view,
+            holdings: data.holdings?.holdings || [],
+            metrics: data.metrics || {},
+            strategyKPIs: strat || {},
+            benchmarkKPIs: spy || {},
+            performanceHistory: data.perf || [],
+          }}
+        />
       </div>
     </div>
   )
@@ -392,36 +503,28 @@ function StrategicDiagnostics({ strat, spy, holdings, expectancy, maxConsecutive
     })
   }
 
+  const typeTheme = {
+    success: { bg: 'bg-[#22c55e]/5 border-[#22c55e]/15 text-[#22c55e]', dot: 'bg-[#22c55e]' },
+    warning: { bg: 'bg-[#ef4444]/5 border-[#ef4444]/15 text-[#ef4444]', dot: 'bg-[#ef4444]' },
+    caution: { bg: 'bg-[#f59e0b]/5 border-[#f59e0b]/15 text-[#f59e0b]', dot: 'bg-[#f59e0b]' },
+    info:    { bg: 'bg-[#3b82f6]/5 border-[#3b82f6]/15 text-[#3b82f6]', dot: 'bg-[#3b82f6]' },
+  }
+
   return (
-    <div className="side-card diagnostics-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <h3 style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 800, color: 'var(--text-strong)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+    <div className="side-card diagnostics-panel p-5 flex flex-col gap-4 border border-border-2 bg-surface rounded-none">
+      <h3 className="m-0 mb-1 text-[14px] font-black text-text-strong uppercase tracking-widest font-mono">
         Strategic Diagnostics & Insights
       </h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {insights.map((ins, i) => {
-          const typeColors = {
-            success: { bg: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.15)', text: 'var(--green)', dotBg: 'var(--green)' },
-            warning: { bg: 'rgba(239, 68, 68, 0.06)', border: '1px solid rgba(239, 68, 68, 0.15)', text: 'var(--red)', dotBg: 'var(--red)' },
-            caution: { bg: 'rgba(245, 158, 11, 0.06)', border: '1px solid rgba(245, 158, 11, 0.15)', text: 'var(--amber)', dotBg: 'var(--amber)' },
-            info: { bg: 'rgba(59, 130, 246, 0.06)', border: '1px solid rgba(59, 130, 246, 0.15)', text: 'var(--blue)', dotBg: 'var(--blue)' }
-          }
-          const theme = typeColors[ins.type] || typeColors.info
-
+          const theme = typeTheme[ins.type] || typeTheme.info
           return (
-            <div key={i} style={{
-              background: theme.bg,
-              border: theme.border,
-              borderRadius: '8px',
-              padding: '12px 14px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: theme.text, fontSize: '12px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: theme.dotBg }} />
+            <div key={i} className={`border p-3.5 flex flex-col gap-1.5 rounded-none ${theme.bg}`}>
+              <div className="flex items-center gap-2 font-bold text-[12px] font-mono">
+                <span className={`w-1.5 h-1.5 rounded-none ${theme.dot}`} />
                 {ins.title}
               </div>
-              <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-2)', lineHeight: '1.45' }}>
+              <p className="m-0 text-[11px] text-text-2 leading-relaxed font-mono">
                 {ins.text}
               </p>
             </div>
@@ -488,7 +591,12 @@ function DashboardView({ perf, holdings, expectancy, maxConsecutiveDdDays, strat
                     <span>{h.sector || 'N/A'}</span>
                   </div>
                   <div className="holding-weight">
-                    <div><span style={{ width: `${Math.round(h.weight * 260)}px` }} /></div>
+                    <div>
+                      <span 
+                        style={{ width: `${Math.round(h.weight * 260)}px` }} 
+                        className="bg-border-3 h-full block" 
+                      />
+                    </div>
                     <strong>{(h.weight * 100).toFixed(1)}%</strong>
                   </div>
                 </div>

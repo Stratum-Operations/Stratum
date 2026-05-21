@@ -16,8 +16,8 @@
   --border-3:   #9aa9bc;
   --text:       #334155;
   --text-strong:#0f172a;
-  --text-2:     #64748b;
-  --text-3:     #94a3b8;
+  --text-2:     #475569;
+  --text-3:     #5e6d82;
   --white:      #ffffff;
   --green:      #0f9f6e;
   --green-dim:  #dff7eb;
@@ -722,7 +722,7 @@ body {
 .metric-benchmark {
   font-size: 13px;
   font-family: 'Roboto Mono', monospace;
-  color: var(--text-2) !important;
+  color: var(--text-strong) !important;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -1610,8 +1610,8 @@ button:hover, .btn:hover {
   --border-3:   #3d4d6a;
   --text:       #c8d3e8;
   --text-strong:#eef2ff;
-  --text-2:     #7a8aaa;
-  --text-3:     #4a5570;
+  --text-2:     #8a9ab8;
+  --text-3:     #6d7d9c;
   --white:      #eef2ff;
   --green:      #22c55e;
   --green-dim:  rgba(34, 197, 94, 0.12);
@@ -1719,5 +1719,35 @@ button:hover, .btn:hover {
   0% { transform: scale(0.9); opacity: 0.6; }
   50% { transform: scale(1.15); opacity: 1; }
   100% { transform: scale(0.9); opacity: 0.6; }
+}
+
+/* ─── AI Copilot Persistent Side Panel Layout ────────────────────── */
+.portfolio-results-layout {
+  display: block;
+  background: var(--surface);
+}
+
+.portfolio-analyst-panel {
+  border-left: 1px solid var(--border-2);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+  .portfolio-results-layout {
+    grid-template-columns: 1fr;
+  }
+  .portfolio-analyst-panel {
+    border-left: none;
+    border-top: 1px solid var(--border-2);
+    position: static;
+    height: auto;
+    max-height: 600px;
+  }
 }
 
