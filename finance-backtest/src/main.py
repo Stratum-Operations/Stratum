@@ -45,7 +45,13 @@ def run_universe(universe_name):
         latest_date = log6['date'].max()
         df_latest = log6[log6['date'] == latest_date]
         if os.path.exists(ledger_path):
-            df_latest.to_csv(ledger_path, mode='a', header=False, index=False)
+            try:
+                existing_df = pd.read_csv(ledger_path)
+                existing_df = existing_df[existing_df['date'] != latest_date]
+                combined_df = pd.concat([existing_df, df_latest], ignore_index=True)
+                combined_df.to_csv(ledger_path, index=False)
+            except Exception:
+                df_latest.to_csv(ledger_path, mode='a', header=False, index=False)
         else:
             df_latest.to_csv(ledger_path, index=False)
     else:
