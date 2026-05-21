@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
-import { ChevronDown, ChevronUp, Layers, Scale, LayoutGrid, ShieldCheck } from 'lucide-react'
+import { ChevronDown, ChevronUp, Layers, Scale, LayoutGrid, ShieldCheck, TrendingUp } from 'lucide-react'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { mockHoldings } from '../data/mockFallbackData'
@@ -132,15 +132,12 @@ export default function LivePortfolio({ strat, spy }) {
       icon: LayoutGrid,
       tone: 'teal',
     },
-<<<<<<< Updated upstream
     {
       label: 'Score',
       value: Number.isFinite(summary.avgScore) ? summary.avgScore.toFixed(2) : '—',
       icon: ShieldCheck,
       tone: 'blue',
     },
-=======
->>>>>>> Stashed changes
   ]
 
   const cagr = parseFloat(strat?.CAGR) || 0
@@ -148,52 +145,29 @@ export default function LivePortfolio({ strat, spy }) {
   const isOnTrack = cagr >= spyCagr
 
   return (
-<<<<<<< Updated upstream
-    <section className="portfolio-overview">
+    <section className="portfolio-overview flex flex-col gap-4">
       <Card 
-        className="portfolio-hero" 
-        style={{ 
-          borderLeft: isOnTrack ? '4px solid var(--green)' : '4px solid var(--amber)',
-          background: isOnTrack ? 'rgba(16, 185, 129, 0.02)' : 'rgba(245, 158, 11, 0.02)',
-          padding: '24px'
-        }}
+        className={`portfolio-hero rounded-none border border-border-2 p-6 border-l-4 ${isOnTrack ? 'border-l-green bg-surface-2' : 'border-l-amber bg-surface-2'}`}
       >
-        <CardContent className="portfolio-hero-content" style={{ padding: 0 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ 
-                fontSize: '9px', 
-                fontWeight: 900, 
-                letterSpacing: '0.12em', 
-                textTransform: 'uppercase', 
-                padding: '3px 8px', 
-                borderRadius: '4px',
-                background: isOnTrack ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
-                color: isOnTrack ? 'var(--green)' : 'var(--amber)',
-                fontFamily: 'JetBrains Mono, monospace'
-              }}>
+        <CardContent className="portfolio-hero-content p-0 flex justify-between items-center">
+          <div className="flex flex-col gap-[6px]">
+            <div className="flex items-center">
+              <span className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-none font-mono ${isOnTrack ? 'bg-green/10 text-green' : 'bg-amber/10 text-amber'}`}>
                 {isOnTrack ? 'ON TRACK' : 'LAGGING BENCHMARK'}
               </span>
             </div>
-            <h1 style={{ fontSize: '18px', fontWeight: 850, color: 'var(--text-strong)', margin: '4px 0 0', letterSpacing: '-0.015em' }}>
+            <h1 className="text-[18px] font-extrabold text-text-strong m-0 tracking-tight leading-snug">
               {isOnTrack 
                 ? "Your capital is doing exactly what it's supposed to be doing right now." 
                 : "Your capital allocation is currently underperforming the market index."
               }
             </h1>
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-2)', lineHeight: '1.5' }}>
+            <p className="m-0 text-[12px] text-text-2 leading-relaxed">
               {isOnTrack 
                 ? `Active factor loading generates a +${cagr.toFixed(2)}% simulated CAGR, outperforming the benchmark S&P 500 (+${spyCagr.toFixed(2)}% CAGR) with managed downside risk.`
                 : `Active portfolio CAGR (+${cagr.toFixed(2)}%) lags behind S&P 500 (+${spyCagr.toFixed(2)}%). Consider reviewing sector and size factor weights.`
               }
             </p>
-=======
-    <section className="portfolio-overview flex flex-col gap-4">
-      <Card className="portfolio-hero">
-        <CardContent className="portfolio-hero-content">
-          <div>
-            <h1>Your portfolio, simplified.</h1>
->>>>>>> Stashed changes
           </div>
           <div className="portfolio-hero-actions">
             <Button size="md" onClick={() => setShowLogs(true)}>Review allocations</Button>
@@ -286,11 +260,7 @@ export default function LivePortfolio({ strat, spy }) {
 
         {showLogs && data?.holdings && (
           <div className="allocation-log-list">
-<<<<<<< Updated upstream
-            {data.weights.filter(w => Number(w.weight) > 0).map(w => (
-=======
-            {data.holdings.map(w => (
->>>>>>> Stashed changes
+            {data.holdings.filter(w => Number(w.weight) > 0).map(w => (
               <div key={w.ticker} className="allocation-row">
                 <div>
                   <strong>{w.ticker}</strong>

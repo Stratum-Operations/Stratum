@@ -84,7 +84,7 @@ export default function BacktestLab({ perf, metrics }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(250px,1fr)_3fr] gap-6 p-5">
         {/* Controls Card */}
-        <div className="flex flex-col gap-4 bg-surface-2 p-4 rounded-[var(--radius-sm)] border border-border">
+        <div className="flex flex-col gap-4 bg-surface-2 p-4 rounded-none border border-border">
            <div>
              <span className="text-[11px] text-text-2 font-bold tracking-wider uppercase font-mono">Simulation Constraints</span>
            </div>
@@ -94,7 +94,7 @@ export default function BacktestLab({ perf, metrics }) {
              <select 
                value={universe} 
                onChange={e => setUniverse(e.target.value)} 
-               className="w-full p-2 bg-surface border border-border text-text mt-1 rounded cursor-pointer outline-none focus:border-border-3 text-[11px] font-mono"
+               className="w-full p-2 bg-surface border border-border text-text mt-1 rounded-none cursor-pointer outline-none focus:border-border-3 text-[11px] font-mono"
              >
                {UNIVERSES.map(u => <option key={u} value={u}>{u}</option>)}
              </select>
@@ -105,7 +105,7 @@ export default function BacktestLab({ perf, metrics }) {
              <select 
                value={topN} 
                onChange={e => setTopN(e.target.value)} 
-               className="w-full p-2 bg-surface border border-border text-text mt-1 rounded cursor-pointer outline-none focus:border-border-3 text-[11px] font-mono"
+               className="w-full p-2 bg-surface border border-border text-text mt-1 rounded-none cursor-pointer outline-none focus:border-border-3 text-[11px] font-mono"
              >
                {TOP_N_OPTS.map(u => <option key={u} value={u}>{u}</option>)}
              </select>
@@ -122,7 +122,7 @@ export default function BacktestLab({ perf, metrics }) {
                       padding: '6px 12px', 
                       fontSize: '0.8rem', 
                       border: '1px solid var(--border-2)', 
-                      borderRadius: '12px', 
+                      borderRadius: '0px', 
                       cursor: 'pointer', 
                       background: selectedVersions.includes(v) ? colors[v] : 'transparent', 
                       color: selectedVersions.includes(v) ? '#000' : 'var(--text)', 
@@ -138,7 +138,7 @@ export default function BacktestLab({ perf, metrics }) {
         </div>
 
         {/* Metrics Table */}
-        <div className="table-wrapper bg-surface-2 p-4 rounded-[var(--radius-sm)] border border-border overflow-x-auto">
+        <div className="table-wrapper bg-surface-2 p-4 rounded-none border border-border overflow-x-auto">
           <table className="data-table mt-[-8px]">
              <thead>
                <tr>
@@ -179,7 +179,7 @@ export default function BacktestLab({ perf, metrics }) {
              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
              <XAxis dataKey="date" stroke="var(--border-3)" tick={{fontSize: 10, fill: 'var(--text-2)'}} tickFormatter={t => t.substring(0,4)} minTickGap={30}/>
              <YAxis stroke="var(--border-3)" tick={{fontSize: 10, fill: 'var(--text-2)'}} domain={['auto', 'auto']} />
-             <Tooltip contentStyle={{background: 'var(--surface-2)', border: '1px solid var(--border-2)', borderRadius: 'var(--radius-sm)', color: 'var(--text)'}} />
+             <Tooltip contentStyle={{background: 'var(--surface-2)', border: '1px solid var(--border-2)', borderRadius: '0px', color: 'var(--text)'}} />
              <Legend wrapperStyle={{fontSize: '0.85rem', color: 'var(--text-2)'}} />
              <Line type="monotone" dataKey="SPY" name="SPY Benchmark" stroke="var(--text-3)" strokeWidth={1.5} dot={false} strokeDasharray="5 5" />
              {selectedVersions.map(v => (

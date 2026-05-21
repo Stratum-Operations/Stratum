@@ -18,7 +18,7 @@ export function TabsList({ className, ...props }) {
     <div
       role="tablist"
       className={cn(
-        'inline-flex min-h-10 items-center rounded-lg border border-[var(--border)] bg-[var(--surface-2)] p-1',
+        'inline-flex min-h-10 items-center rounded-none border border-[var(--border)] bg-[var(--surface-2)] p-1',
         className
       )}
       {...props}
@@ -35,7 +35,7 @@ export function TabsTrigger({ value, currentValue, onValueChange, className, ...
       data-state={active ? 'active' : 'inactive'}
       onClick={() => onValueChange?.(value)}
       className={cn(
-        'inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-md px-3 text-xs font-bold text-[var(--text-2)] transition-colors hover:text-[var(--text-strong)]',
+        'inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-none px-3 text-xs font-bold text-[var(--text-2)] transition-colors hover:text-[var(--text-strong)]',
         active && 'bg-[var(--surface)] text-[var(--text-strong)] shadow-sm',
         className
       )}

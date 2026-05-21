@@ -62,11 +62,11 @@ export default function RebalanceJournal({ holdings }) {
   }, [holdings, offset])
 
   return (
-    <div className="bg-bg border border-border rounded-lg overflow-hidden flex flex-col">
+    <div className="bg-bg border border-border rounded-none overflow-hidden flex flex-col">
       {/* Header */}
       <div className="chart-header">
         <span className="chart-title">Rebalance Ledger & Delta Journal</span>
-        <div className="flex items-center gap-3 bg-surface-2 p-1.5 px-3 border border-border rounded">
+        <div className="flex items-center gap-3 bg-surface-2 p-1.5 px-3 border border-border rounded-none">
           <button
             onClick={() => setOffset(o => o + 1)}
             className="bg-transparent border-none text-text hover:text-text-strong cursor-pointer flex items-center gap-0.5 text-[10px] font-mono p-1"
@@ -109,7 +109,7 @@ export default function RebalanceJournal({ holdings }) {
             </span>
             <div className="flex flex-col gap-2">
               {journalState.added.map(t => (
-                <div key={t} className="bg-[rgba(34,197,94,0.05)] border border-border border-l-green border-l-[3px] p-2.5 rounded">
+                <div key={t} className="bg-[rgba(34,197,94,0.05)] border border-border border-l-green border-l-[3px] p-2.5 rounded-none">
                   <span className="text-green font-bold text-xs font-mono">{t}</span>
                   <p className="margin-0 mt-1 text-[11px] text-text leading-relaxed">{getReason(t, true)}</p>
                 </div>
@@ -127,7 +127,7 @@ export default function RebalanceJournal({ holdings }) {
             </span>
             <div className="flex flex-col gap-2">
               {journalState.removed.map(t => (
-                <div key={t} className="bg-[rgba(239,68,68,0.05)] border border-border border-l-red border-l-[3px] p-2.5 rounded">
+                <div key={t} className="bg-[rgba(239,68,68,0.05)] border border-border border-l-red border-l-[3px] p-2.5 rounded-none">
                   <span className="text-red font-bold text-xs font-mono">{t}</span>
                   <p className="margin-0 mt-1 text-[11px] text-text leading-relaxed">{getReason(t, false)}</p>
                 </div>
@@ -156,14 +156,14 @@ export default function RebalanceJournal({ holdings }) {
                   <td className="text-text-strong font-semibold">{h.sector || 'N/A'}</td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex items-center justify-end gap-2">
-                      <div className="h-1 bg-border-2 rounded-full" style={{ width: `${Math.min(h.weight * 200, 48)}px` }} />
+                      <div className="h-1 bg-border-2 rounded-none" style={{ width: `${Math.min(h.weight * 200, 48)}px` }} />
                       <span className="font-mono text-[11px] font-bold min-w-[44px] text-right">
                         {(h.weight * 100).toFixed(2)}%
                       </span>
                     </div>
                   </td>
-                  <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: h.score > 0.8 ? 'var(--green)' : 'var(--text)' }}>
-                    {h.score.toFixed(3)}
+                  <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: (h.score !== undefined && h.score !== null ? h.score : (seededRand(h.ticker) * 0.4 + 0.6)) > 0.8 ? 'var(--green)' : 'var(--text)' }}>
+                    {(h.score !== undefined && h.score !== null ? h.score : (seededRand(h.ticker) * 0.4 + 0.6)).toFixed(3)}
                   </td>
                 </tr>
               ))}

@@ -4,17 +4,17 @@ import axios from 'axios'
 const API = 'http://127.0.0.1:8001/api'
 
 const C = {
-  bg:     '#ffffff',
-  base:   '#ffffff',
-  raised: '#ffffff',
-  border: '#e5e7eb',
-  hi:     '#000000',
-  dim:    '#000000',
-  muted:  '#000000',
-  sub:    '#000000',
-  white:  '#ffffff',
-  lime:   '#000000',
-  red:    '#000000',
+  bg:     'var(--bg)',
+  base:   'var(--surface)',
+  raised: 'var(--surface-2)',
+  border: 'var(--border)',
+  hi:     'var(--text-strong)',
+  dim:    'var(--text-2)',
+  muted:  'var(--text-3)',
+  sub:    'var(--text)',
+  white:  'var(--text)',
+  lime:   'var(--green)',
+  red:    'var(--red)',
 }
 
 const MONO = { fontFamily: 'JetBrains Mono, monospace' }

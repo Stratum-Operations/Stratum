@@ -37,7 +37,7 @@ export default function StockContextPanel({ ticker }) {
     <div className="stock-context-panel flex flex-col gap-5">
       
       {data.isUpcoming && (
-        <div className="bg-[rgba(255,171,0,0.1)] border border-[rgba(255,171,0,0.15)] p-3 rounded-[var(--radius-sm)] flex gap-2.5">
+        <div className="bg-[rgba(255,171,0,0.1)] border border-[rgba(255,171,0,0.15)] p-3 rounded-none flex gap-2.5">
            <AlertTriangle size={16} color="#ffab00" className="mt-0.5 flex-shrink-0" />
            <div>
               <span className="text-[#ffab00] font-bold text-[11px] tracking-wider">MACRO EVENT ALERT</span>
@@ -49,7 +49,7 @@ export default function StockContextPanel({ ticker }) {
       )}
 
       {/* Corporate Events Card */}
-      <div className="bg-surface-2 border border-border p-4 rounded-[var(--radius-sm)]">
+      <div className="bg-surface-2 border border-border p-4 rounded-none">
          <span className="text-[11px] text-text-2 font-semibold flex items-center gap-2 tracking-wider uppercase">
            <Calendar size={14} className="text-text-3" /> Corporate Events
          </span>
@@ -74,7 +74,7 @@ export default function StockContextPanel({ ticker }) {
       </div>
 
       {/* Intelligence Feed Card */}
-      <div className="bg-surface-2 border border-border p-4 rounded-[var(--radius-sm)]">
+      <div className="bg-surface-2 border border-border p-4 rounded-none">
          <span className="text-[11px] text-text-2 font-semibold flex items-center gap-2 tracking-wider uppercase">
            <Newspaper size={14} className="text-text-3" /> Intelligence Feed
          </span>

@@ -229,7 +229,7 @@ export default function AlphaScreener({ globalDate }) {
             {date} · {total} ASSETS
           </span>
 
-          <div className="flex border border-border-2 rounded overflow-hidden ml-2.5">
+          <div className="flex border border-border-2 rounded-none overflow-hidden ml-2.5">
             <button onClick={() => setActiveTab('TABLE')} style={tabBtnStyle(activeTab === 'TABLE')}>SCREENER TABLE</button>
             <button onClick={() => setActiveTab('HEATMAP')} style={tabBtnStyle(activeTab === 'HEATMAP')}>CORRELATION MATRIX</button>
           </div>
@@ -488,20 +488,20 @@ function CorrelationHeatmap({ top15Rows }) {
   const isWarning = avgCorrelation > 0.60 || highCorrPairs.length > 3
 
   return (
-    <div className="p-5 bg-surface rounded-xl border border-border flex flex-col gap-5 font-sans">
+    <div className="p-5 bg-surface rounded-none border border-border-2 flex flex-col gap-5 font-sans">
       <div className="flex justify-between items-center gap-4 flex-wrap">
         <div>
           <h3 className="margin-0 text-sm font-extrabold text-text-strong tracking-wide">Portfolio Correlation Heatmap</h3>
           <span className="text-[10px] text-text-2">Visual covariance matrix analyzing overlapping exposure risks among top {top15Rows.length} assets</span>
         </div>
-        <div className="bg-surface-2 border border-border-2 p-1.5 px-3 rounded text-right">
+        <div className="bg-surface-2 border border-border-2 p-1.5 px-3 rounded-none text-right">
           <span className="block text-[8px] text-text-2 uppercase tracking-widest font-mono">Avg Correlation</span>
           <span className="text-sm font-black text-green font-mono" style={{ color: isWarning ? 'var(--red)' : 'var(--green)' }}>{avgCorrelation.toFixed(2)}</span>
         </div>
       </div>
 
       {isWarning ? (
-        <div className="bg-red-dim border border-[rgba(239,68,68,0.2)] rounded-lg p-3 px-4 flex flex-col gap-1">
+        <div className="bg-red/10 border border-red/20 rounded-none p-3 px-4 flex flex-col gap-1">
           <span className="text-[10px] font-extrabold text-red tracking-wider font-mono">⚠️ HIGH CONCENTRATION RISK DETECTED</span>
           <span className="text-[10px] text-text leading-relaxed font-mono">
             Your top positions are highly correlated (Average: {avgCorrelation.toFixed(2)}).
@@ -509,7 +509,7 @@ function CorrelationHeatmap({ top15Rows }) {
           </span>
         </div>
       ) : (
-        <div className="bg-green-dim border border-[rgba(34,197,94,0.2)] rounded-lg p-3 px-4 font-mono">
+        <div className="bg-green/10 border border-green/20 rounded-none p-3 px-4 font-mono">
           <span className="text-[10px] font-extrabold text-green tracking-wider">✓ HEALTHY RISK DIVERSIFICATION</span>
           <span className="block text-[10px] text-text mt-1 leading-relaxed">
             Holdings show low-to-moderate covariance (Average: {avgCorrelation.toFixed(2)}). Low overlapping volatility suggests clean sector diversification.
@@ -519,7 +519,7 @@ function CorrelationHeatmap({ top15Rows }) {
 
       <div className="flex gap-6 flex-wrap">
         {/* The Matrix */}
-        <div className="overflow-x-auto flex-grow p-1 bg-bg rounded-lg border border-border">
+        <div className="overflow-x-auto flex-grow p-1 bg-bg rounded-none border border-border-2">
           <div className="grid gap-0.5 p-1.5" style={{ gridTemplateColumns: `repeat(${top15Rows.length + 1}, minmax(32px, 1fr))` }}>
             <div className="w-8 h-8" />
             {top15Rows.map((row, c) => {
@@ -561,7 +561,7 @@ function CorrelationHeatmap({ top15Rows }) {
                           background: bg, 
                           border: directHover ? '1px solid var(--text-strong)' : cellActive ? '1px solid var(--border-3)' : '1px solid transparent'
                         }}
-                        className="h-8 rounded-sm flex items-center justify-center text-[8px] font-extrabold font-mono cursor-crosshair transition-all duration-150"
+                        className="h-8 rounded-none flex items-center justify-center text-[8px] font-extrabold font-mono cursor-crosshair transition-all duration-150"
                         title={`${rowA.ticker} vs ${rowB.ticker}: ${corr > 0 ? '+' : ''}${corr.toFixed(2)}`}
                       >
                         {isDiag ? '1.0' : (corr > 0 ? '+' : '') + corr.toFixed(2)}
@@ -575,7 +575,7 @@ function CorrelationHeatmap({ top15Rows }) {
         </div>
 
         {/* Legend Panel */}
-        <div className="min-w-[220px] flex-[0_0_240px] flex flex-col gap-4 bg-surface-2 border border-border-2 rounded-lg p-4 font-mono">
+        <div className="min-w-[220px] flex-[0_0_240px] flex flex-col gap-4 bg-surface-2 border border-border-2 rounded-none p-4 font-mono">
           <span className="text-[9px] font-extrabold text-text-strong tracking-wider uppercase font-mono">Risk Gradient</span>
 
           <div className="flex flex-col gap-2.5">
@@ -586,7 +586,7 @@ function CorrelationHeatmap({ top15Rows }) {
               { bg: 'rgba(239, 68, 68, 0.4)', label: 'Negative (< -0.1)' },
             ].map(({ bg, label }) => (
               <div key={label} className="flex items-center gap-2.5">
-                <div style={{ backgroundColor: bg }} className="w-3.5 h-3.5 rounded-sm flex-shrink-0" />
+                <div style={{ backgroundColor: bg }} className="w-3.5 h-3.5 rounded-none flex-shrink-0" />
                 <span className="text-[10px] text-text-2">{label}</span>
               </div>
             ))}

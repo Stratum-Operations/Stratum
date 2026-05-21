@@ -42,12 +42,13 @@ export default function LivePortfolioTracker({ holdings, perf }) {
   const liveData = useMemo(() => {
     if (!holdings) return []
     return holdings.map(h => {
+      const score        = h.score !== undefined && h.score !== null ? Number(h.score) : (seededRandom(h.ticker, 'score-fallback') * 0.4 + 0.6)
       const rand         = seededRandom(h.ticker, 'live-prices')
       const entryPrice   = rand * 200 + 40
       const currentPrice = entryPrice * (1 + (Math.random() * 0.12 - 0.04))
-      const currentScore = h.score - (seededRandom(h.ticker, 'drift') * 0.15)
-      const drift        = ((h.score - currentScore) / h.score) * 100
-      return { ...h, entryPrice, currentPrice, currentScore, drift }
+      const currentScore = score - (seededRandom(h.ticker, 'drift') * 0.15)
+      const drift        = ((score - currentScore) / score) * 100
+      return { ...h, score, entryPrice, currentPrice, currentScore, drift }
     })
   }, [holdings])
 
@@ -61,7 +62,7 @@ export default function LivePortfolioTracker({ holdings, perf }) {
   }, [perf])
 
   return (
-    <div className="bg-bg flex flex-col gap-0 border border-border rounded-lg overflow-hidden">
+    <div className="bg-bg flex flex-col gap-0 border border-border rounded-none overflow-hidden">
       {/* Header */}
       <div className="chart-header">
         <div className="flex items-center gap-2.5">

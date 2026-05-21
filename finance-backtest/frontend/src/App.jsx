@@ -37,12 +37,8 @@ const NAV = [
     items: [
       { id: 'portfolio',  label: 'Evaluate Holdings', icon: Briefcase       },
       { id: 'dashboard',  label: 'Dashboard',         icon: LayoutDashboard },
-<<<<<<< Updated upstream
-      { id: 'analytics',  label: 'Advanced Analytics',icon: BarChart2       },
-=======
       { id: 'analytics',  label: 'Analytics',         icon: BarChart2       },
       { id: 'copilot',    label: 'AI Copilot',        icon: Sparkles        },
->>>>>>> Stashed changes
       { id: 'audit',      label: 'Evaluator Audit',   icon: ClipboardCheck  },
       { id: 'reporting',  label: 'Reporting',         icon: FileText        },
     ],
@@ -312,16 +308,12 @@ export default function App() {
             )
           })}
 
-<<<<<<< Updated upstream
-
-=======
           {/* Sidebar footer */}
           <div className="sidebar-bottom flex justify-between items-center p-[16px_20px]">
             <span className="text-[10px] text-text-3 font-mono tracking-wider font-semibold">
               PHINEUS OS V1.2.0
             </span>
           </div>
->>>>>>> Stashed changes
         </aside>
 
         {/* ── Main Content ─────────────────────────────────────── */}
@@ -357,8 +349,7 @@ export default function App() {
               <DashboardView perf={data.perf} holdings={data.holdings} expectancy={expPct} maxConsecutiveDdDays={maxConsecutiveDdDays} strat={strat} spy={spy} />
             )}
             {view === 'analytics' && (
-<<<<<<< Updated upstream
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              <div className="flex flex-col gap-0">
                 <PortfolioAnalytics
                   perf={data.perf}
                   holdings={data.holdings}
@@ -367,10 +358,6 @@ export default function App() {
                   expectancy={expPct}
                   maxConsecutiveDdDays={maxConsecutiveDdDays}
                 />
-=======
-              <div className="flex flex-col gap-0">
-                <PortfolioAnalytics perf={data.perf} holdings={data.holdings} />
->>>>>>> Stashed changes
                 <BenchmarkSuite     perf={data.perf} holdings={data.holdings} />
               </div>
             )}
@@ -517,83 +504,115 @@ function StrategicDiagnostics({ strat, spy, holdings, expectancy, maxConsecutive
   }
 
   return (
-<<<<<<< Updated upstream
-    <div className="side-card diagnostics-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <h3 style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 800, color: 'var(--text-strong)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+    <div className="side-card diagnostics-panel p-5 flex flex-col gap-4 border border-border-2 rounded-none bg-surface">
+      <h3 className="m-0 text-[14px] font-black text-text-strong uppercase tracking-wider">
         Strategic Diagnostics & Insights
       </h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {insights.map((ins, i) => {
           const typeColors = {
-            success: { bg: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.15)', text: 'var(--green)', dotBg: 'var(--green)' },
-            warning: { bg: 'rgba(239, 68, 68, 0.06)', border: '1px solid rgba(239, 68, 68, 0.15)', text: 'var(--red)', dotBg: 'var(--red)' },
-            caution: { bg: 'rgba(245, 158, 11, 0.06)', border: '1px solid rgba(245, 158, 11, 0.15)', text: 'var(--amber)', dotBg: 'var(--amber)' },
-            info: { bg: 'rgba(59, 130, 246, 0.06)', border: '1px solid rgba(59, 130, 246, 0.15)', text: 'var(--blue)', dotBg: 'var(--blue)' }
+            success: 'bg-green/5 border-green/20 text-green',
+            warning: 'bg-red/5 border-red/20 text-red',
+            caution: 'bg-amber/5 border-amber/20 text-amber',
+            info: 'bg-blue/5 border-blue/20 text-blue'
           }
-          const theme = typeColors[ins.type] || typeColors.info
+          const themeClass = typeColors[ins.type] || typeColors.info
 
           return (
-            <div key={i} style={{
-              background: theme.bg,
-              border: theme.border,
-              borderRadius: '8px',
-              padding: '12px 14px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: theme.text, fontSize: '12px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: theme.dotBg }} />
+            <div key={i} className={`border p-3.5 flex flex-col gap-1 rounded-none ${themeClass}`}>
+              <div className="flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wide">
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: 'currentColor' }} />
                 {ins.title}
               </div>
-              <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-2)', lineHeight: '1.45' }}>
+              <p className="m-0 text-[11px] text-text-2 leading-relaxed font-sans">
                 {ins.text}
               </p>
             </div>
           )
         })}
-=======
-    <div className="header-grid">
-      <div className="metric-card cursor-help" title="Compound Annual Growth Rate: The simulated geometric mean rate of return that the strategy generates per year. Benchmark comparison displays outperformance relative to SPY.">
-        <span className="metric-label">CAGR <span className="opacity-50 text-[9px]">ⓘ</span></span>
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="metric-value">{strat?.CAGR ?? '—'}</span>
+      </div>
+    </div>
+  )
+}
+
+/* ── Delta Helper ────────────────────────────────────────────────── */
+function Delta({ v, invert = false, suffix = '%' }) {
+  if (v === null || v === undefined || isNaN(v)) return <span className="font-mono text-text-3">—</span>
+  const val = parseFloat(v)
+  const isPositive = invert ? val <= 0 : val >= 0
+  const sign = val > 0 ? '▲ +' : val < 0 ? '▼ ' : ''
+  const color = val === 0 ? 'text-text-3' : isPositive ? 'text-green' : 'text-red'
+  
+  return (
+    <span className={`font-mono font-bold ${color}`}>
+      {sign}{val.toFixed(2)}{suffix}
+    </span>
+  )
+}
+
+/* ── Header Grid ─────────────────────────────────────────────────── */
+function HeaderGrid({ strat, spy }) {
+  const stratCagr = parseFloat(strat?.CAGR) || 0
+  const spyCagr = parseFloat(spy?.CAGR) || 0
+  const cagrDelta = stratCagr - spyCagr
+
+  const stratDd = parseFloat(strat?.['Max Drawdown'] || strat?.Max_Drawdown) || 0
+  const spyDd = parseFloat(spy?.['Max Drawdown'] || spy?.Max_Drawdown) || 0
+  const ddDelta = Math.abs(stratDd) - Math.abs(spyDd)
+
+  const stratSharpe = parseFloat(strat?.Sharpe) || 0
+  const spySharpe = parseFloat(spy?.Sharpe) || 0
+  const sharpeDelta = stratSharpe - spySharpe
+
+  const stratSortino = parseFloat(strat?.Sortino) || 0
+  const spySortino = parseFloat(spy?.Sortino) || 0
+  const sortinoDelta = stratSortino - spySortino
+
+  const stratPf = parseFloat(strat?.profit_factor || strat?.['Profit Factor']) || 0
+  const spyPf = parseFloat(spy?.profit_factor || spy?.['Profit Factor']) || 0
+  const pfDelta = stratPf - spyPf
+
+  return (
+    <div className="header-grid flex flex-wrap gap-4 mb-4">
+      <div className="metric-card flex-1 min-w-[160px] bg-surface p-4 border border-border-2 rounded-none cursor-help" title="Compound Annual Growth Rate: The simulated geometric mean rate of return that the strategy generates per year. Benchmark comparison displays outperformance relative to SPY.">
+        <span className="metric-label text-[10px] text-text-3 font-mono font-semibold block uppercase tracking-wider mb-1">CAGR <span className="opacity-50 text-[9px]">ⓘ</span></span>
+        <div className="flex items-baseline gap-2 flex-wrap mb-1">
+          <span className="metric-value text-2xl font-black text-text-strong font-mono">{strat?.CAGR ?? '—'}</span>
           <span className="text-[11px] text-text-strong font-mono font-semibold">vs SPY: {spy?.CAGR ?? '—'}</span>
         </div>
-        <div className="metric-benchmark">Delta: <Delta v={cagrDelta} /></div>
+        <div className="metric-benchmark text-[11px] font-mono text-text-3">Delta: <Delta v={cagrDelta} /></div>
       </div>
-      <div className="metric-card cursor-help" title="Max Drawdown: The peak-to-trough maximum drop in portfolio value. Benchmark comparison displays risk reduction relative to SPY.">
-        <span className="metric-label">Max Drawdown <span className="opacity-50 text-[9px]">ⓘ</span></span>
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="metric-value">{strat?.['Max Drawdown'] ?? '—'}</span>
+      <div className="metric-card flex-1 min-w-[160px] bg-surface p-4 border border-border-2 rounded-none cursor-help" title="Max Drawdown: The peak-to-trough maximum drop in portfolio value. Benchmark comparison displays risk reduction relative to SPY.">
+        <span className="metric-label text-[10px] text-text-3 font-mono font-semibold block uppercase tracking-wider mb-1">Max Drawdown <span className="opacity-50 text-[9px]">ⓘ</span></span>
+        <div className="flex items-baseline gap-2 flex-wrap mb-1">
+          <span className="metric-value text-2xl font-black text-text-strong font-mono">{strat?.['Max Drawdown'] ?? '—'}</span>
           <span className="text-[11px] text-text-strong font-mono font-semibold">vs SPY: {spy?.['Max Drawdown'] ?? '—'}</span>
         </div>
-        <div className="metric-benchmark">Delta: <Delta v={ddDelta} invert /></div>
+        <div className="metric-benchmark text-[11px] font-mono text-text-3">Delta: <Delta v={ddDelta} invert /></div>
       </div>
-      <div className="metric-card cursor-help" title="Sharpe Ratio: Risk-adjusted return measure (excess return over risk-free rate per unit of volatility). Benchmark comparison displays improvement over SPY.">
-        <span className="metric-label">Sharpe Ratio <span className="opacity-50 text-[9px]">ⓘ</span></span>
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="metric-value">{strat?.Sharpe ?? '—'}</span>
+      <div className="metric-card flex-1 min-w-[160px] bg-surface p-4 border border-border-2 rounded-none cursor-help" title="Sharpe Ratio: Risk-adjusted return measure (excess return over risk-free rate per unit of volatility). Benchmark comparison displays improvement over SPY.">
+        <span className="metric-label text-[10px] text-text-3 font-mono font-semibold block uppercase tracking-wider mb-1">Sharpe Ratio <span className="opacity-50 text-[9px]">ⓘ</span></span>
+        <div className="flex items-baseline gap-2 flex-wrap mb-1">
+          <span className="metric-value text-2xl font-black text-text-strong font-mono">{strat?.Sharpe ?? '—'}</span>
           <span className="text-[11px] text-text-strong font-mono font-semibold">vs SPY: {spy?.Sharpe ?? '—'}</span>
         </div>
-        <div className="metric-benchmark">Delta: <Delta v={sharpeDelta} suffix="x" /></div>
+        <div className="metric-benchmark text-[11px] font-mono text-text-3">Delta: <Delta v={sharpeDelta} suffix="x" /></div>
       </div>
-      <div className="metric-card cursor-help" title="Sortino Ratio: Risk-adjusted return measure focusing only on downside volatility. Benchmark comparison displays outperformance relative to SPY.">
-        <span className="metric-label">Sortino Ratio <span className="opacity-50 text-[9px]">ⓘ</span></span>
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="metric-value">{strat?.Sortino ?? '—'}</span>
+      <div className="metric-card flex-1 min-w-[160px] bg-surface p-4 border border-border-2 rounded-none cursor-help" title="Sortino Ratio: Risk-adjusted return measure focusing only on downside volatility. Benchmark comparison displays outperformance relative to SPY.">
+        <span className="metric-label text-[10px] text-text-3 font-mono font-semibold block uppercase tracking-wider mb-1">Sortino Ratio <span className="opacity-50 text-[9px]">ⓘ</span></span>
+        <div className="flex items-baseline gap-2 flex-wrap mb-1">
+          <span className="metric-value text-2xl font-black text-text-strong font-mono">{strat?.Sortino ?? '—'}</span>
           <span className="text-[11px] text-text-strong font-mono font-semibold">vs SPY: {spy?.Sortino ?? '—'}</span>
         </div>
-        <div className="metric-benchmark">Delta: <Delta v={sortinoDelta} suffix="x" /></div>
+        <div className="metric-benchmark text-[11px] font-mono text-text-3">Delta: <Delta v={sortinoDelta} suffix="x" /></div>
       </div>
-      <div className="metric-card cursor-help" title="Profit Factor: The ratio of gross profits to gross losses. A value greater than 1.0 indicates a profitable strategy.">
-        <span className="metric-label">Profit Factor <span className="opacity-50 text-[9px]">ⓘ</span></span>
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="metric-value">{strat?.profit_factor || strat?.['Profit Factor'] || '—'}</span>
+      <div className="metric-card flex-1 min-w-[160px] bg-surface p-4 border border-border-2 rounded-none cursor-help" title="Profit Factor: The ratio of gross profits to gross losses. A value greater than 1.0 indicates a profitable strategy.">
+        <span className="metric-label text-[10px] text-text-3 font-mono font-semibold block uppercase tracking-wider mb-1">Profit Factor <span className="opacity-50 text-[9px]">ⓘ</span></span>
+        <div className="flex items-baseline gap-2 flex-wrap mb-1">
+          <span className="metric-value text-2xl font-black text-text-strong font-mono">{strat?.profit_factor || strat?.['Profit Factor'] || '—'}</span>
           <span className="text-[11px] text-text-strong font-mono font-semibold">vs SPY: {spy?.profit_factor || spy?.['Profit Factor'] || '—'}</span>
         </div>
-        <div className="metric-benchmark">Delta: <Delta v={pfDelta} suffix="x" /></div>
->>>>>>> Stashed changes
+        <div className="metric-benchmark text-[11px] font-mono text-text-3">Delta: <Delta v={pfDelta} suffix="x" /></div>
       </div>
     </div>
   )
@@ -607,6 +626,7 @@ function DashboardView({ perf, holdings, expectancy, maxConsecutiveDdDays, strat
   return (
     <div className="dashboard-view">
       <LivePortfolio strat={strat} spy={spy} />
+      <HeaderGrid strat={strat} spy={spy} />
       <div className="dashboard-layout">
         {/* Left: Chart + Sector + Strategic Insights */}
         <div className="dashboard-main-column">

@@ -2,7 +2,7 @@ import { cn } from '../../lib/utils'
 import { cva } from 'class-variance-authority'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center rounded-lg text-[12px] font-bold transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 border',
+  'inline-flex items-center justify-center rounded-none text-[12px] font-bold transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 border',
   {
     variants: {
       variant: {

@@ -21,9 +21,10 @@ export default function StockDetail({ holding }) {
 
   const mockData = useMemo(() => {
     const rand = seededRandom(holding.ticker)
+    const scoreVal = holding.score !== undefined && holding.score !== null ? Number(holding.score) : (seededRandom(holding.ticker) * 0.4 + 0.6)
     
     const history = []
-    let currentScore = holding.score * 100
+    let currentScore = scoreVal * 100
     for(let i=12; i>=0; i--) {
        currentScore = currentScore - (rand * 10 - 4)
        history.push({ 
@@ -63,11 +64,11 @@ export default function StockDetail({ holding }) {
               {holding.ticker} 
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 400, marginTop: '4px' }}>{holding.sector}</span>
               {mockData.wasHeld ? (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', background: 'rgba(0,255,136,0.1)', color: 'var(--accent-green)', padding: '4px 8px', borderRadius: '12px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', background: 'rgba(0,255,136,0.1)', color: 'var(--accent-green)', padding: '4px 8px', borderRadius: '0px' }}>
                   <CheckCircle size={12}/> Retained (Prior Rebalance)
                 </span>
               ) : (
-               <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', background: 'rgba(255,51,102,0.1)', color: 'var(--accent-red)', padding: '4px 8px', borderRadius: '12px' }}>
+               <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', background: 'rgba(255,51,102,0.1)', color: 'var(--accent-red)', padding: '4px 8px', borderRadius: '0px' }}>
                  <AlertTriangle size={12}/> New Addition
                </span>
               )}
@@ -75,7 +76,7 @@ export default function StockDetail({ holding }) {
              <div style={{ display: 'flex', gap: '16px', marginTop: '12px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                <span>Mkt Cap: <strong style={{color: '#fff'}}>${mockData.marketCap}</strong></span>
                <span>Valuation Snapshot: <strong style={{color: '#fff'}}>{mockData.pE} P/E</strong></span>
-               <span>Percentile Scoring: <strong style={{color: 'var(--accent-cyan)'}}>{holding.score.toFixed(2)}</strong></span>
+               <span>Percentile Scoring: <strong style={{color: 'var(--accent-cyan)'}}>{(holding.score !== undefined && holding.score !== null ? Number(holding.score) : (seededRandom(holding.ticker) * 0.4 + 0.6)).toFixed(2)}</strong></span>
              </div>
           </div>
           <div style={{ width: '180px', height: '60px' }}>
@@ -89,7 +90,7 @@ export default function StockDetail({ holding }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 1.2fr) 2fr', gap: '24px' }}>
-          <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)', padding: '16px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '0px', padding: '16px', display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Multi-Factor Footprint</span>
             <div style={{ flex: 1, minHeight: '220px' }}>
                <ResponsiveContainer>
@@ -97,24 +98,24 @@ export default function StockDetail({ holding }) {
                     <PolarGrid stroke="rgba(255,255,255,0.05)" />
                     <PolarAngleAxis dataKey="subject" tick={{fill: '#8a9fc2', fontSize: 10}} />
                     <Radar name={holding.ticker} dataKey="A" stroke="var(--accent-cyan)" fill="var(--accent-cyan)" fillOpacity={0.3} />
-                    <Tooltip contentStyle={{background: 'var(--bg-dark)', borderColor: 'var(--glass-border)', fontSize: '0.8rem'}} />
+                    <Tooltip contentStyle={{background: 'var(--bg-dark)', borderColor: 'var(--glass-border)', fontSize: '0.8rem', borderRadius: '0px'}} />
                   </RadarChart>
                </ResponsiveContainer>
             </div>
           </div>
 
-          <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)', padding: '16px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '0px', padding: '16px', display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '16px' }}>Composite Score Tracking (Trailing 12M)</span>
             <div style={{ flex: 1, minHeight: '220px' }}>
-              <ResponsiveContainer>
-                <LineChart data={mockData.history}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="month" stroke="#8a9fc2" tick={{fontSize: 10}} />
-                  <YAxis stroke="#8a9fc2" tick={{fontSize: 10}} domain={[0, 100]} />
-                  <Tooltip contentStyle={{background: 'var(--bg-dark)', borderColor: 'var(--glass-border)'}} labelStyle={{color: '#8a9fc2'}} />
-                  <Line type="monotone" dataKey="score" stroke="var(--accent-purple)" strokeWidth={2} dot={{fill: 'var(--accent-purple)', r: 3, strokeWidth: 0}} />
-                </LineChart>
-              </ResponsiveContainer>
+               <ResponsiveContainer>
+                 <LineChart data={mockData.history}>
+                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                   <XAxis dataKey="month" stroke="#8a9fc2" tick={{fontSize: 10}} />
+                   <YAxis stroke="#8a9fc2" tick={{fontSize: 10}} domain={[0, 100]} />
+                   <Tooltip contentStyle={{background: 'var(--bg-dark)', borderColor: 'var(--glass-border)', borderRadius: '0px'}} labelStyle={{color: '#8a9fc2'}} />
+                   <Line type="monotone" dataKey="score" stroke="var(--accent-purple)" strokeWidth={2} dot={{fill: 'var(--accent-purple)', r: 3, strokeWidth: 0}} />
+                 </LineChart>
+               </ResponsiveContainer>
             </div>
           </div>
         </div>

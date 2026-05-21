@@ -140,7 +140,7 @@ export default function EvaluatorAudit() {
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          borderRadius: '8px',
+          borderRadius: '0px',
         }}>
           <CircleDot size={13} className="animate-pulse" style={{ color: 'var(--blue)' }} />
           <span>SANDBOX MODE — Running local evaluator audit simulation.</span>
@@ -178,7 +178,7 @@ export default function EvaluatorAudit() {
         </CardHeader>
         <CardContent>
           <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="audit-tabs flex gap-2 p-1.5 bg-surface-2 border border-border rounded-xl w-full md:w-auto mb-6">
+            <TabsList className="audit-tabs flex gap-2 p-1.5 bg-surface-2 border border-border rounded-none w-full md:w-auto mb-6">
               {[
                 ['gaps', 'Gaps'],
                 ['procedures', 'Procedures'],
@@ -190,7 +190,7 @@ export default function EvaluatorAudit() {
                   value={value} 
                   currentValue={tab} 
                   onValueChange={setTab}
-                  className="flex-1 md:flex-initial px-6 py-2.5 min-h-10 text-[11px] font-extrabold uppercase tracking-wider transition-all duration-150 rounded-lg"
+                  className="flex-1 md:flex-initial px-6 py-2.5 min-h-10 text-[11px] font-extrabold uppercase tracking-wider transition-all duration-150 rounded-none"
                 >
                   {label}
                 </TabsTrigger>

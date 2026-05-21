@@ -6,19 +6,19 @@ import { mockAlpacaPositions, mockHoldings } from '../data/mockFallbackData'
 const API = 'http://127.0.0.1:8001/api'
 
 const C = {
-  bg:       '#070707',
-  base:     '#0e0e0e',
-  raised:   '#141414',
-  border:   '#1c1c1c',
-  borderHi: '#2e2e2e',
-  text:     '#d0d0d0',
-  dim:      '#d0d0d0',
-  muted:    '#888888',
-  sub:      '#aaaaaa',
-  white:    '#e0e0e0',
-  lime:     '#22c55e',
-  red:      '#ef4444',
-  green:    '#22c55e',
+  bg:       'var(--bg)',
+  base:     'var(--surface)',
+  raised:   'var(--surface-2)',
+  border:   'var(--border)',
+  borderHi: 'var(--border-2)',
+  text:     'var(--text)',
+  dim:      'var(--text-2)',
+  muted:    'var(--text-3)',
+  sub:      'var(--text-2)',
+  white:    'var(--text-strong)',
+  lime:     'var(--green)',
+  red:      'var(--red)',
+  green:    'var(--green)',
 }
 
 function buildDiff(targetWeights, alpacaPositions, aum) {

@@ -210,7 +210,7 @@ function parsePortfolioImport(text) {
 }
 
 /* ── Focusable input cell ───────────────────────────────────────── */
-function EditCell({ value, onChange, onKeyDown, placeholder, type = 'text', bold, align = 'left' }) {
+function EditCell({ value, onChange, onKeyDown, placeholder, type = 'text', bold, align = 'left', mono = true }) {
   const [focused, setFocused] = useState(false)
   return (
     <input
@@ -221,11 +221,6 @@ function EditCell({ value, onChange, onKeyDown, placeholder, type = 'text', bold
       placeholder={placeholder}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
-<<<<<<< Updated upstream
-      className={`bg-transparent border-none border-b text-xs py-1 px-1.5 w-full outline-none min-w-0 font-mono transition-all duration-150 placeholder:text-text-3/60 placeholder:font-normal placeholder:opacity-100 ${
-        focused ? 'border-border-3 text-text-strong' : 'border-transparent text-text'
-      } ${bold ? 'font-bold' : 'font-normal'} text-${align}`}
-=======
       className={`bg-transparent border-none text-[12px] p-[2px_4px] w-full outline-none min-w-0 border-b transition-colors duration-150 ${
         focused ? 'border-border-3' : 'border-transparent'
       } ${
@@ -234,37 +229,21 @@ function EditCell({ value, onChange, onKeyDown, placeholder, type = 'text', bold
         mono ? 'font-mono' : 'font-sans'
       }`}
       style={{ textAlign: align }}
->>>>>>> Stashed changes
     />
   )
 }
 
-<<<<<<< Updated upstream
-/* ── Generic toolbar button ─────────────────────────────────────── */
-function TBtn({ onClick, disabled, primary, children }) {
-=======
 /* ── Toolbar button ─────────────────────────────────────────────── */
 function TBtn({ onClick, disabled, primary, children, className = '' }) {
->>>>>>> Stashed changes
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-<<<<<<< Updated upstream
-      className={`px-4 py-1.5 text-[9px] font-mono tracking-wider uppercase whitespace-nowrap transition-colors duration-150 ${
-        disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
-      } ${
-        primary
-          ? (disabled ? 'bg-surface-2 text-text-2 border border-border' : 'bg-text-strong text-bg font-extrabold hover:opacity-90')
-          : 'bg-transparent border border-border-2 text-text-2 hover:text-text hover:border-border-3'
-      }`}
-=======
       className={`px-4 py-1.5 text-[9px] font-mono tracking-widest uppercase cursor-pointer border whitespace-nowrap font-bold transition-colors duration-150 rounded-none ${
         primary 
           ? 'bg-white text-bg border-transparent hover:bg-text disabled:bg-surface-2 disabled:text-text-2 disabled:cursor-not-allowed' 
           : 'bg-transparent border-border-2 text-text-2 hover:bg-surface-2 hover:text-white'
       } ${className}`}
->>>>>>> Stashed changes
     >
       {children}
     </button>
@@ -274,134 +253,22 @@ function TBtn({ onClick, disabled, primary, children, className = '' }) {
 /* ── Card wrapper for file drop / paste panels ─────────────────── */
 function ImportCard({ active, icon: Icon, title, children }) {
   return (
-<<<<<<< Updated upstream
-    <div className={`rounded-xl p-4 min-w-0 border transition-all duration-150 ${
-      active ? 'bg-surface border-border-2 shadow-sm' : 'bg-surface-2 border-border'
-    }`}>
-      <div className="flex items-center gap-2 mb-3">
-        <Icon size={18} className="text-teal" />
-        <strong className="font-sans text-sm text-text-strong tracking-wide">{title}</strong>
-=======
     <div className={`p-4 min-w-0 border rounded-none ${
       active ? 'bg-surface border-border-2' : 'bg-surface-2 border-border'
     }`}>
       <div className="flex items-center gap-2.5 mb-3">
         <Icon size={18} className="text-teal" />
         <strong className="font-sans text-[15px] text-text-strong">{title}</strong>
->>>>>>> Stashed changes
       </div>
       {children}
     </div>
   )
 }
 
-<<<<<<< Updated upstream
-/* ── Preview table for incoming imports ─────────────────────────── */
-function ImportPreview({ rows, rejected, onImport, loading }) {
-  const canImport = rows.length > 0 && !loading
-
-  return (
-    <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-sm flex flex-col">
-      <div className="flex items-center justify-between gap-3 p-3.5 px-4 border-b border-border bg-bg">
-        <div className="flex items-center gap-2">
-          <strong className="font-sans text-xs font-bold text-text-strong uppercase tracking-wider">Preview</strong>
-          {!canImport && (
-            <span className="px-1.5 py-0.5 text-[8px] font-extrabold font-sans uppercase tracking-wider bg-[rgba(245,158,11,0.08)] text-amber rounded border border-amber/10">
-              Awaiting Data
-            </span>
-          )}
-        </div>
-        <div 
-          title={!canImport ? "No holdings parsed yet. Drag & drop a CSV file, or paste text in the 'Paste holdings' field on the left to preview and import." : "Import previewed holdings and run portfolio analysis"}
-          className={!canImport ? "cursor-not-allowed" : ""}
-        >
-          <button
-            onClick={onImport}
-            disabled={!canImport}
-            className={`border rounded px-3.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider transition-all duration-150 ${
-              canImport 
-                ? 'bg-text-strong text-bg hover:opacity-90 cursor-pointer border-border-2' 
-                : 'bg-surface-3 text-text-3 border-border pointer-events-none'
-            }`}
-          >
-            {loading ? 'Importing...' : 'Import portfolio'}
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto min-h-[220px]">
-        {rows.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  {['Ticker', 'Shares', 'Avg cost'].map((h, i) => (
-                    <th
-                      key={h}
-                      className={`p-2 px-3 text-[10px] text-text-2 font-mono border-b border-border bg-surface-2 font-bold uppercase tracking-wider ${
-                        i === 0 ? 'text-left' : 'text-right'
-                      }`}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.slice(0, 12).map(row => (
-                  <tr key={row.id} className="hover:bg-surface-2 transition-colors duration-100">
-                    <td className="p-2 px-3 border-b border-border font-mono font-bold text-text-strong">
-                      {row.ticker}
-                    </td>
-                    <td className="p-2 px-3 border-b border-border text-right font-mono text-text">
-                      {Number(row.shares).toLocaleString()}
-                    </td>
-                    <td className={`p-2 px-3 border-b border-border text-right font-mono ${
-                      row.cost_basis ? 'text-text' : 'text-text-3'
-                    }`}>
-                      {row.cost_basis ? `$${Number(row.cost_basis).toFixed(2)}` : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {rows.length > 12 && (
-              <div className="p-2.5 px-3.5 text-text-3 font-mono text-[10px]">
-                + {rows.length - 12} more rows will be imported.
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="p-5 text-text-3 font-mono text-xs flex items-center justify-center h-full text-center">
-            Add a CSV or paste holdings to preview them here.
-          </div>
-        )}
-      </div>
-
-      {rejected.length > 0 && (
-        <div className="p-2.5 px-3.5 border-t border-border bg-[rgba(245,158,11,0.05)] text-amber font-mono text-[10px]">
-          Skipped {rejected.length} row{rejected.length !== 1 ? 's' : ''} without a ticker and share count.
-        </div>
-      )}
-    </div>
-  )
-}
-
-=======
->>>>>>> Stashed changes
 /* ── Score sub-bar ──────────────────────────────────────────────── */
 function ScoreBar({ label, value, detail }) {
   const color = value >= 80 ? 'var(--green)' : value >= 60 ? 'var(--amber)' : 'var(--red)'
   return (
-<<<<<<< Updated upstream
-    <div>
-      <div className="flex justify-between items-baseline mb-1">
-        <span className="text-[9px] font-bold tracking-wider uppercase text-text-3 font-mono">{label}</span>
-        <span className="text-sm font-bold font-mono" style={{ color }}>{value}</span>
-      </div>
-      <div className="h-0.5 bg-border-2 mb-1.5 rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-300" style={{ width: `${value}%`, backgroundColor: color }} />
-=======
     <div className="flex flex-col">
       <div className="flex justify-between items-baseline mb-1.5">
         <span className="text-[9px] font-bold tracking-widest uppercase text-text-3 font-mono">{label}</span>
@@ -409,7 +276,6 @@ function ScoreBar({ label, value, detail }) {
       </div>
       <div className="h-0.5 bg-border-2 mb-1.5">
         <div style={{ width: `${value}%`, background: color }} className="h-full" />
->>>>>>> Stashed changes
       </div>
       <div className="text-[9px] text-text-3 font-mono">{detail}</div>
     </div>
@@ -424,14 +290,6 @@ function HealthScoreCard({ health }) {
   const label = score >= 80 ? 'STRONG' : score >= 60 ? 'MODERATE' : 'NEEDS ATTENTION'
 
   return (
-<<<<<<< Updated upstream
-    <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] border-b border-border-2">
-      {/* Score number */}
-      <div className="p-8 px-6 border-r border-b md:border-b-0 border-border-2 flex flex-col items-center justify-center bg-bg">
-        <div className="text-[9px] font-extrabold tracking-widest uppercase text-text-3 font-mono mb-3.5">Health Score</div>
-        <div className="text-[72px] font-bold font-mono leading-none" style={{ color: scoreColor }}>{score}</div>
-        <div className="text-[9px] font-extrabold tracking-widest uppercase font-mono mt-2.5" style={{ color: scoreColor }}>{label}</div>
-=======
     <div className="grid grid-cols-[200px_1fr] border-b border-border-2">
       {/* Score number */}
       <div className="p-8 px-6 border-r border-border-2 flex flex-col items-center justify-center bg-bg">
@@ -444,16 +302,11 @@ function HealthScoreCard({ health }) {
         <div style={{ color: scoreColor }} className="text-[9px] font-black tracking-wider uppercase font-mono mt-2.5">
           {label}
         </div>
->>>>>>> Stashed changes
       </div>
 
       {/* Component bars */}
       <div className="p-6 px-8 bg-surface">
-<<<<<<< Updated upstream
-        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-x-12 ${flags.length ? 'mb-5' : 'mb-0'}`}>
-=======
         <div className={`grid grid-cols-1 sm:grid-cols-2 gap-[20px_48px] ${flags.length ? 'mb-5' : 'mb-0'}`}>
->>>>>>> Stashed changes
           <ScoreBar
             label="Diversification"
             value={components.diversification}
@@ -477,13 +330,6 @@ function HealthScoreCard({ health }) {
         </div>
 
         {flags.length > 0 && (
-<<<<<<< Updated upstream
-          <div className="p-3 bg-surface-3 border border-border-2 rounded-sm mt-4">
-            <div className="text-[9px] font-bold tracking-wider uppercase text-text-3 font-mono mb-2">Flagged Warnings</div>
-            <div className="flex flex-col gap-1.5">
-              {flags.map((f, i) => (
-                <div key={i} className="text-[10px] text-text-2 font-mono leading-relaxed pl-2.5 border-l-2 border-amber">{f}</div>
-=======
           <div className="p-4 bg-surface-2 border border-border-2 mt-4 rounded-none">
             <div className="text-[10px] font-black tracking-wider uppercase text-text-strong font-mono mb-3 flex items-center gap-1.5">
               <AlertCircle size={14} style={{ color: score < 60 ? '#ef4444' : '#f59e0b' }} />
@@ -500,7 +346,6 @@ function HealthScoreCard({ health }) {
                   <AlertCircle size={14} className={score < 60 ? "text-red flex-shrink-0" : "text-amber flex-shrink-0"} />
                   <span className="font-bold">{f}</span>
                 </div>
->>>>>>> Stashed changes
               ))}
             </div>
           </div>
@@ -515,17 +360,10 @@ const STATUS_COLOR = { ok: 'var(--green)', warning: 'var(--amber)', alert: 'var(
 
 function RadarPanel({ title, status = 'ok', children }) {
   return (
-<<<<<<< Updated upstream
-    <div className="p-5 border-r border-b border-border min-w-0 last:border-r-0 md:even:border-r-0">
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-[9px] font-bold tracking-wider uppercase text-text-3 font-mono">{title}</span>
-        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: STATUS_COLOR[status] ?? STATUS_COLOR.unknown }} />
-=======
     <div className="p-5 border-r border-b border-border flex flex-col min-w-0">
       <div className="flex items-center justify-between mb-4">
         <span className="text-[9px] font-bold tracking-wider uppercase text-text-3 font-mono">{title}</span>
         <div style={{ background: STATUS_COLOR[status] ?? STATUS_COLOR.unknown }} className="w-1.5 h-1.5 flex-shrink-0" />
->>>>>>> Stashed changes
       </div>
       {children}
     </div>
@@ -535,13 +373,8 @@ function RadarPanel({ title, status = 'ok', children }) {
 function MiniBar({ value, max, color }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0
   return (
-<<<<<<< Updated upstream
-    <div className="h-0.5 bg-border-2 my-1 rounded-full overflow-hidden">
-      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
-=======
     <div className="h-0.5 bg-border-2 mt-1 mb-1">
       <div style={{ width: `${pct}%`, background: color }} className="h-full" />
->>>>>>> Stashed changes
     </div>
   )
 }
@@ -555,21 +388,12 @@ function TiltRow({ label, value }) {
     <div className="mb-2.5">
       <div className="flex justify-between items-baseline mb-1">
         <span className="text-[9px] text-text-2 font-mono uppercase tracking-wider">{label}</span>
-<<<<<<< Updated upstream
-        <span className="text-[11px] font-bold font-mono" style={{ color }}>
-          {pos ? '+' : ''}{value.toFixed(2)}
-        </span>
-      </div>
-      <div className="h-0.5 bg-border-2 rounded-full overflow-hidden">
-        <div className="h-full rounded-full animate-pulse-slow" style={{ width: `${barPct}%`, backgroundColor: color }} />
-=======
         <span style={{ color }} className="text-[11px] font-bold font-mono">
           {pos ? '+' : ''}{value.toFixed(2)}
         </span>
       </div>
       <div className="h-0.5 bg-border-2">
         <div style={{ width: `${barPct}%`, background: color }} className="h-full" />
->>>>>>> Stashed changes
       </div>
     </div>
   )
@@ -586,39 +410,20 @@ function RiskRadar({ radar }) {
   return (
     <div className="border-b border-border-2">
       {/* Section label */}
-<<<<<<< Updated upstream
-      <div className="p-2.5 px-5 border-b border-border bg-bg text-[9px] font-extrabold tracking-widest uppercase text-text-3 font-mono">
-        Risk Radar
-=======
       <div className="px-5 py-2.5 border-b border-border bg-bg text-[9px] font-black tracking-widest uppercase text-text-3 font-mono">
         Risk Profile Diagnostics
->>>>>>> Stashed changes
       </div>
 
       {/* 2 × 2 panel grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 bg-surface">
-<<<<<<< Updated upstream
-        {/* Panel 1: Sector Exposure */}
-=======
 
         {/* ── Panel 1: Sector Exposure ────────────────────────────── */}
->>>>>>> Stashed changes
         <RadarPanel
           title="Sector Exposure"
           status={sector_exposure.find(s => s.status === 'alert') ? 'alert'
                 : sector_exposure.find(s => s.status === 'warning') ? 'warning' : 'ok'}
         >
           {sector_exposure.length === 0
-<<<<<<< Updated upstream
-            ? <span className="text-xs text-text-3 font-mono">No sector data</span>
-            : sector_exposure.map(s => (
-              <div key={s.sector} className="mb-2.5">
-                <div className="flex justify-between mb-0.5">
-                  <span className="text-[9px] text-text-2 font-mono overflow-hidden text-ellipsis whitespace-nowrap max-w-[65%]">
-                    {s.sector}
-                  </span>
-                  <span className="text-xs font-bold font-mono" style={{ color: STATUS_COLOR[s.status] }}>
-=======
             ? <span className="text-[10px] text-text-3 font-mono">No sector data</span>
             : sector_exposure.map(s => (
               <div key={s.sector} className="mb-2">
@@ -627,7 +432,6 @@ function RiskRadar({ radar }) {
                     {s.sector}
                   </span>
                   <span style={{ color: STATUS_COLOR[s.status] }} className="text-[10px] font-bold font-mono">
->>>>>>> Stashed changes
                     {s.weight}%
                   </span>
                 </div>
@@ -640,28 +444,17 @@ function RiskRadar({ radar }) {
         {/* Panel 2: Correlation Risk */}
         <RadarPanel title="Correlation Risk" status={correlation.level ?? 'unknown'}>
           {correlation.avg == null ? (
-<<<<<<< Updated upstream
-            <span className="text-xs text-text-3 font-mono">
-=======
             <span className="text-[10px] text-text-3 font-mono">
->>>>>>> Stashed changes
               Requires ≥2 S&P 500 tickers
             </span>
           ) : (
             <>
               <div className="mb-4">
                 <div className="flex items-baseline gap-2.5 mb-1">
-<<<<<<< Updated upstream
-                  <span className="text-3xl font-bold font-mono" style={{ color: STATUS_COLOR[correlation.level] }}>
-                    {correlation.avg.toFixed(2)}
-                  </span>
-                  <span className="text-[9px] font-extrabold tracking-wider uppercase font-mono" style={{ color: STATUS_COLOR[correlation.level] }}>
-=======
                   <span style={{ color: STATUS_COLOR[correlation.level] }} className="text-[28px] font-bold font-mono">
                     {correlation.avg.toFixed(2)}
                   </span>
                   <span style={{ color: STATUS_COLOR[correlation.level] }} className="text-[9px] font-black tracking-widest uppercase font-mono">
->>>>>>> Stashed changes
                     {corrLevelLabel[correlation.level]}
                   </span>
                 </div>
@@ -678,19 +471,11 @@ function RiskRadar({ radar }) {
                   {correlation.high_pairs.map((p, i) => {
                     const c = p.corr >= 0.7 ? 'var(--red)' : p.corr >= 0.5 ? 'var(--amber)' : 'var(--text-2)'
                     return (
-<<<<<<< Updated upstream
-                      <div key={i} className="flex justify-between mb-1">
-                        <span className="text-[10px] font-mono text-text-2 font-bold">
-                          {p.a} · {p.b}
-                        </span>
-                        <span className="text-[10px] font-mono font-bold" style={{ color: c }}>
-=======
                       <div key={i} className="flex justify-between mb-1.5">
                         <span className="text-[10px] font-mono text-text-2 font-bold">
                           {p.a} · {p.b}
                         </span>
                         <span style={{ color: c }} className="text-[10px] font-mono font-bold">
->>>>>>> Stashed changes
                           {p.corr.toFixed(2)}
                         </span>
                       </div>
@@ -705,11 +490,7 @@ function RiskRadar({ radar }) {
         {/* Panel 3: Factor Tilt */}
         <RadarPanel title="Factor Tilt" status="ok">
           {!factor_tilt.has_data ? (
-<<<<<<< Updated upstream
-            <span className="text-xs text-text-3 font-mono">
-=======
             <span className="text-[10px] text-text-3 font-mono">
->>>>>>> Stashed changes
               No universe overlap — factor data unavailable
             </span>
           ) : (
@@ -728,16 +509,6 @@ function RiskRadar({ radar }) {
         {/* Panel 4: Top-5 Concentration */}
         <RadarPanel title="Top-5 Positions" status="ok">
           {top5.length === 0
-<<<<<<< Updated upstream
-            ? <span className="text-xs text-text-3 font-mono">No data</span>
-            : top5.map((p, i) => (
-              <div key={p.ticker} className="mb-2">
-                <div className="flex justify-between mb-0.5">
-                  <span className="text-[11px] font-bold font-mono text-text-strong">
-                    {i + 1}. {p.ticker}
-                  </span>
-                  <span className="text-xs font-bold font-mono text-text">
-=======
             ? <span className="text-[10px] text-text-3 font-mono">No data</span>
             : top5.map((p, i) => (
               <div key={p.ticker} className="mb-2">
@@ -746,7 +517,6 @@ function RiskRadar({ radar }) {
                     {i + 1}. {p.ticker}
                   </span>
                   <span className="text-[10px] font-bold font-mono text-text">
->>>>>>> Stashed changes
                     {p.weight}%
                   </span>
                 </div>
@@ -765,37 +535,23 @@ function MetricTile({ label, current, baseline, delta_label, improved }) {
   const deltaColor = improved ? 'var(--green)' : 'var(--red)'
   const arrow      = improved ? '▲' : '▼'
   return (
-<<<<<<< Updated upstream
-    <div className="p-5 px-6 border-r border-border last:border-r-0 flex-1 min-w-0">
-=======
     <div className="p-5 px-6 border-r border-border flex-1 min-w-0">
->>>>>>> Stashed changes
       <div className="text-[9px] font-bold tracking-wider uppercase text-text-3 font-mono mb-3.5">
         {label}
       </div>
 
       <div className="flex items-end gap-3 mb-2.5">
         <div>
-<<<<<<< Updated upstream
-          <div className="text-2xl font-bold font-mono text-text-strong leading-none">
-=======
           <div className="text-[22px] font-bold font-mono text-white leading-none">
->>>>>>> Stashed changes
             {current}
           </div>
           <div className="text-[8px] text-text-3 font-mono tracking-wider uppercase mt-1">
             Portfolio
           </div>
         </div>
-<<<<<<< Updated upstream
-        <div className="text-[9px] text-text-3 font-mono mb-3.5">vs.</div>
-        <div>
-          <div className="text-base font-semibold font-mono text-text-2 leading-none">
-=======
         <div className="text-[9px] text-text-3 font-mono mb-3">vs.</div>
         <div>
           <div className="text-[15px] font-semibold font-mono text-text-2 leading-none">
->>>>>>> Stashed changes
             {baseline}
           </div>
           <div className="text-[8px] text-text-3 font-mono tracking-wider uppercase mt-1">
@@ -804,11 +560,7 @@ function MetricTile({ label, current, baseline, delta_label, improved }) {
         </div>
       </div>
 
-<<<<<<< Updated upstream
-      <div className="text-[10px] font-bold font-mono" style={{ color: deltaColor }}>
-=======
       <div style={{ color: deltaColor }} className="text-[10px] font-bold font-mono">
->>>>>>> Stashed changes
         {arrow} {delta_label}
       </div>
     </div>
@@ -820,11 +572,6 @@ function InsightRow({ type, text }) {
   const isDefense = type === 'defense'
   const color     = isDefense ? 'var(--green)' : 'var(--amber)'
   return (
-<<<<<<< Updated upstream
-    <div className="flex gap-3 items-start py-2.5 border-b border-border last:border-b-0">
-      <div className="w-1 h-1 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: color }} />
-      <span className={`text-[11px] font-mono leading-relaxed ${isDefense ? 'text-text' : 'text-text-2'}`}>{text}</span>
-=======
     <div className="flex gap-3 items-start py-[11px] border-b border-border">
       <span 
         style={{ background: color }} 
@@ -833,7 +580,6 @@ function InsightRow({ type, text }) {
       <span className={`text-[11px] font-mono leading-relaxed ${isDefense ? 'text-text' : 'text-text-2'}`}>
         {text}
       </span>
->>>>>>> Stashed changes
     </div>
   )
 }
@@ -846,13 +592,8 @@ function DefensiveIntelligence({ defense }) {
   return (
     <div className="border-b border-border-2">
       {/* Header */}
-<<<<<<< Updated upstream
-      <div className="flex items-center justify-between p-2.5 px-5 border-b border-border bg-bg">
-        <div className="text-[9px] font-extrabold tracking-widest uppercase text-text-3 font-mono">
-=======
       <div className="flex items-center justify-between px-5 py-2.5 border-b border-border bg-bg">
         <div className="text-[9px] font-black tracking-widest uppercase text-text-3 font-mono">
->>>>>>> Stashed changes
           Defensive Intelligence
         </div>
         <div className="text-[9px] text-text-3 font-mono">
@@ -862,21 +603,13 @@ function DefensiveIntelligence({ defense }) {
       </div>
 
       {/* Metric tiles */}
-<<<<<<< Updated upstream
-      <div className="grid grid-cols-1 md:grid-cols-3 border-b border-border-2 bg-surface">
-=======
       <div className="flex border-b border-border-2 bg-surface">
->>>>>>> Stashed changes
         {metrics.map((m, i) => <MetricTile key={i} {...m} />)}
       </div>
 
       {/* Insight feed */}
       {insights.length > 0 && (
-<<<<<<< Updated upstream
-        <div className="p-5 py-2.5 bg-surface flex flex-col">
-=======
         <div className="px-5 pb-1 bg-surface">
->>>>>>> Stashed changes
           {insights.map((ins, i) => <InsightRow key={i} {...ins} />)}
         </div>
       )}
@@ -891,11 +624,7 @@ function Stat({ label, value, green }) {
       <div className="text-[9px] text-text-3 font-mono tracking-wider uppercase">
         {label}
       </div>
-<<<<<<< Updated upstream
-      <div className="text-base font-mono font-bold mt-0.5" style={{ color: green ? 'var(--green)' : 'var(--text-strong)' }}>
-=======
       <div className={`text-[16px] font-mono font-bold mt-0.5 ${green ? 'text-green' : 'text-white'}`}>
->>>>>>> Stashed changes
         {value}
       </div>
     </div>
@@ -944,18 +673,6 @@ function ResultView({ result }) {
   }, [positions, search, sortKey, sortDir])
 
   return (
-<<<<<<< Updated upstream
-    <div className="bg-surface min-h-full">
-      {/* Header */}
-      <div className="flex items-center gap-4 flex-wrap p-3.5 px-5 border-b border-border-2 bg-bg">
-        <TBtn onClick={onBack}>← Edit Positions</TBtn>
-        <div className="flex-1" />
-        <Stat label="Portfolio Value"
-          value={`$${(total_value ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-        <Stat label="Positions" value={positions.length} />
-        <Stat label="Sectors" value={[...new Set(positions.map(p => p.sector).filter(s => s && s !== '—'))].length} />
-      </div>
-=======
     <div className="portfolio-results-layout grid grid-cols-1">
       {/* Left Column: Dashboard metrics and table */}
       <div className="min-w-0 flex flex-col overflow-y-auto">
@@ -973,7 +690,6 @@ function ResultView({ result }) {
             <span>Ask Copilot (⌘K)</span>
           </TBtn>
         </div>
->>>>>>> Stashed changes
 
         {/* Hero Stats Panel */}
         <div className="grid grid-cols-1 md:grid-cols-3 border-b border-border-2 bg-surface-2">
@@ -1011,80 +727,6 @@ function ResultView({ result }) {
         {/* Health Score */}
         <HealthScoreCard health={health} />
 
-<<<<<<< Updated upstream
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              {[
-                { label: '#',         align: 'center', w: 40  },
-                { label: 'TICKER',    align: 'left'           },
-                { label: 'SECTOR',    align: 'left'           },
-                { label: 'SHARES',    align: 'right'          },
-                { label: 'PRICE',     align: 'right'          },
-                { label: 'MKT VALUE', align: 'right'          },
-                { label: 'WEIGHT',    align: 'right'          },
-                { label: 'P&L %',     align: 'right'          },
-              ].map((h, i) => (
-                <th key={i} style={{ ...TH_STYLE, textAlign: h.align, width: h.w }}>{h.label}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {positions.map((p, i) => {
-              const hasPnl = p.pnl_pct != null
-              const pnlColor = hasPnl ? (p.pnl_pct >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--text-3)'
-              return (
-                <tr key={p.ticker + i} className={`border-b border-border ${i % 2 === 0 ? 'bg-surface' : 'bg-surface-2'}`}>
-                  <td className="text-center p-2.5 px-3 text-[10px] text-text-3 font-mono">{i + 1}</td>
-
-                  <td className="p-2.5 px-3">
-                    <span className="font-mono text-xs font-bold text-text-strong">{p.ticker}</span>
-                  </td>
-
-                  <td className="p-2.5 px-3">
-                    <span className="font-mono text-[10px] text-text-2">{p.sector || '—'}</span>
-                  </td>
-
-                  <td className="p-2.5 px-3 text-right font-mono text-xs text-text">
-                    {p.shares?.toLocaleString()}
-                  </td>
-
-                  <td className="p-2.5 px-3 text-right font-mono text-xs text-text">
-                    {p.price != null ? `$${p.price.toFixed(2)}` : '—'}
-                  </td>
-
-                  <td className="p-2.5 px-3 text-right font-mono text-xs font-bold text-text">
-                    {p.mkt_value != null
-                      ? `$${p.mkt_value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                      : '—'}
-                  </td>
-
-                  <td className="p-2.5 px-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <div className="h-0.5 bg-border-3 rounded-full" style={{ width: `${Math.min(Math.round((p.weight || 0) * 200), 60)}px` }} />
-                      <span className="font-mono text-[10px] font-bold text-text min-w-[40px] text-right">
-                        {p.weight != null ? `${(p.weight * 100).toFixed(1)}%` : '—'}
-                      </span>
-                    </div>
-                  </td>
-
-                  <td className="p-2.5 px-3 text-right font-mono text-xs font-bold" style={{ color: pnlColor }}>
-                    {hasPnl ? `${p.pnl_pct >= 0 ? '+' : ''}${p.pnl_pct.toFixed(2)}%` : '—'}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Footer note */}
-      <div className="p-3 px-5 border-t border-border text-[10px] text-text-3 font-mono leading-relaxed">
-        Prices sourced from last market close. P&L requires avg cost basis.
-        Tickers not in the S&P 500 universe are resolved via yfinance.
-=======
         {/* Risk Radar */}
         <RiskRadar radar={risk_radar} />
 
@@ -1243,7 +885,6 @@ function ResultView({ result }) {
           Prices sourced from last market close. P&L requires avg cost basis.
           Tickers not in the S&P 500 universe are resolved via yfinance.
         </div>
->>>>>>> Stashed changes
       </div>
     </div>
   )
@@ -1251,40 +892,6 @@ function ResultView({ result }) {
 
 function ReportSkeleton() {
   return (
-<<<<<<< Updated upstream
-    <div className="border-b border-border-2">
-      {/* Header */}
-      <div className="p-2.5 px-5 border-b border-border bg-bg flex items-center justify-between">
-        <div className="text-[9px] font-extrabold tracking-widest uppercase text-text-3 font-mono">
-          AI Portfolio Analyst
-        </div>
-        <div className="text-[9px] text-text-3 font-mono">
-          groq llama-3 · context-aware · portfolio-specific
-        </div>
-      </div>
-
-      <div className="p-5 bg-surface">
-        {/* Chips — always visible */}
-        <div className={messages.length ? 'mb-4' : 'mb-5'}>
-          {messages.length === 0 && (
-            <div className="text-[9px] text-text-3 font-mono tracking-wider uppercase mb-2.5">
-              Suggested questions
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2">
-            {ANALYST_CHIPS.map(chip => (
-              <button
-                key={chip}
-                onClick={() => send(chip)}
-                disabled={loading}
-                className={`bg-surface-3 border border-border-2 text-[10px] font-mono p-1.5 px-3 text-left transition-colors duration-150 rounded ${
-                  loading ? 'text-text-3 cursor-not-allowed' : 'text-text-2 hover:text-text hover:border-border-3 cursor-pointer'
-                }`}
-              >
-                {chip}
-              </button>
-            ))}
-=======
     <div className="flex flex-col gap-5 p-5 bg-surface min-h-[600px] rounded-none">
       {/* Header Skeleton */}
       <div className="flex justify-between items-center h-10 border-b border-border-2 pb-3 animate-pulse">
@@ -1298,80 +905,10 @@ function ReportSkeleton() {
           <div key={i} className="flex flex-col gap-2">
             <div className="w-20 h-2 bg-border-3" />
             <div className="w-36 h-6 bg-border-2" />
->>>>>>> Stashed changes
           </div>
         ))}
       </div>
 
-<<<<<<< Updated upstream
-        {/* Conversation */}
-        {messages.length > 0 && (
-          <div className="max-h-[420px] overflow-y-auto mb-4 flex flex-col gap-2">
-            {messages.map((m, i) => {
-              const isUser = m.role === 'user'
-              return (
-                <div 
-                  key={i} 
-                  className={`p-2.5 px-3.5 border-l-2 rounded-r ${
-                    isUser ? 'bg-surface-3 border-border-3' : 'bg-bg border-green'
-                  }`}
-                >
-                  <div className={`text-[8px] font-extrabold tracking-widest uppercase font-mono mb-1.5 ${
-                    isUser ? 'text-text-3' : 'text-green'
-                  }`}>
-                    {isUser ? 'You' : 'Analyst'}
-                  </div>
-                  <div className={`text-xs font-mono leading-relaxed whitespace-pre-wrap ${
-                    isUser ? 'text-text-2' : 'text-text'
-                  }`}>
-                    {m.content}
-                  </div>
-                </div>
-              )
-            })}
-
-            {loading && (
-              <div className="p-2.5 px-3.5 bg-bg border-l-2 border-green rounded-r">
-                <div className="text-[8px] font-extrabold tracking-widest uppercase font-mono mb-1.5 text-green">Analyst</div>
-                <div className="text-xs text-text-3 font-mono animate-pulse">Analyzing portfolio...</div>
-              </div>
-            )}
-            <div ref={endRef} />
-          </div>
-        )}
-
-        {/* Error */}
-        {error && (
-          <div className="p-2.5 px-3.5 mb-3 bg-red-dim border border-red text-red text-[10px] font-mono leading-relaxed rounded">
-            {error}
-          </div>
-        )}
-
-        {/* Input row */}
-        <div className="flex gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-            placeholder="Ask anything about your portfolio..."
-            disabled={loading}
-            className="flex-1 bg-bg border border-border-2 text-text font-mono text-xs p-2 px-3 outline-none rounded focus:border-border-3 disabled:opacity-50"
-          />
-          <button
-            onClick={() => send()}
-            disabled={loading || !input.trim()}
-            className={`border-none p-2 px-5 text-[9px] font-mono font-extrabold tracking-wider uppercase whitespace-nowrap transition-colors duration-150 rounded ${
-              (loading || !input.trim())
-                ? 'bg-surface-3 text-text-3 cursor-not-allowed'
-                : 'bg-text-strong text-bg hover:opacity-90 cursor-pointer'
-            }`}
-          >
-            Send →
-          </button>
-        </div>
-=======
       {/* Warnings Skeleton */}
       <div className="h-20 bg-surface-2 border border-border-2 p-4 flex flex-col gap-3 animate-pulse">
         <div className="w-36 h-2.5 bg-border-3" />
@@ -1388,20 +925,13 @@ function ReportSkeleton() {
             <div className="w-20 h-3 bg-border-2" />
           </div>
         ))}
->>>>>>> Stashed changes
       </div>
     </div>
   )
 }
 
 /* ── Input view ─────────────────────────────────────────────────── */
-<<<<<<< Updated upstream
-export default function PortfolioEntry() {
-  const [rows, setRows]         = useState(() => [newRow(), newRow(), newRow()])
-  const [result, setResult]     = useState(null)
-=======
 export default function PortfolioEntry({ rows = [], setRows, result, setResult, onApplyPortfolio }) {
->>>>>>> Stashed changes
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState(null)
   const [inputText, setInputText] = useState('')
@@ -1410,24 +940,7 @@ export default function PortfolioEntry({ rows = [], setRows, result, setResult, 
   const [activeTab, setActiveTab]   = useState('editor')
   const fileRef = useRef(null)
 
-<<<<<<< Updated upstream
-  const [previewRows, setPreviewRows] = useState([])
-  const [previewRejected, setPreviewRejected] = useState([])
-
-  useEffect(() => {
-    const textToParse = importText || pasteText
-    if (!textToParse.trim()) {
-      setPreviewRows([])
-      setPreviewRejected([])
-      return
-    }
-    const parsed = parsePortfolioImport(textToParse)
-    setPreviewRows(parsed.rows)
-    setPreviewRejected(parsed.rejected)
-  }, [importText, pasteText])
-=======
   const parsedImport = parsePortfolioImport(inputText)
->>>>>>> Stashed changes
 
   function update(id, field, value) {
     setRows(r => r.map(row => row.id === id ? { ...row, [field]: value } : row))
@@ -1477,16 +990,10 @@ export default function PortfolioEntry({ rows = [], setRows, result, setResult, 
   }
 
   function importPortfolio() {
-<<<<<<< Updated upstream
-    if (!previewRows.length) return
-    setRows(previewRows)
-    analyze(previewRows)
-=======
     if (!parsedImport.rows.length) return
     setRows(parsedImport.rows)
     setInputText('')
     setImportName('')
->>>>>>> Stashed changes
   }
 
   async function quickImportAndAnalyze() {
@@ -1525,159 +1032,16 @@ export default function PortfolioEntry({ rows = [], setRows, result, setResult, 
     <div className="bg-surface min-h-full">
 
       {/* ── Toolbar ─────────────────────────────────────────────── */}
-<<<<<<< Updated upstream
-      <div className="flex items-center gap-2.5 flex-wrap p-3.5 px-5 border-b border-border-2 bg-bg">
-        <div className="text-xl font-extrabold text-text-strong font-sans">
-          Import portfolio
-        </div>
-
-        <div className="ml-2 text-xs text-text-2 font-sans font-medium">
-=======
       <div className="flex items-center gap-2.5 flex-wrap px-5 py-3.5 border-b border-border-2 bg-bg">
         <div className="text-[20px] font-black text-white tracking-tight">
           Import portfolio
         </div>
 
         <div className="ml-2 text-[14px] text-text-2">
->>>>>>> Stashed changes
           {rows.filter(r => r.ticker.trim()).length > 0
             ? `${rows.filter(r => r.ticker.trim() && r.shares).length} position${rows.filter(r => r.ticker.trim() && r.shares).length !== 1 ? 's' : ''} ready`
             : 'Upload, paste, or enter holdings'}
         </div>
-<<<<<<< Updated upstream
-
-        <div className="flex-1" />
-
-        <TBtn onClick={analyze} disabled={loading} primary>
-          {loading ? 'Analyzing...' : 'Analyze manual rows'}
-        </TBtn>
-      </div>
-
-      {/* ── Import panel ─────────────────────────────────────────── */}
-      <div className="p-5 grid grid-cols-1 lg:grid-cols-[minmax(280px,0.9fr)_minmax(320px,1.1fr)] gap-4 border-b border-border bg-bg">
-        <div className="grid gap-4">
-          <ImportCard active={dragActive || !!importName} icon={UploadCloud} title="Drop CSV">
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".csv,text/csv"
-              onChange={e => handleFile(e.target.files?.[0])}
-              style={{ display: 'none' }}
-            />
-            <div
-              onClick={() => fileRef.current?.click()}
-              onDragOver={e => { e.preventDefault(); setDragActive(true) }}
-              onDragLeave={() => setDragActive(false)}
-              onDrop={handleDrop}
-              className={`min-h-[128px] border border-dashed rounded-xl flex items-center justify-center text-center p-4.5 cursor-pointer text-text-2 font-sans text-sm font-semibold transition-all duration-150 ${
-                dragActive ? 'border-teal bg-surface-3' : 'border-border-3 bg-surface hover:border-border-2'
-              }`}
-            >
-              {importName || 'Choose a CSV or drag it here'}
-            </div>
-            <div className="text-[11px] text-text-3 mt-2 font-sans leading-relaxed">
-              Requires headers for <strong>ticker / symbol</strong> and <strong>shares / quantity</strong> (e.g. <code>ticker,shares,cost_basis</code>).
-            </div>
-          </ImportCard>
-
-          <ImportCard active={!!pasteText} icon={ClipboardPaste} title="Paste holdings">
-            <textarea
-              value={pasteText}
-              onChange={e => {
-                setPasteText(e.target.value)
-                setImportText('')
-                setImportName('')
-              }}
-              placeholder={'AAPL, 100, 155.00\nMSFT, 50, 280.00\nNVDA, 25, 400.00'}
-              className="w-full min-h-[126px] bg-surface border border-border rounded-xl text-text font-mono text-xs p-3 resize-y box-border outline-none leading-relaxed focus:border-border-3"
-            />
-            <div className="text-[11px] text-text-3 mt-2 font-sans leading-relaxed">
-              Supports comma, tab, or space-delimited text. Formats must follow: <code>ticker, shares, [cost_basis]</code>.
-            </div>
-          </ImportCard>
-        </div>
-
-        <ImportPreview
-          rows={previewRows}
-          rejected={previewRejected}
-          onImport={importPortfolio}
-          loading={loading}
-        />
-      </div>
-
-      {/* ── Error banner ────────────────────────────────────────── */}
-      {error && (
-        <div className="p-2.5 px-5 bg-red-dim border-b border-red text-red text-xs font-mono">
-          {error}
-        </div>
-      )}
-
-      {/* ── Editable grid ───────────────────────────────────────── */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              <th style={{ ...TH_STYLE, textAlign: 'center', width: 44 }}>#</th>
-              <th style={{ ...TH_STYLE, width: 120 }}>TICKER</th>
-              <th style={{ ...TH_STYLE, textAlign: 'right', width: 140 }}>SHARES</th>
-              <th style={{ ...TH_STYLE, textAlign: 'right', width: 160 }}>AVG COST <span className="text-text-3 font-normal font-sans text-[10px]">(optional)</span></th>
-              <th style={{ ...TH_STYLE, width: 44 }} />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, idx) => (
-              <tr key={row.id} className={`border-b border-border ${idx % 2 === 0 ? 'bg-surface' : 'bg-surface-2'}`}>
-                <td className="text-center p-1 px-2 text-[10px] text-text-3 font-mono w-11">
-                  {idx + 1}
-                </td>
-
-                <td className="p-1 px-2 w-[120px]">
-                  <EditCell
-                    value={row.ticker}
-                    onChange={v => update(row.id, 'ticker', v)}
-                    placeholder="e.g. AAPL"
-                    bold
-                  />
-                </td>
-
-                <td className="p-1 px-2 w-[140px]">
-                  <EditCell
-                    type="number"
-                    value={row.shares}
-                    onChange={v => update(row.id, 'shares', v)}
-                    placeholder="e.g. 100"
-                    align="right"
-                  />
-                </td>
-
-                <td className="p-1 px-2 w-[160px]">
-                  <EditCell
-                    type="number"
-                    value={row.cost_basis}
-                    onChange={v => update(row.id, 'cost_basis', v)}
-                    placeholder="e.g. 150"
-                    align="right"
-                  />
-                </td>
-
-                <td className="p-1 px-2 text-center w-11">
-                  <button
-                    onClick={() => removeRow(row.id)}
-                    className="bg-transparent border-none text-text-3 hover:text-red cursor-pointer text-base leading-none p-0.5 px-1.5 font-mono"
-                  >×</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ── Add row ─────────────────────────────────────────────── */}
-      <div className="p-2.5 px-5 border-top border-border">
-        <button
-          onClick={addRow}
-          className="bg-transparent border border-dashed border-border-3 text-text-3 hover:text-text hover:border-border-2 p-2 px-5 text-[9px] font-mono font-bold tracking-wider uppercase cursor-pointer w-full transition-colors duration-150"
-=======
       </div>
 
       {/* ── Tabs Header ────────────────────────────────────────── */}
@@ -1687,7 +1051,6 @@ export default function PortfolioEntry({ rows = [], setRows, result, setResult, 
           className={`flex-1 py-3.5 bg-transparent border-none border-r border-border-2 border-b-2 font-mono text-[11px] font-black cursor-pointer uppercase tracking-wider outline-none transition-colors rounded-none ${
             activeTab === 'editor' ? 'bg-surface border-b-white text-white' : 'border-b-transparent text-text-3 hover:text-text-2 hover:bg-surface-3'
           }`}
->>>>>>> Stashed changes
         >
           Position Editor {rows.length > 0 ? `(${rows.length})` : ''}
         </button>
@@ -1701,13 +1064,6 @@ export default function PortfolioEntry({ rows = [], setRows, result, setResult, 
         </button>
       </div>
 
-<<<<<<< Updated upstream
-      {/* ── Help text ───────────────────────────────────────────── */}
-      <div className="p-3.5 px-5 border-t border-border text-[10px] text-text-3 font-mono leading-relaxed">
-        Prices are fetched from last market close. &nbsp;·&nbsp; Avg cost is optional — required to compute P&amp;L.
-        &nbsp;·&nbsp; Tickers outside the S&amp;P 500 universe resolve via yfinance.
-      </div>
-=======
       {/* ── Tab Contents: Editor ───────────────────────────────── */}
       {activeTab === 'editor' && (
         <div>
@@ -1982,7 +1338,6 @@ export default function PortfolioEntry({ rows = [], setRows, result, setResult, 
           )}
         </div>
       )}
->>>>>>> Stashed changes
     </div>
   )
 }

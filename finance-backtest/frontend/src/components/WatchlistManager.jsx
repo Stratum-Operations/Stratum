@@ -63,7 +63,7 @@ export default function WatchlistManager({ topTickers }) {
   }
 
   return (
-    <div className="bg-bg flex flex-col gap-0 border border-border rounded-lg overflow-hidden">
+    <div className="bg-bg flex flex-col gap-0 border border-border rounded-none overflow-hidden">
       {/* Header */}
       <div className="chart-header">
         <div className="flex items-center gap-2.5">
@@ -116,12 +116,12 @@ export default function WatchlistManager({ topTickers }) {
               <div className="text-[14px] font-extrabold text-text-strong font-mono flex items-center gap-2 mb-2">
                 {item.ticker}
                 {item.isOverride && (
-                  <span className="text-[8px] bg-red-dim text-red border border-red px-1.5 py-0.5 font-bold tracking-wider rounded-sm">
+                  <span className="text-[8px] bg-red-dim text-red border border-red px-1.5 py-0.5 font-bold tracking-wider rounded-none">
                     OVERRIDE
                   </span>
                 )}
                 {topTickers.includes(item.ticker) && (
-                  <span className="text-[8px] bg-green-dim text-green border border-green px-1.5 py-0.5 font-bold tracking-wider rounded-sm">
+                  <span className="text-[8px] bg-green-dim text-green border border-green px-1.5 py-0.5 font-bold tracking-wider rounded-none">
                     SELECTED
                   </span>
                 )}
