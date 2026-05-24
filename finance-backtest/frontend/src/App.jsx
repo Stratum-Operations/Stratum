@@ -74,7 +74,7 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [view, setView]       = useState('dashboard')
   const [isDemoMode, setIsDemoMode] = useState(false)
-  const [theme, setTheme]     = useState(() => localStorage.getItem('phineus-theme') || 'light')
+  const [theme, setTheme]     = useState(() => localStorage.getItem('stratum-theme') || 'light')
   const [chatOpen, setChatOpen] = useState(false)
   const [portfolioRows, setPortfolioRows] = useState([])
   const [portfolioResult, setPortfolioResult] = useState(null)
@@ -87,7 +87,7 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('phineus-theme', theme)
+    localStorage.setItem('stratum-theme', theme)
   }, [theme])
 
   const toggleSection = (sec) => {
@@ -237,7 +237,7 @@ export default function App() {
         {/* Logo */}
         <div className="top-bar-logo">
           <div className="top-bar-logo-pip" />
-          <span>Phineus OS</span>
+          <span>Stratum</span>
         </div>
 
 
@@ -311,7 +311,7 @@ export default function App() {
           {/* Sidebar footer */}
           <div className="sidebar-bottom flex justify-between items-center p-[16px_20px]">
             <span className="text-[10px] text-text-3 font-mono tracking-wider font-semibold">
-              PHINEUS OS V1.2.0
+              STRATUM V1.2.0
             </span>
           </div>
         </aside>

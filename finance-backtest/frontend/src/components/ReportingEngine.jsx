@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+﻿import { useState, useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { TrendingUp, Table as TableIcon, Download, Printer } from 'lucide-react'
 
@@ -15,7 +15,7 @@ const C = {
   red:    'var(--red)',
   green:  'var(--green)',
 }
-const MONO = { fontFamily: 'JetBrains Mono, monospace' }
+const MONO = { fontFamily: 'Geist Mono, monospace' }
 
 export default function ReportingEngine({ metrics, perf, holdings }) {
   const [isPrinting, setIsPrinting] = useState(false)
@@ -62,7 +62,7 @@ export default function ReportingEngine({ metrics, perf, holdings }) {
     const blob = new Blob([[headers.join(','), ...rows].join('\n')], { type: 'text/csv' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `phineus_report_${reportDate.toLowerCase().replace(' ', '_')}.csv`
+    a.download = `stratum_report_${reportDate.toLowerCase().replace(' ', '_')}.csv`
     a.click()
   }
 
@@ -79,7 +79,7 @@ export default function ReportingEngine({ metrics, perf, holdings }) {
           color: var(--text);
           min-height: 100%;
           font-size: 12px;
-          font-family: 'JetBrains Mono', monospace;
+          font-family: 'Geist Mono', monospace;
         }
         .reporting-body-container {
           background-color: var(--surface);
@@ -144,7 +144,7 @@ export default function ReportingEngine({ metrics, perf, holdings }) {
         {/* Title block */}
         <div style={{ borderBottom: `2px solid ${C.lime}`, paddingBottom: '16px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <div style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.02em', fontFamily: 'Space Grotesk, sans-serif' }}>PHINEUS OS</div>
+            <div style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.02em', fontFamily: 'Inter, sans-serif' }}>STRATUM</div>
             <div style={{ fontSize: '9px', letterSpacing: '0.25em', textTransform: 'uppercase', color: C.lime, marginTop: '4px' }}>
               Monthly Quant Strategy Report — V7 QP Optimizer
             </div>
@@ -188,10 +188,10 @@ export default function ReportingEngine({ metrics, perf, holdings }) {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
                   <CartesianGrid stroke="var(--border)" strokeDasharray="" />
-                  <XAxis dataKey="date" tick={{ fontSize: 8, fill: 'var(--text-2)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }} stroke="var(--border)" tickFormatter={v => v.substring(0, 4)} minTickGap={40} />
-                  <YAxis tick={{ fontSize: 8, fill: 'var(--text-2)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }} stroke="var(--border)" tickFormatter={v => `$${(v/1000).toFixed(0)}k`} width={44} />
+                  <XAxis dataKey="date" tick={{ fontSize: 8, fill: 'var(--text-2)', fontFamily: 'Geist Mono, monospace', fontWeight: 600 }} stroke="var(--border)" tickFormatter={v => v.substring(0, 4)} minTickGap={40} />
+                  <YAxis tick={{ fontSize: 8, fill: 'var(--text-2)', fontFamily: 'Geist Mono, monospace', fontWeight: 600 }} stroke="var(--border)" tickFormatter={v => `$${(v/1000).toFixed(0)}k`} width={44} />
                   <Tooltip
-                    contentStyle={{ background: 'var(--surface-2)', border: '1px solid var(--border)', fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-strong)' }}
+                    contentStyle={{ background: 'var(--surface-2)', border: '1px solid var(--border)', fontSize: '10px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-strong)' }}
                     itemStyle={{ color: 'var(--text)' }}
                     labelStyle={{ color: 'var(--text-strong)', fontWeight: 700 }}
                     formatter={(v, name) => [`$${Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}`, name === 'equity' ? 'Strategy' : 'SPY']}

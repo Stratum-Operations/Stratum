@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+﻿import { useState, useEffect, useMemo } from 'react'
 import { Bookmark, Plus, X, Tag } from 'lucide-react'
 
 export default function WatchlistManager({ topTickers }) {
@@ -9,7 +9,7 @@ export default function WatchlistManager({ topTickers }) {
   const [editingText, setEditingText] = useState('')
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('phineus_watchlist') || '[]')
+    const saved = JSON.parse(localStorage.getItem('stratum_watchlist') || '[]')
     setWatchlist(saved)
   }, [])
 
@@ -18,20 +18,20 @@ export default function WatchlistManager({ topTickers }) {
     const newItem = { ticker: ticker.toUpperCase(), notes, tags: ['Discretionary'], isOverride: false, id: Date.now() }
     const updated = [...watchlist, newItem]
     setWatchlist(updated)
-    localStorage.setItem('phineus_watchlist', JSON.stringify(updated))
+    localStorage.setItem('stratum_watchlist', JSON.stringify(updated))
     setTicker(''); setNotes('')
   }
 
   const removeTicker = (id) => {
     const updated = watchlist.filter(item => item.id !== id)
     setWatchlist(updated)
-    localStorage.setItem('phineus_watchlist', JSON.stringify(updated))
+    localStorage.setItem('stratum_watchlist', JSON.stringify(updated))
   }
 
   const toggleOverride = (id) => {
     const updated = watchlist.map(item => item.id === id ? { ...item, isOverride: !item.isOverride } : item)
     setWatchlist(updated)
-    localStorage.setItem('phineus_watchlist', JSON.stringify(updated))
+    localStorage.setItem('stratum_watchlist', JSON.stringify(updated))
   }
 
   const startEditing = (item) => {
@@ -42,7 +42,7 @@ export default function WatchlistManager({ topTickers }) {
   const saveEditing = (id) => {
     const updated = watchlist.map(item => item.id === id ? { ...item, notes: editingText } : item)
     setWatchlist(updated)
-    localStorage.setItem('phineus_watchlist', JSON.stringify(updated))
+    localStorage.setItem('stratum_watchlist', JSON.stringify(updated))
     setEditingId(null)
   }
 
@@ -56,7 +56,7 @@ export default function WatchlistManager({ topTickers }) {
     border: '1px solid var(--border-2)',
     color: 'var(--text)',
     padding: '8px 12px',
-    fontFamily: 'JetBrains Mono, monospace',
+    fontFamily: 'Geist Mono, monospace',
     fontSize: '11px',
     outline: 'none',
     width: '100%',

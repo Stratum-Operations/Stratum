@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+﻿import { useState, useMemo } from 'react'
 import { Info } from 'lucide-react'
 import FactorHeatmap from './FactorHeatmap'
 import ExplainabilityTooltip from './ExplainabilityEngine'
@@ -72,16 +72,16 @@ export default function LiveScreener({ holdings, onSelect }) {
                     <div style={{ fontWeight: isTop15 ? 900 : 400, color: 'var(--text-strong)', fontSize: '11px', letterSpacing: '0.04em' }}>{h.ticker}</div>
                     <div style={{ fontSize: '10px', color: 'var(--text-2)' }}>{h.name}</div>
                   </td>
-                  <td style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: 'var(--text-strong)' }}>
+                  <td style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontFamily: 'Geist Mono, monospace', fontSize: '11px', color: 'var(--text-strong)' }}>
                     #{i + 1}
                     <div style={{ fontSize: '9px', color: 'var(--text-2)' }}>
                       {h.rankChange > 0 ? '▲' : h.rankChange < 0 ? '▼' : '-'} {Math.abs(h.rankChange)}
                     </div>
                   </td>
-                  <td style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: 'var(--text-strong)' }}>
+                  <td style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontFamily: 'Geist Mono, monospace', fontSize: '11px', color: 'var(--text-strong)' }}>
                     ${parseFloat(h.price).toFixed(2)}
                   </td>
-                  <td style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', fontWeight: isTop15 ? 900 : 600, color: 'var(--text-strong)' }}>
+                  <td style={{ textAlign: 'right', padding: '15px 12px', borderBottom: '1px solid var(--border)', fontFamily: 'Geist Mono, monospace', fontSize: '11px', fontWeight: isTop15 ? 900 : 600, color: 'var(--text-strong)' }}>
                     {parseFloat(h.score).toFixed(2)}
                   </td>
                   <td style={{ padding: '15px 12px', borderBottom: '1px solid var(--border)' }}>

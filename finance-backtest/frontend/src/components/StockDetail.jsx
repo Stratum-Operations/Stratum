@@ -60,7 +60,7 @@ export default function StockDetail({ holding }) {
       <div className="glass-panel" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--glass-border)', paddingBottom: '16px' }}>
           <div>
-             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: '12px' }}>
+             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-strong)', display: 'flex', alignItems: 'center', gap: '12px' }}>
               {holding.ticker} 
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 400, marginTop: '4px' }}>{holding.sector}</span>
               {mockData.wasHeld ? (
@@ -74,8 +74,8 @@ export default function StockDetail({ holding }) {
               )}
              </div>
              <div style={{ display: 'flex', gap: '16px', marginTop: '12px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-               <span>Mkt Cap: <strong style={{color: '#fff'}}>${mockData.marketCap}</strong></span>
-               <span>Valuation Snapshot: <strong style={{color: '#fff'}}>{mockData.pE} P/E</strong></span>
+               <span>Mkt Cap: <strong style={{color: 'var(--text-strong)'}}>${mockData.marketCap}</strong></span>
+               <span>Valuation Snapshot: <strong style={{color: 'var(--text-strong)'}}>{mockData.pE} P/E</strong></span>
                <span>Percentile Scoring: <strong style={{color: 'var(--accent-cyan)'}}>{(holding.score !== undefined && holding.score !== null ? Number(holding.score) : (seededRandom(holding.ticker) * 0.4 + 0.6)).toFixed(2)}</strong></span>
              </div>
           </div>
@@ -90,13 +90,13 @@ export default function StockDetail({ holding }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 1.2fr) 2fr', gap: '24px' }}>
-          <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '0px', padding: '16px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: 'var(--surface-2)', borderRadius: '0px', padding: '16px', display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Multi-Factor Footprint</span>
             <div style={{ flex: 1, minHeight: '220px' }}>
                <ResponsiveContainer>
                   <RadarChart outerRadius="70%" data={radarData}>
                     <PolarGrid stroke="rgba(255,255,255,0.05)" />
-                    <PolarAngleAxis dataKey="subject" tick={{fill: '#8a9fc2', fontSize: 10}} />
+                    <PolarAngleAxis dataKey="subject" tick={{fill: 'var(--text-2)', fontSize: 10}} />
                     <Radar name={holding.ticker} dataKey="A" stroke="var(--accent-cyan)" fill="var(--accent-cyan)" fillOpacity={0.3} />
                     <Tooltip contentStyle={{background: 'var(--bg-dark)', borderColor: 'var(--glass-border)', fontSize: '0.8rem', borderRadius: '0px'}} />
                   </RadarChart>
@@ -104,15 +104,15 @@ export default function StockDetail({ holding }) {
             </div>
           </div>
 
-          <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '0px', padding: '16px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: 'var(--surface-2)', borderRadius: '0px', padding: '16px', display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '16px' }}>Composite Score Tracking (Trailing 12M)</span>
             <div style={{ flex: 1, minHeight: '220px' }}>
                <ResponsiveContainer>
                  <LineChart data={mockData.history}>
                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                   <XAxis dataKey="month" stroke="#8a9fc2" tick={{fontSize: 10}} />
-                   <YAxis stroke="#8a9fc2" tick={{fontSize: 10}} domain={[0, 100]} />
-                   <Tooltip contentStyle={{background: 'var(--bg-dark)', borderColor: 'var(--glass-border)', borderRadius: '0px'}} labelStyle={{color: '#8a9fc2'}} />
+                   <XAxis dataKey="month" stroke="var(--text-2)" tick={{fontSize: 10}} />
+                   <YAxis stroke="var(--text-2)" tick={{fontSize: 10}} domain={[0, 100]} />
+                   <Tooltip contentStyle={{background: 'var(--bg-dark)', borderColor: 'var(--glass-border)', borderRadius: '0px'}} labelStyle={{color: 'var(--text-2)'}} />
                    <Line type="monotone" dataKey="score" stroke="var(--accent-purple)" strokeWidth={2} dot={{fill: 'var(--accent-purple)', r: 3, strokeWidth: 0}} />
                  </LineChart>
                </ResponsiveContainer>

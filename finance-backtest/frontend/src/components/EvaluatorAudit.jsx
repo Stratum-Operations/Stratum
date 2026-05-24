@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 import { mockEvaluatorAudit } from '../data/mockFallbackData'
 import {
@@ -135,7 +135,7 @@ export default function EvaluatorAudit() {
           border: '1px solid var(--border)',
           color: 'var(--text-2)',
           fontSize: '11px',
-          fontFamily: 'JetBrains Mono, monospace',
+          fontFamily: 'Geist Mono, monospace',
           marginBottom: '16px',
           display: 'flex',
           alignItems: 'center',

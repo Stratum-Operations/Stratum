@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+﻿import { useState, useMemo } from 'react'
 import { LineChart, Line, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, Radar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
 
 const BENCHMARKS = ['SPY', 'QQQ', 'MTUM']
@@ -13,7 +13,7 @@ function seededRand(str) {
 const TT_STYLE = {
   background: 'var(--surface-2)',
   border: '1px solid var(--border)',
-  fontFamily: 'JetBrains Mono, monospace',
+  fontFamily: 'Geist Mono, monospace',
   fontSize: '11px',
   color: 'var(--text)',
 }
@@ -149,10 +149,10 @@ export default function PortfolioAnalytics({ perf, holdings, strat, spy, expecta
                   <ResponsiveContainer width="99%" height="88%">
                     <LineChart data={analytics.rollingLine}>
                       <CartesianGrid strokeDasharray="" stroke="var(--border)" vertical={false} />
-                      <XAxis dataKey="month" stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} />
-                      <YAxis stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} />
+                      <XAxis dataKey="month" stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'Geist Mono, monospace' }} />
+                      <YAxis stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'Geist Mono, monospace' }} />
                       <Tooltip contentStyle={TT_STYLE} />
-                      <Legend wrapperStyle={{ fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-2)' }} />
+                      <Legend wrapperStyle={{ fontSize: '10px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-2)' }} />
                       <Line type="monotone" dataKey="Alpha"       stroke="var(--text-strong)" strokeWidth={2} dot={false} isAnimationActive={false} />
                       <Line type="monotone" dataKey="DrawdownGap" stroke="var(--border-3)"   strokeWidth={1} strokeDasharray="4 4" dot={false} isAnimationActive={false} />
                     </LineChart>
@@ -167,10 +167,10 @@ export default function PortfolioAnalytics({ perf, holdings, strat, spy, expecta
                   <ResponsiveContainer width="99%" height="88%">
                     <BarChart data={analytics.exposures}>
                       <CartesianGrid strokeDasharray="" stroke="var(--border)" vertical={false} />
-                      <XAxis dataKey="name" stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} />
-                      <YAxis stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} />
+                      <XAxis dataKey="name" stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'Geist Mono, monospace' }} />
+                      <YAxis stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'Geist Mono, monospace' }} />
                       <Tooltip contentStyle={TT_STYLE} />
-                      <Legend wrapperStyle={{ fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-2)' }} />
+                      <Legend wrapperStyle={{ fontSize: '10px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-2)' }} />
                       <Bar dataKey="Portfolio" fill="var(--text)" isAnimationActive={false} />
                       <Bar dataKey="Benchmark" fill="var(--border-3)" isAnimationActive={false} />
                     </BarChart>
@@ -187,7 +187,7 @@ export default function PortfolioAnalytics({ perf, holdings, strat, spy, expecta
                   <ResponsiveContainer width="99%" height="88%">
                     <RadarChart outerRadius="70%" data={analytics.factors}>
                       <PolarGrid stroke="var(--border-2)" />
-                      <PolarAngleAxis dataKey="name" tick={{ fill: 'var(--text-2)', fontSize: 9, fontFamily: 'JetBrains Mono, monospace' }} />
+                      <PolarAngleAxis dataKey="name" tick={{ fill: 'var(--text-2)', fontSize: 9, fontFamily: 'Geist Mono, monospace' }} />
                       <Radar 
                         name="Portfolio" 
                         dataKey="Portfolio" 
@@ -209,7 +209,7 @@ export default function PortfolioAnalytics({ perf, holdings, strat, spy, expecta
                         isAnimationActive={false}
                       />
                       <Tooltip contentStyle={TT_STYLE} />
-                      <Legend wrapperStyle={{ fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-2)' }} />
+                      <Legend wrapperStyle={{ fontSize: '10px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-2)' }} />
                     </RadarChart>
                   </ResponsiveContainer>
                 </div>

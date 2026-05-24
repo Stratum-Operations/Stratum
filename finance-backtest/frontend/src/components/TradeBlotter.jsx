@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+﻿import { useEffect, useState, useMemo } from 'react'
 import axios from 'axios'
 import { RefreshCw } from 'lucide-react'
 import { mockAlpacaPositions, mockHoldings } from '../data/mockFallbackData'
@@ -43,8 +43,8 @@ function buildDiff(targetWeights, alpacaPositions, aum) {
 function KV({ label, value, valueColor }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: `1px solid ${C.border}`, padding: '5px 0' }}>
-      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted }}>{label}</span>
-      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', fontWeight: 700, color: valueColor || C.white }}>{value}</span>
+      <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted }}>{label}</span>
+      <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: '11px', fontWeight: 700, color: valueColor || C.white }}>{value}</span>
     </div>
   )
 }
@@ -102,7 +102,7 @@ export default function TradeBlotter() {
     setExecuting(false)
   }
 
-  const mono = { fontFamily: 'JetBrains Mono, monospace' }
+  const mono = { fontFamily: 'Geist Mono, monospace' }
 
   return (
     <div style={{ background: C.bg, color: C.text, minHeight: '100%', ...mono, fontSize: '12px' }}>
@@ -125,7 +125,7 @@ export default function TradeBlotter() {
                 border: `1px solid ${C.border}`,
                 color: C.text,
                 fontSize: '9px',
-                fontFamily: 'JetBrains Mono, monospace',
+                fontFamily: 'Geist Mono, monospace',
                 padding: '2px 4px',
                 outline: 'none',
                 cursor: 'pointer',
@@ -185,7 +185,7 @@ export default function TradeBlotter() {
                     borderBottom: `1px solid ${C.borderHi}`,
                     color: C.white,
                     fontSize: '15px',
-                    fontFamily: 'JetBrains Mono, monospace',
+                    fontFamily: 'Geist Mono, monospace',
                     fontWeight: 600,
                     width: '100%',
                     outline: 'none',
@@ -241,7 +241,7 @@ export default function TradeBlotter() {
                   display: 'block',
                   width: '100%',
                   fontSize: diff.length === 0 ? '14px' : confirmed ? '18px' : '22px',
-                  fontFamily: 'JetBrains Mono, monospace',
+                  fontFamily: 'Geist Mono, monospace',
                   fontWeight: 900,
                   letterSpacing: '-0.01em',
                   textTransform: 'uppercase',

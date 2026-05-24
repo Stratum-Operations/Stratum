@@ -912,7 +912,7 @@ def _build_analyst_prompt(ctx: dict) -> str:
     total_val  = ctx.get("total_value", 0)
 
     lines = [
-        "You are a senior portfolio analyst for Phineus OS, an institutional portfolio intelligence platform.",
+        "You are a senior portfolio analyst for Stratum, an institutional portfolio intelligence platform.",
         "Answer questions about the user's portfolio using ONLY the data below — do not invent figures.",
         "Be direct, specific, and quantitative. Speak like a Bloomberg terminal analyst: data-first, precise.",
         "Do not give financial advice or recommend buying/selling specific securities.",

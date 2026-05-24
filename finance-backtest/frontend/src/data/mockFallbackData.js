@@ -1,4 +1,4 @@
-// Mock fallback data for Phineus OS when the backend API server is unreachable.
+// Mock fallback data for Stratum when the backend API server is unreachable.
 
 const TICKERS = [
   { ticker: 'AAPL', sector: 'Technology', weight: 0.10, score: 0.94 },

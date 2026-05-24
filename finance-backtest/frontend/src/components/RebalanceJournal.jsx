@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+﻿import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react'
 
 const ALTERNATE_TICKERS = ['NFLX', 'META', 'TSLA', 'JPM', 'UNH', 'V', 'JNJ', 'WMT', 'PG', 'MA', 'HD', 'CVX', 'ABBV', 'MRK', 'PEP']
@@ -162,7 +162,7 @@ export default function RebalanceJournal({ holdings }) {
                       </span>
                     </div>
                   </td>
-                  <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: (h.score !== undefined && h.score !== null ? h.score : (seededRand(h.ticker) * 0.4 + 0.6)) > 0.8 ? 'var(--green)' : 'var(--text)' }}>
+                  <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'Geist Mono, monospace', fontSize: '11px', color: (h.score !== undefined && h.score !== null ? h.score : (seededRand(h.ticker) * 0.4 + 0.6)) > 0.8 ? 'var(--green)' : 'var(--text)' }}>
                     {(h.score !== undefined && h.score !== null ? h.score : (seededRand(h.ticker) * 0.4 + 0.6)).toFixed(3)}
                   </td>
                 </tr>

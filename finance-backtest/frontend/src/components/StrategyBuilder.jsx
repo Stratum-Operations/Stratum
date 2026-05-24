@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+﻿import { useState, useMemo } from 'react'
 import axios from 'axios'
 
 const API = 'http://127.0.0.1:8001/api'
@@ -17,7 +17,7 @@ const C = {
   red:    'var(--red)',
 }
 
-const MONO = { fontFamily: 'JetBrains Mono, monospace' }
+const MONO = { fontFamily: 'Geist Mono, monospace' }
 const SANS = { fontFamily: 'Space Grotesk, sans-serif' }
 
 // ─── Defaults ────────────────────────────────────────────────────────────
@@ -432,16 +432,16 @@ export default function StrategyLab() {
 function SectionHead({ label }) {
   return (
     <div style={{
-      fontFamily: 'JetBrains Mono, monospace',
+      fontFamily: 'Geist Mono, monospace',
       fontSize: '8px',
       fontWeight: 700,
       letterSpacing: '0.2em',
       textTransform: 'uppercase',
-      color: '#4a4a4a',
+      color: 'var(--text-3)',
       padding: '10px 16px 4px',
-      borderTop: '1px solid #2a2a2a',
-      borderBottom: '1px solid #1a1a1a',
-      background: '#111111',
+      borderTop: '1px solid var(--border)',
+      borderBottom: '1px solid var(--border)',
+      background: 'var(--surface-2)',
       marginTop: '4px',
     }}>
       {label}

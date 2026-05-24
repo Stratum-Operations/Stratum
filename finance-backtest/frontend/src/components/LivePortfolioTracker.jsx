@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+﻿import { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
 import { TrendingUp, AlertCircle, ShoppingCart } from 'lucide-react'
 
@@ -13,7 +13,7 @@ const TT_STYLE = {
   background: 'var(--surface-2)',
   border: '1px solid var(--border-2)',
   color: 'var(--text)',
-  fontFamily: 'JetBrains Mono, monospace',
+  fontFamily: 'Geist Mono, monospace',
   fontSize: '11px',
 }
 
@@ -24,10 +24,10 @@ const LiveLedgerItem = ({ ticker, entry, current, weight }) => {
   return (
     <div className="ledger-item" style={{ borderLeftColor: positive ? 'var(--green)' : 'var(--red)', padding: '6px 12px' }}>
       <div className="ledger-info">
-        <strong style={{ color: 'var(--text-strong)', fontSize: '11px', fontFamily: 'JetBrains Mono, monospace' }}>{ticker}</strong>
-        <span style={{ fontSize: '10px', color: 'var(--text-2)', fontFamily: 'JetBrains Mono, monospace' }}>{weight}% Alloc.</span>
+        <strong style={{ color: 'var(--text-strong)', fontSize: '11px', fontFamily: 'Geist Mono, monospace' }}>{ticker}</strong>
+        <span style={{ fontSize: '10px', color: 'var(--text-2)', fontFamily: 'Geist Mono, monospace' }}>{weight}% Alloc.</span>
       </div>
-      <div className="ledger-prices" style={{ display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '9px', fontFamily: 'JetBrains Mono, monospace' }}>
+      <div className="ledger-prices" style={{ display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '9px', fontFamily: 'Geist Mono, monospace' }}>
         <span style={{ color: 'var(--text-3)' }}>Entry: <strong style={{ color: 'var(--text-strong)' }}>${entry.toFixed(2)}</strong></span>
         <span style={{ color: 'var(--text-3)' }}>Current: <strong style={{ color: 'var(--text-strong)' }}>${current.toFixed(2)}</strong></span>
       </div>
@@ -113,10 +113,10 @@ export default function LivePortfolioTracker({ holdings, perf }) {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="month" stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} />
-                  <YAxis stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} domain={['auto', 'auto']} />
+                  <XAxis dataKey="month" stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'Geist Mono, monospace' }} />
+                  <YAxis stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'Geist Mono, monospace' }} domain={['auto', 'auto']} />
                   <Tooltip contentStyle={TT_STYLE} />
-                  <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '8px', color: 'var(--text-2)', fontFamily: 'JetBrains Mono, monospace' }} />
+                  <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '8px', color: 'var(--text-2)', fontFamily: 'Geist Mono, monospace' }} />
                   <Line type="monotone" dataKey="Expected" stroke="var(--border-3)" strokeDasharray="5 5" strokeWidth={1} dot={false} />
                   <Line type="monotone" dataKey="Realized"  stroke="var(--text-strong)" strokeWidth={2}   dot={false} />
                 </LineChart>
@@ -167,7 +167,7 @@ export default function LivePortfolioTracker({ holdings, perf }) {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-3)', padding: '24px 0', fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-3)', padding: '24px 0', fontSize: '11px', fontFamily: 'Geist Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     No active positions to monitor.
                   </td>
                 </tr>

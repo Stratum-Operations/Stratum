@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+﻿import { useState, useRef, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import { ClipboardPaste, UploadCloud, AlertCircle, Sparkles, Search } from 'lucide-react'
 
 const API_BASE = 'http://127.0.0.1:8001/api'
-const MONO = 'JetBrains Mono, monospace'
+const MONO = 'Geist Mono, monospace'
 const SANS = 'Inter, system-ui, sans-serif'
 
 const TH_STYLE = {

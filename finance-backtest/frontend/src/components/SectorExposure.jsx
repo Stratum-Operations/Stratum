@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+﻿import { useMemo } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const COLORS = ['#e8e8e8', '#b0b0b0', '#808080', '#606060', '#404040', '#c8c8c8', '#989898', '#707070']
@@ -20,7 +20,7 @@ export default function SectorExposure({ holdings }) {
       <span style={{
         fontSize: '10px', fontWeight: 800, letterSpacing: '0.2em',
         textTransform: 'uppercase', color: 'var(--text)', marginBottom: '12px',
-        fontFamily: 'JetBrains Mono, monospace', display: 'block',
+        fontFamily: 'Geist Mono, monospace', display: 'block',
       }}>
         Sector Exposure
       </span>
@@ -42,18 +42,18 @@ export default function SectorExposure({ holdings }) {
             <Tooltip
               formatter={val => `${(val * 100).toFixed(1)}%`}
               contentStyle={{
-                background: '#141414',
-                border: '1px solid #2e2e2e',
-                fontFamily: 'JetBrains Mono, monospace',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                fontFamily: 'Geist Mono, monospace',
                 fontSize: '11px',
-                color: '#d0d0d0',
+                color: 'var(--text)',
               }}
             />
             <Legend
               layout="vertical"
               verticalAlign="middle"
               align="right"
-              wrapperStyle={{ fontSize: '10px', color: '#888888', fontFamily: 'JetBrains Mono, monospace' }}
+              wrapperStyle={{ fontSize: '10px', color: 'var(--text-2)', fontFamily: 'Geist Mono, monospace' }}
             />
           </PieChart>
         </ResponsiveContainer>

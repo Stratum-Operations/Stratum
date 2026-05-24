@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+﻿import { useState, useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
 import { Check } from 'lucide-react'
 
@@ -20,7 +20,7 @@ const FACTORS = [
 const TT_STYLE = {
   background: 'var(--surface-3)',
   border: '1px solid var(--border-2)',
-  fontFamily: 'JetBrains Mono, monospace',
+  fontFamily: 'Geist Mono, monospace',
   fontSize: '11px',
   color: 'var(--text-strong)',
   borderRadius: 0,
@@ -123,10 +123,10 @@ export default function BenchmarkSuite({ perf, holdings }) {
           <ResponsiveContainer width="100%" height="88%">
             <BarChart data={factorData}>
               <CartesianGrid strokeDasharray="" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="name" stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }} />
-              <YAxis stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }} domain={[0, 100]} />
+              <XAxis dataKey="name" stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'Geist Mono, monospace', fontWeight: 600 }} />
+              <YAxis stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'Geist Mono, monospace', fontWeight: 600 }} domain={[0, 100]} />
               <Tooltip contentStyle={TT_STYLE} />
-              <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '6px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-2)' }} />
+              <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '6px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-2)' }} />
               <Bar dataKey="Portfolio" fill="var(--green)" />
               {selected.map(id => (
                 <Bar key={id} dataKey={id} fill={BENCHMARKS.find(b => b.id === id).color} />

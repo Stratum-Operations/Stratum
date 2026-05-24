@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+﻿import React, { useState, useMemo, useEffect } from 'react'
 import axios from 'axios'
 import { ChevronRight, X } from 'lucide-react'
 import { mockScreener } from '../data/mockFallbackData'
@@ -61,7 +61,7 @@ const TH_BASE = {
   cursor: 'pointer',
   userSelect: 'none',
   whiteSpace: 'nowrap',
-  fontFamily: 'JetBrains Mono, monospace',
+  fontFamily: 'Geist Mono, monospace',
 }
 
 function TH({ col, sortKey, sortDir, onSort }) {
@@ -198,7 +198,7 @@ export default function AlphaScreener({ globalDate }) {
     color: 'var(--text)',
     padding: '5px 10px',
     fontSize: '11px',
-    fontFamily: 'JetBrains Mono, monospace',
+    fontFamily: 'Geist Mono, monospace',
     outline: 'none',
   }
 
@@ -209,7 +209,7 @@ export default function AlphaScreener({ globalDate }) {
     padding: '4px 12px',
     fontSize: '9px',
     fontWeight: 700,
-    fontFamily: 'JetBrains Mono, monospace',
+    fontFamily: 'Geist Mono, monospace',
     cursor: 'pointer',
     transition: 'all 0.2s',
   })
@@ -332,7 +332,7 @@ export default function AlphaScreener({ globalDate }) {
                                   borderBottom: '1px solid var(--border)',
                                   whiteSpace: 'nowrap',
                                   background: 'transparent',
-                                  fontFamily: col.key === 'ticker' ? 'JetBrains Mono, monospace' : 'inherit',
+                                  fontFamily: col.key === 'ticker' ? 'Geist Mono, monospace' : 'inherit',
                                   fontWeight: col.key === 'ticker' ? (isActiveHolding ? 900 : 600) :
                                               isZ ? (Math.abs(zVal) > 1.0 ? 800 : 400) : 400,
                                   color: col.key === 'ticker' ? (isActiveHolding ? 'var(--green)' : 'var(--text)') :
@@ -421,7 +421,7 @@ export default function AlphaScreener({ globalDate }) {
           <span>Z-Score Baseline: Cross-Sectional</span>
         </div>
         <div className="text-text-3 font-semibold">
-          PHINEUS OS · QP OPTIMIZER V7
+          STRATUM · QP OPTIMIZER V7
         </div>
       </div>
     </div>

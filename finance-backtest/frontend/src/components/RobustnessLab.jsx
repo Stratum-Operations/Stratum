@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+﻿import { useState, useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceArea } from 'recharts'
 import { ShieldCheck, Database, History, Zap } from 'lucide-react'
 
@@ -13,7 +13,7 @@ const SENSITIVITY_DATA = [
 const TT_STYLE = {
   background: 'var(--surface-2)',
   border: '1px solid var(--border)',
-  fontFamily: 'JetBrains Mono, monospace',
+  fontFamily: 'Geist Mono, monospace',
   fontSize: '11px',
   color: 'var(--text)',
 }
@@ -35,7 +35,7 @@ export default function RobustnessLab({ perf }) {
     color: 'var(--text)',
     padding: '5px 10px',
     fontSize: '11px',
-    fontFamily: 'JetBrains Mono, monospace',
+    fontFamily: 'Geist Mono, monospace',
     outline: 'none',
     cursor: 'pointer',
   }
@@ -53,7 +53,7 @@ export default function RobustnessLab({ perf }) {
 
         {/* Left: Config panel */}
         <div style={{ background: 'var(--surface)', borderRight: '1px solid var(--border)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <span style={{ fontSize: '9px', color: 'var(--text-2)', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '9px', color: 'var(--text-2)', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Geist Mono, monospace', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Database size={12} /> Sensitivity Parameters
           </span>
 
@@ -79,7 +79,7 @@ export default function RobustnessLab({ perf }) {
           </div>
 
           <div style={{ marginTop: 'auto', padding: '14px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-            <span style={{ fontSize: '9px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
+            <span style={{ fontSize: '9px', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'Geist Mono, monospace', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
               Sensitivity Outlook
             </span>
             <div style={{ fontSize: '11px', color: 'var(--text-2)', lineHeight: 1.6 }}>
@@ -90,7 +90,7 @@ export default function RobustnessLab({ perf }) {
 
         {/* Right: Walk-forward chart */}
         <div style={{ background: 'var(--bg)', padding: '20px', minWidth: 0 }}>
-          <span style={{ fontSize: '9px', color: 'var(--text-2)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '9px', color: 'var(--text-2)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontFamily: 'Geist Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
             <History size={12} /> In-Sample vs. Out-of-Sample Performance
           </span>
           <div style={{ height: '300px' }}>
@@ -98,20 +98,20 @@ export default function RobustnessLab({ perf }) {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={walkForwardData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="date" stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} />
-                  <YAxis stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }} />
+                  <XAxis dataKey="date" stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'Geist Mono, monospace' }} />
+                  <YAxis stroke="var(--border)" tick={{ fontSize: 9, fill: 'var(--text-3)', fontFamily: 'Geist Mono, monospace' }} />
                   <Tooltip contentStyle={TT_STYLE} />
                   <ReferenceArea
                     x1={walkForwardData[0]?.date}
                     x2={splitDate}
                     fill="var(--surface)"
-                    label={{ position: 'insideTopLeft', value: 'IS', fill: 'var(--text-3)', fontSize: 9, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
+                    label={{ position: 'insideTopLeft', value: 'IS', fill: 'var(--text-3)', fontSize: 9, fontFamily: 'Geist Mono, monospace', fontWeight: 700 }}
                   />
                   <ReferenceArea
                     x1={splitDate}
                     x2={walkForwardData[walkForwardData.length - 1]?.date}
                     fill="transparent"
-                    label={{ position: 'insideTopLeft', value: 'OOS', fill: 'var(--text-2)', fontSize: 9, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
+                    label={{ position: 'insideTopLeft', value: 'OOS', fill: 'var(--text-2)', fontSize: 9, fontFamily: 'Geist Mono, monospace', fontWeight: 700 }}
                   />
                   <Line type="monotone" dataKey="Strategy_Equity" stroke="var(--teal)" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="SPY_Equity" stroke="var(--border-3)" strokeWidth={1} strokeDasharray="3 3" dot={false} />
@@ -126,19 +126,19 @@ export default function RobustnessLab({ perf }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px' }}>
             <div style={{ background: 'var(--surface)', padding: '14px', border: '1px solid var(--border)' }}>
-              <span style={{ fontSize: '8px', color: 'var(--text-3)', textTransform: 'uppercase', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>
+              <span style={{ fontSize: '8px', color: 'var(--text-3)', textTransform: 'uppercase', fontWeight: 700, fontFamily: 'Geist Mono, monospace', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>
                 In-Sample
               </span>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text)', fontFamily: 'Geist Mono, monospace' }}>
                 <span>Sharpe: <strong style={{ color: 'var(--text-strong)' }}>1.35</strong></span>
                 <span>Win: <strong style={{ color: 'var(--accent-green)' }}>62%</strong></span>
               </div>
             </div>
             <div style={{ background: 'var(--surface)', padding: '14px', border: '1px solid var(--border)' }}>
-              <span style={{ fontSize: '8px', color: 'var(--text-3)', textTransform: 'uppercase', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>
+              <span style={{ fontSize: '8px', color: 'var(--text-3)', textTransform: 'uppercase', fontWeight: 700, fontFamily: 'Geist Mono, monospace', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>
                 Out-of-Sample
               </span>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text)', fontFamily: 'Geist Mono, monospace' }}>
                 <span>Sharpe: <strong style={{ color: 'var(--text-strong)' }}>1.22</strong></span>
                 <span>Win: <strong style={{ color: 'var(--accent-green)' }}>58%</strong></span>
               </div>
@@ -149,7 +149,7 @@ export default function RobustnessLab({ perf }) {
 
       {/* Sensitivity Matrix */}
       <div style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: '16px 20px' }}>
-        <span style={{ fontSize: '9px', color: 'var(--text-2)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        <span style={{ fontSize: '9px', color: 'var(--text-2)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontFamily: 'Geist Mono, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
           <Zap size={12} /> Parameter Sensitivity Matrix
         </span>
         <div className="table-wrapper">
@@ -169,10 +169,10 @@ export default function RobustnessLab({ perf }) {
                 <tr key={d.id} style={{ opacity: String(d.size) === String(config.size) ? 1 : 0.4 }}>
                   <td>{d.size} Assets</td>
                   <td>{d.freq}</td>
-                  <td className="signal-green" style={{ fontFamily: 'JetBrains Mono, monospace' }}>{d.cagr}</td>
-                  <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{d.sharpe}</td>
-                  <td className="signal-red" style={{ fontFamily: 'JetBrains Mono, monospace' }}>{d.drawdown}</td>
-                  <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{d.turnover}</td>
+                  <td className="signal-green" style={{ fontFamily: 'Geist Mono, monospace' }}>{d.cagr}</td>
+                  <td style={{ fontFamily: 'Geist Mono, monospace' }}>{d.sharpe}</td>
+                  <td className="signal-red" style={{ fontFamily: 'Geist Mono, monospace' }}>{d.drawdown}</td>
+                  <td style={{ fontFamily: 'Geist Mono, monospace' }}>{d.turnover}</td>
                 </tr>
               ))}
             </tbody>

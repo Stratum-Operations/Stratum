@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+﻿import { useState, useMemo } from 'react'
 import {
   LineChart, Line, XAxis, YAxis,
   Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine,
@@ -25,7 +25,7 @@ const TT = ({ active, payload, label, view }) => {
       border: '1px solid var(--border)',
       borderRadius: '0px',
       padding: '12px 14px',
-      fontFamily: 'JetBrains Mono, monospace',
+      fontFamily: 'Geist Mono, monospace',
       fontSize: '12px',
       color: 'var(--text)',
       minWidth: '220px',
@@ -172,7 +172,7 @@ export default function MainChart({ perf }) {
         background: 'var(--surface-2)',
         borderBottom: '1px solid var(--border)',
         fontSize: '11px',
-        fontFamily: 'JetBrains Mono, monospace',
+        fontFamily: 'Geist Mono, monospace',
       }}>
         {/* Indicators */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -237,7 +237,7 @@ export default function MainChart({ perf }) {
           fontSize: '10px',
           color: 'var(--teal)',
           borderBottom: '1px solid var(--border)',
-          fontFamily: 'JetBrains Mono, monospace',
+          fontFamily: 'Geist Mono, monospace',
           display: 'flex',
           justifyContent: 'space-between',
         }}>
@@ -255,7 +255,7 @@ export default function MainChart({ perf }) {
             <XAxis
               dataKey="date"
               stroke="var(--border)"
-              tick={{ fontSize: 11, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}
+              tick={{ fontSize: 11, fill: 'var(--text-3)', fontFamily: 'Geist Mono, monospace', fontWeight: 600 }}
               tickFormatter={t => String(t).substring(0, 4)}
               minTickGap={50}
               axisLine={{ stroke: 'var(--border)' }}
@@ -263,7 +263,7 @@ export default function MainChart({ perf }) {
             />
             <YAxis
               stroke="var(--border)"
-              tick={{ fontSize: 11, fill: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}
+              tick={{ fontSize: 11, fill: 'var(--text-3)', fontFamily: 'Geist Mono, monospace', fontWeight: 600 }}
               tickFormatter={cfg.yFmt}
               axisLine={false}
               tickLine={false}
