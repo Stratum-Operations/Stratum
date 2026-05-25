@@ -1,8 +1,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { AreaChart, Area, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
-import { X, Calendar as CalendarIcon, ChevronDown } from 'lucide-react'
+import { X } from 'lucide-react'
 import DataQualityManifest from './DataQualityManifest'
-import { Calendar } from './ui/calendar'
 
 /* ── Utilities ───────────────────────────────────────────────────── */
 function healthColor(score) {
@@ -382,37 +381,7 @@ function HoldingsTable({ holdings, loading }) {
 /* ── Command Center ──────────────────────────────────────────────── */
 export default function LivePortfolio({ holdings, perf, strat, spy, selectedDate, onDateChange, loading }) {
   const h = holdings || {}
-  const navValue = h.total_value != null
-    ? `$${Number(h.total_value).toLocaleString('en-US', { maximumFractionDigits: 0 })}`
-    : '—'
-  const healthScore = h.health?.score ?? 85;
   const [activeModal, setActiveModal] = useState(null);
-  const [calendarOpen, setCalendarOpen] = useState(false);
-
-  const calendarDate = useMemo(() => {
-    if (!selectedDate) return undefined;
-    const parts = selectedDate.split('-');
-    if (parts.length !== 3) return undefined;
-    return new Date(parts[0], parts[1] - 1, parts[2]);
-  }, [selectedDate]);
-
-  const handleDateSelect = (date) => {
-    if (!date) return;
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
-    onDateChange(dateStr);
-    setCalendarOpen(false);
-  };
-
-  const formatDateLabel = (dateStr) => {
-    if (!dateStr) return 'Select Date';
-    const parts = dateStr.split('-');
-    if (parts.length !== 3) return dateStr;
-    const d = new Date(parts[0], parts[1] - 1, parts[2]);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -422,93 +391,7 @@ export default function LivePortfolio({ holdings, perf, strat, spy, selectedDate
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const filteredPerf = useMemo(() => {
-    if (!perf || perf.length === 0) return [];
-    if (!selectedDate) return perf;
-    const targetTime = new Date(selectedDate + 'T23:59:59').getTime();
-    return perf.filter(p => new Date(p.date).getTime() <= targetTime);
-  }, [perf, selectedDate]);
-
-  // Dynamic CAGR & Max Drawdown calculations
-  const dynamicMetrics = useMemo(() => {
-    if (filteredPerf.length === 0) {
-      return {
-        stratCAGR: '—',
-        spyCAGR: '—',
-        cagrDelta: 0,
-        cagrDeltaSign: '',
-        stratMaxDD: '—',
-        spyMaxDD: '—',
-        ddDelta: 0,
-        ddDeltaSign: ''
-      };
-    }
-
-    const startEq = filteredPerf[0].Strategy_Equity || 10000;
-    const endEq = filteredPerf[filteredPerf.length - 1].Strategy_Equity || 10000;
-    const spyStartEq = filteredPerf[0].SPY_Equity || 10000;
-    const spyEndEq = filteredPerf[filteredPerf.length - 1].SPY_Equity || 10000;
-
-    const startDate = new Date(filteredPerf[0].date);
-    const endDate = new Date(filteredPerf[filteredPerf.length - 1].date);
-    const diffTime = endDate - startDate;
-    const years = diffTime / (1000 * 60 * 60 * 24 * 365.25);
-
-    let stratCAGRVal = 0;
-    let spyCAGRVal = 0;
-    if (years > 0.05) {
-      stratCAGRVal = ((endEq / startEq) ** (1 / years) - 1) * 100;
-      spyCAGRVal = ((spyEndEq / spyStartEq) ** (1 / years) - 1) * 100;
-    } else {
-      stratCAGRVal = ((endEq - startEq) / startEq) * 100;
-      spyCAGRVal = ((spyEndEq - spyStartEq) / spyStartEq) * 100;
-    }
-
-    // Calculate Max Drawdown
-    let stratPeak = 0;
-    let spyPeak = 0;
-    let stratMaxDDVal = 0;
-    let spyMaxDDVal = 0;
-
-    filteredPerf.forEach(p => {
-      const eq = p.Strategy_Equity || 0;
-      if (eq > stratPeak) stratPeak = eq;
-      const dd = stratPeak > 0 ? (eq - stratPeak) / stratPeak : 0;
-      if (dd < stratMaxDDVal) stratMaxDDVal = dd;
-
-      const spyEq = p.SPY_Equity || 0;
-      if (spyEq > spyPeak) spyPeak = spyEq;
-      const sdd = spyPeak > 0 ? (spyEq - spyPeak) / spyPeak : 0;
-      if (sdd < spyMaxDDVal) spyMaxDDVal = sdd;
-    });
-
-    const cagrDelta = stratCAGRVal - spyCAGRVal;
-    const cagrDeltaSign = cagrDelta >= 0 ? 'Δ +' : 'Δ ';
-
-    const ddDelta = Math.abs(spyMaxDDVal) - Math.abs(stratMaxDDVal);
-    const ddDeltaSign = ddDelta >= 0 ? 'Δ +' : 'Δ ';
-
-    return {
-      stratCAGR: stratCAGRVal.toFixed(2) + '%',
-      spyCAGR: spyCAGRVal.toFixed(2) + '%',
-      cagrDelta,
-      cagrDeltaSign,
-      stratMaxDD: (stratMaxDDVal * 100).toFixed(2) + '%',
-      spyMaxDD: (spyMaxDDVal * 100).toFixed(2) + '%',
-      ddDelta,
-      ddDeltaSign
-    };
-  }, [filteredPerf]);
-
-  // Dynamic NAV Value based on point-in-time selectedDate
-  const dynamicNavValue = useMemo(() => {
-    if (filteredPerf.length > 0) {
-      const eq = filteredPerf[filteredPerf.length - 1].Strategy_Equity;
-      return `$${Math.round(eq).toLocaleString()}`;
-    }
-    return navValue;
-  }, [filteredPerf, navValue]);
-
+  const healthScore    = h.health?.score ?? 0
   const activeHoldings = useMemo(
     () => (h.holdings ?? []).filter(x => Number(x.weight) > 0),
     [h]
@@ -519,17 +402,21 @@ export default function LivePortfolio({ holdings, perf, strat, spy, selectedDate
   )
   const maxSectorEntry = h.risk_radar?.sector_exposure?.[0]
 
+  const navValue = h.total_value != null
+    ? `$${Number(h.total_value).toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+    : '—'
+
   const maxSectorLabel = maxSectorEntry != null
     ? `${(Number(maxSectorEntry.weight) * 100).toFixed(1)}%`
     : '—'
 
   // Sparkline data generators
   const navData = useMemo(() => {
-    if (filteredPerf.length === 0) {
+    if (!perf || perf.length === 0) {
       return Array.from({ length: 12 }).map((_, i) => ({ val: 1000000 + Math.sin(i) * 5000 }));
     }
-    return filteredPerf.map(p => ({ val: p.Strategy_Equity }));
-  }, [filteredPerf]);
+    return perf.map(p => ({ val: p.Strategy_Equity }));
+  }, [perf]);
 
   const healthData = useMemo(() => {
     const base = healthScore || 85;
@@ -540,33 +427,33 @@ export default function LivePortfolio({ holdings, perf, strat, spy, selectedDate
   }, [healthScore]);
 
   const cagrData = useMemo(() => {
-    if (filteredPerf.length === 0) {
+    if (!perf || perf.length === 0) {
       return Array.from({ length: 12 }).map((_, i) => ({ val: i * 0.5 }));
     }
-    const first = filteredPerf[0]?.Strategy_Equity || 1000000;
-    return filteredPerf.map(p => ({ val: ((p.Strategy_Equity - first) / first) * 100 }));
-  }, [filteredPerf]);
+    const first = perf[0]?.Strategy_Equity || 1000000;
+    return perf.map(p => ({ val: ((p.Strategy_Equity - first) / first) * 100 }));
+  }, [perf]);
 
   const ddData = useMemo(() => {
-    if (filteredPerf.length === 0) {
+    if (!perf || perf.length === 0) {
       return Array.from({ length: 12 }).map(() => ({ val: 0 }));
     }
     let peak = 0;
-    return filteredPerf.map(p => {
+    return perf.map(p => {
       const eq = p.Strategy_Equity;
       if (eq > peak) peak = eq;
       const dd = peak > 0 ? ((eq - peak) / peak) * 100 : 0;
       return { val: dd };
     });
-  }, [filteredPerf]);
+  }, [perf]);
 
   // Delta calculations
   let lastDailyReturnVal = '—';
   let lastDailyReturnPct = '—';
   let navChangeType = 'positive';
-  if (filteredPerf && filteredPerf.length >= 2) {
-    const last = filteredPerf[filteredPerf.length - 1].Strategy_Equity;
-    const prev = filteredPerf[filteredPerf.length - 2].Strategy_Equity;
+  if (perf && perf.length >= 2) {
+    const last = perf[perf.length - 1].Strategy_Equity;
+    const prev = perf[perf.length - 2].Strategy_Equity;
     const diff = last - prev;
     const pct = (diff / prev) * 100;
     
@@ -581,29 +468,47 @@ export default function LivePortfolio({ holdings, perf, strat, spy, selectedDate
     navChangeType = diff >= 0 ? 'positive' : 'negative';
   }
 
+  let cagrDelta = 0;
+  let cagrDeltaSign = '';
+  if (strat?.CAGR && spy?.CAGR) {
+    const sVal = parseFloat(strat.CAGR);
+    const bVal = parseFloat(spy.CAGR);
+    cagrDelta = sVal - bVal;
+    cagrDeltaSign = cagrDelta >= 0 ? 'Δ +' : 'Δ ';
+  }
+  
+  let ddDelta = 0;
+  let ddDeltaSign = '';
+  if (strat?.['Max Drawdown'] && spy?.['Max Drawdown']) {
+    const sVal = parseFloat(strat['Max Drawdown']);
+    const bVal = parseFloat(spy['Max Drawdown']);
+    ddDelta = Math.abs(bVal) - Math.abs(sVal);
+    ddDeltaSign = ddDelta >= 0 ? 'Δ +' : 'Δ ';
+  }
+
   const metricDetails = {
     'PORTFOLIO NAV': {
       title: 'Portfolio Growth',
-      value: dynamicNavValue,
+      value: navValue,
       subtitle: `${lastDailyReturnVal} (${lastDailyReturnPct}) Today`,
       description: 'A starting investment of $10,000 in January 1, 2017 would be worth $25,108 as of April 30, 2026, which represents a cumulative return of 151.08%. Over the same period, the benchmark would be worth $37,264, which represents a cumulative return of 272.64%.'
     },
     'TOTAL RETURN / CAGR': {
       title: 'Return Analysis',
-      value: dynamicMetrics.stratCAGR,
-      subtitle: `SPY Benchmark: ${dynamicMetrics.spyCAGR} (${dynamicMetrics.cagrDeltaSign}${dynamicMetrics.cagrDelta.toFixed(2)}% relative)`,
+      value: strat?.CAGR || '—',
+      subtitle: spy?.CAGR ? `SPY Benchmark: ${spy.CAGR} (${cagrDeltaSign}${cagrDelta.toFixed(2)}% relative)` : '—',
       description: 'Over the period, the portfolio generated a return of 10.37% per year, with 79 out of 112 or 70.54% of months positive. Over the same period, the benchmark generated a return of 15.14% per year, with 79 out of 112 or 70.54% of months positive. The best year for the portfolio was 2019 with 24.02% return and the worst year over the period was 2022 with -17.95% return.'
     },
     'MAX DRAWDOWN': {
       title: 'Risk Profile',
-      value: dynamicMetrics.stratMaxDD,
-      subtitle: `SPY Benchmark: ${dynamicMetrics.spyMaxDD} (${dynamicMetrics.ddDeltaSign}${dynamicMetrics.ddDelta.toFixed(2)}% relative)`,
+      value: strat?.['Max Drawdown'] || '—',
+      subtitle: spy?.['Max Drawdown'] ? `SPY Benchmark: ${spy['Max Drawdown']} (${ddDeltaSign}${ddDelta.toFixed(2)}% relative)` : '—',
       description: 'The maximum drawdown of the portfolio was 23.55% from January 1, 2022 to September 30, 2022, with a recovery time of 18 months. Over the same period maximum drawdown of the benchmark was 23.93% from January 1, 2022 to September 30, 2022 with a recovery time of 15 months. The risk adjusted return of the portfolio, measured by the Sharpe Ratio, was 0.65. Whereas the Sharpe ratio of the benchmark was 0.83. The portfolio captured 72.12% of the upside of the benchmark whilst capturing 85.31% of the downside.'
     }
   };
 
   const renderModalChart = (metricName) => {
-    if (filteredPerf.length === 0) {
+    if (!perf || perf.length === 0) {
       return (
         <div className="flex items-center justify-center h-full font-mono text-xs text-text-3">
           NO PERFORMANCE DATA AVAILABLE
@@ -611,10 +516,10 @@ export default function LivePortfolio({ holdings, perf, strat, spy, selectedDate
       );
     }
 
-    const firstStrat = filteredPerf[0]?.Strategy_Equity || 10000;
-    const firstSpy = filteredPerf[0]?.SPY_Equity || 10000;
+    const firstStrat = perf[0]?.Strategy_Equity || 10000;
+    const firstSpy = perf[0]?.SPY_Equity || 10000;
 
-    const chartData = filteredPerf.map(p => {
+    const chartData = perf.map(p => {
       const stratEq = p.Strategy_Equity || 0;
       const spyEq = p.SPY_Equity || 0;
       
@@ -716,7 +621,7 @@ export default function LivePortfolio({ holdings, perf, strat, spy, selectedDate
   const summary = [
     {
       name: 'PORTFOLIO NAV',
-      value: dynamicNavValue,
+      value: navValue,
       change: lastDailyReturnVal,
       percentageChange: lastDailyReturnPct,
       changeType: navChangeType,
@@ -724,18 +629,18 @@ export default function LivePortfolio({ holdings, perf, strat, spy, selectedDate
     },
     {
       name: 'TOTAL RETURN / CAGR',
-      value: dynamicMetrics.stratCAGR,
-      change: `SPY: ${dynamicMetrics.spyCAGR}`,
-      percentageChange: dynamicMetrics.cagrDeltaSign + dynamicMetrics.cagrDelta.toFixed(2) + '%',
-      changeType: dynamicMetrics.cagrDelta >= 0 ? 'positive' : 'negative',
+      value: strat?.CAGR || '—',
+      change: spy?.CAGR ? `SPY: ${spy.CAGR}` : '—',
+      percentageChange: cagrDeltaSign + cagrDelta.toFixed(2) + '%',
+      changeType: cagrDelta >= 0 ? 'positive' : 'negative',
       data: cagrData,
     },
     {
       name: 'MAX DRAWDOWN',
-      value: dynamicMetrics.stratMaxDD,
-      change: `SPY: ${dynamicMetrics.spyMaxDD}`,
-      percentageChange: dynamicMetrics.ddDeltaSign + (dynamicMetrics.ddDelta * 100).toFixed(2) + '%',
-      changeType: dynamicMetrics.ddDelta >= 0 ? 'positive' : 'negative',
+      value: strat?.['Max Drawdown'] || '—',
+      change: spy?.['Max Drawdown'] ? `SPY: ${spy['Max Drawdown']}` : '—',
+      percentageChange: ddDeltaSign + ddDelta.toFixed(2) + '%',
+      changeType: ddDelta >= 0 ? 'positive' : 'negative',
       data: ddData,
     }
   ];
@@ -754,42 +659,30 @@ export default function LivePortfolio({ holdings, perf, strat, spy, selectedDate
       {/* Clean, transparent top header row (removing the grey box background/border) */}
       <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
-          {h.data_quality_manifest && (
+          {h.data_quality_manifest ? (
             <span className="font-sans font-bold text-xs text-text-strong tracking-wide uppercase flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-green animate-pulse" />
               Imported Portfolio Analysis
             </span>
+          ) : (
+            <span className="font-sans font-bold text-xs text-text-strong tracking-wide uppercase flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-blue" />
+              Live Pipeline Portfolio Feed
+            </span>
           )}
         </div>
         
-        {/* Dropdown Calendar Date Selector */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setCalendarOpen(prev => !prev)}
-            title="Select historical portfolio date"
-            className="flex items-center gap-2 bg-surface border border-border text-text hover:border-neutral-700 hover:text-text-strong p-2 px-3 outline-none rounded-xl cursor-pointer font-sans text-xs font-medium transition-all shadow-sm animate-fade-in"
-          >
-            <CalendarIcon size={14} className="text-text-3" />
-            <span>{formatDateLabel(selectedDate)}</span>
-            <ChevronDown size={14} className={`text-text-3 transition-transform duration-200 ${calendarOpen ? 'rotate-180' : ''}`} />
-          </button>
-          {calendarOpen && (
-            <>
-              <div 
-                className="fixed inset-0 z-40 bg-transparent" 
-                onClick={() => setCalendarOpen(false)} 
-              />
-              <div className="absolute right-0 mt-2 z-50 bg-surface border border-border rounded-xl shadow-xl p-1">
-                <Calendar
-                  mode="single"
-                  selected={calendarDate}
-                  onSelect={handleDateSelect}
-                  className="rounded-lg border-0"
-                />
-              </div>
-            </>
-          )}
+        {/* Portfolio As Of Date Selector */}
+        <div className="flex items-center gap-2 font-mono text-[11px] text-text-2">
+          <span>Portfolio As Of:</span>
+          <input
+            type="date"
+            value={selectedDate || new Date().toISOString().substring(0, 10)}
+            onChange={(e) => onDateChange(e.target.value)}
+            disabled={!h.data_quality_manifest}
+            title={h.data_quality_manifest ? "Select historical date for manual portfolio" : "Historical pricing selector is enabled for manual CSV uploads"}
+            className="bg-surface border border-border text-text p-1 px-2 outline-none rounded-md cursor-pointer font-mono text-[11px] hover:border-border-3 transition-colors"
+          />
         </div>
       </div>
 
