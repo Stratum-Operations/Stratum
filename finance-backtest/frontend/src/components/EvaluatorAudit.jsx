@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 import { mockEvaluatorAudit } from '../data/mockFallbackData'
 
-const API_BASE = 'http://127.0.0.1:8001/api'
+const API_BASE = '/api'
 
 function scoreColor(s) {
   if (s >= 80) return 'text-green'

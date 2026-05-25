@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import axios from 'axios'
 import { mockScreener } from '../data/mockFallbackData'
 
-const API_BASE = 'http://127.0.0.1:8001/api'
+const API_BASE = '/api'
 const PAGE_SIZE = 50
 const PROD_WEIGHTS = { w_m6: 40, w_m12: 25, w_vol: 20, w_qual: 15 }
 

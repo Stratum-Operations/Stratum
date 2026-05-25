@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import axios from 'axios'
 import {
   LayoutDashboard, BarChart2,
   SlidersHorizontal, ClipboardList,
-  ClipboardCheck, Moon, Sun, Sparkles, Search,
+  ClipboardCheck, Sparkles, Search, Settings,
 } from 'lucide-react'
 import './App.css'
 import AiAnalystDrawer from './components/AiAnalystDrawer'
@@ -14,8 +14,12 @@ import BacktestLab    from './components/BacktestLab'
 import TradeBlotter   from './components/TradeBlotter'
 import EvaluatorAudit from './components/EvaluatorAudit'
 import { mockPerf, mockMetrics, mockHoldings } from './data/mockFallbackData'
+import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
+import { SuggestiveSearch } from '@/components/ui/suggestive-search'
+import StockDetail from './components/StockDetail'
+import SettingsTab from './components/SettingsTab'
 
-const API_BASE = 'http://127.0.0.1:8001/api'
+const API_BASE = '/api'
 
 const NAV = [
   { id: 'command',  label: 'Command Center',   icon: LayoutDashboard  },
@@ -32,6 +36,24 @@ export default function App() {
   const [isDemoMode, setIsDemoMode] = useState(false)
   const [theme, setTheme]         = useState(() => localStorage.getItem('stratum-theme') || 'light')
   const [chatOpen, setChatOpen]   = useState(false)
+  const [selectedHolding, setSelectedHolding] = useState(null)
+  const [username, setUsername]   = useState(() => localStorage.getItem('stratum-username') || 'Joshua')
+
+  useEffect(() => {
+    localStorage.setItem('stratum-username', username)
+  }, [username])
+
+  const searchItems = useMemo(() => {
+    const active = data.holdings?.holdings || []
+    const fallbacks = mockHoldings?.holdings || []
+    const combined = [...active, ...fallbacks]
+    const seen = new Set()
+    return combined.filter(h => {
+      if (!h?.ticker || seen.has(h.ticker)) return false
+      seen.add(h.ticker)
+      return true
+    })
+  }, [data.holdings])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -70,6 +92,9 @@ export default function App() {
         e.preventDefault()
         setChatOpen(open => !open)
       }
+      if (e.key === 'Escape') {
+        setSelectedHolding(null)
+      }
     }
     window.addEventListener('toggle-ai-chat', handleToggleChat)
     window.addEventListener('keydown', handleKeyDown)
@@ -103,10 +128,16 @@ export default function App() {
           <span>Stratum</span>
         </div>
         <div className="top-bar-actions">
-          <div className="top-search">
-            <Search size={14} />
-            <span>Search tickers</span>
-          </div>
+          <SuggestiveSearch
+            suggestions={[
+              "Search AAPL, MSFT, NVDA...",
+              "Search AVGO, PDD, INTC...",
+              "Search tickers..."
+            ]}
+            searchItems={searchItems}
+            onSelect={(holding) => setSelectedHolding(holding)}
+            className="top-search"
+          />
           <button
             className={`top-icon-button transition-colors duration-150 ${
               chatOpen ? 'active text-green border-green' : ''
@@ -116,13 +147,7 @@ export default function App() {
           >
             <Sparkles size={15} />
           </button>
-          <button
-            className="top-icon-button"
-            onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
-            title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-          >
-            {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
-          </button>
+          <AnimatedThemeToggler theme={theme} onThemeChange={setTheme} />
           <div className="top-bar-status">
             <div className="w-1.5 h-1.5 bg-green rounded-full animate-pulse" />
             <span>Live</span>
@@ -153,6 +178,14 @@ export default function App() {
 
           {/* Sidebar footer */}
           <div className="sidebar-bottom flex flex-col gap-2">
+            <div 
+              className={`sidebar-item flex items-center gap-2 cursor-pointer ${view === 'settings' ? 'active' : ''}`}
+              onClick={() => setView('settings')}
+              title="Settings"
+            >
+              <Settings size={14} className="sidebar-icon" />
+              <span>Settings</span>
+            </div>
             <span className="text-[10px] text-text-3 font-mono tracking-wider font-semibold">
               STRATUM V1.2.0
             </span>
@@ -181,6 +214,7 @@ export default function App() {
             {view === 'backtest' && <BacktestLab perf={data.perf} />}
             {view === 'blotter'  && <TradeBlotter holdings={data.holdings?.holdings} />}
             {view === 'audit'    && <EvaluatorAudit />}
+            {view === 'settings' && <SettingsTab username={username} setUsername={setUsername} />}
           </div>
         </main>
 
@@ -199,6 +233,29 @@ export default function App() {
           }}
         />
       </div>
+
+      {/* Stock Detail Modal */}
+      {selectedHolding && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
+          onClick={() => setSelectedHolding(null)}
+        >
+          <div 
+            className="relative w-full max-w-5xl max-h-[85vh] overflow-y-auto bg-surface border border-border p-6 shadow-2xl"
+            style={{ borderRadius: "var(--radius, 0.625rem)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              className="absolute top-4 right-4 font-mono text-[10px] uppercase tracking-wider border border-border px-2.5 py-1 bg-surface-2 hover:bg-surface cursor-pointer text-text-strong transition-colors"
+              style={{ borderRadius: "var(--radius, 0.625rem)" }}
+              onClick={() => setSelectedHolding(null)}
+            >
+              Close [ESC]
+            </button>
+            <StockDetail holding={selectedHolding} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

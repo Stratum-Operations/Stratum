@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import { X, Send, Sparkles, AlertCircle, Briefcase, TrendingUp, PieChart, ShieldCheck } from 'lucide-react'
 
-const API_BASE = 'http://127.0.0.1:8001/api'
+const API_BASE = '/api'
 
 const DEFAULT_CHIPS = [
   "What is my biggest portfolio risk?",

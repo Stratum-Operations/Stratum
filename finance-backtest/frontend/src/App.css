@@ -7,37 +7,37 @@
 /* Stratum design system — 8pt grid, Inter + Geist Mono, semantic color tokens */
 :root {
   /* Backgrounds */
-  --bg:         #f1f3f7;
-  --surface:    #ffffff;
-  --surface-2:  #f7f8fa;
-  --surface-3:  #eef2f7;
-  --surface-4:  #111827;
+  --bg:         var(--background);
+  --surface:    var(--card);
+  --surface-2:  var(--muted);
+  --surface-3:  var(--secondary);
+  --surface-4:  var(--primary);
 
   /* Borders */
-  --border:     #e4e8ef;
-  --border-2:   #cdd3de;
-  --border-3:   #a0aab8;
+  --border:     var(--border);
+  --border-2:   var(--border);
+  --border-3:   var(--ring);
 
   /* Text */
-  --text-strong:#0d1117;
-  --text:       #2d3748;
-  --text-2:     #64748b;
-  --text-3:     #94a3b8;
-  --white:      #ffffff;
+  --text-strong:var(--foreground);
+  --text:       var(--card-foreground);
+  --text-2:     var(--muted-foreground);
+  --text-3:     var(--muted-foreground);
+  --white:      var(--primary-foreground);
 
   /* Semantic */
   --green:      #16a34a;
   --green-dim:  #dcfce7;
-  --red:        #dc2626;
+  --red:        var(--destructive);
   --red-dim:    #fee2e2;
   --amber:      #d97706;
   --amber-dim:  #fef3c7;
-  --blue:       #2563eb;
-  --blue-dim:   #dbeafe;
+  --blue:       var(--chart-3);
+  --blue-dim:   var(--chart-1);
   --teal:       #0f766e;
   --teal-dim:   #ccfbf1;
-  --ink:        #0d1117;
-  --accent:     #2563eb;
+  --ink:        var(--primary);
+  --accent:     var(--chart-3);
 
   /* Legacy aliases — kept for component back-compat */
   --glass-border:  var(--border-2);
@@ -258,7 +258,7 @@ body {
   align-items: stretch;
   padding: 24px;
   border: 1px solid var(--border);
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
   background: var(--surface);
 }
 
@@ -294,7 +294,7 @@ body {
   gap: 6px;
   padding: 20px;
   border: 1px solid var(--border);
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
   background: var(--surface-2);
 }
 
@@ -323,7 +323,7 @@ body {
 }
 
 .audit-metric-tile {
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
 }
 
 .audit-metric-content {
@@ -344,7 +344,7 @@ body {
   height: 40px;
   align-items: center;
   justify-content: center;
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
   background: var(--surface-2);
   color: var(--blue);
 }
@@ -366,7 +366,7 @@ body {
 .audit-hub-card,
 .audit-gap-card,
 .audit-ux-card {
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
 }
 
 .audit-hub-header,
@@ -419,7 +419,7 @@ body {
 
 .audit-procedure {
   padding: 12px;
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
   background: var(--surface-2);
   color: var(--text-strong);
   font-weight: 650;
@@ -432,7 +432,7 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: 8px;
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
   background: var(--blue-dim);
   color: var(--blue);
 }
@@ -454,7 +454,7 @@ body {
   align-items: center;
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
   background: var(--surface-2);
 }
 
@@ -478,7 +478,7 @@ body {
 }
 
 .audit-loading-card {
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
 }
 
 .audit-loading-content,
@@ -558,7 +558,7 @@ body {
   color: var(--text-2) !important;
   cursor: pointer !important;
   border-left: 2px solid transparent !important;
-  border-radius: 0px !important;
+  border-radius: var(--radius, 0.625rem) !important;
   text-transform: none !important;
   letter-spacing: 0 !important;
   font-family: 'Inter', sans-serif !important;
@@ -604,7 +604,7 @@ body {
   padding: 14px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
 }
 
 .sidebar-help-card span {
@@ -694,7 +694,7 @@ body {
   flex-direction: column;
   gap: 6px;
   border: 1px solid var(--border);
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
   background: var(--surface);
 }
 
@@ -740,7 +740,7 @@ body {
 .glass-panel {
   background: var(--surface) !important;
   border: 1px solid var(--border) !important;
-  border-radius: 0px !important;
+  border-radius: var(--radius, 0.625rem) !important;
   padding: 0 !important;
   margin: 0 !important;
 }
@@ -748,7 +748,7 @@ body {
 .b-panel {
   background: var(--surface) !important;
   border: 1px solid var(--border) !important;
-  border-radius: 0px !important;
+  border-radius: var(--radius, 0.625rem) !important;
   padding: 24px !important;
 }
 
@@ -776,7 +776,7 @@ body {
   display: flex;
   gap: 4px;
   border: 1px solid var(--border);
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
   padding: 4px;
   background: var(--surface-2);
 }
@@ -814,7 +814,7 @@ body {
 .table-wrapper {
   overflow-x: auto;
   background: var(--surface);
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
 }
 
 .data-table {
@@ -1088,7 +1088,7 @@ body {
 .side-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
   overflow: hidden;
 }
 
@@ -1120,7 +1120,7 @@ body {
 .status-list span {
   padding: 10px;
   border: 1px solid var(--border);
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
   background: var(--surface-2);
   color: var(--text-2);
   font-size: 11px;
@@ -1608,31 +1608,31 @@ button:hover, .btn:hover {
 
 /* ─── Dark Theme ─────────────────────────────────────────────────── */
 [data-theme="dark"] {
-  --bg:         #0d0f14;
-  --surface:    #141720;
-  --surface-2:  #1c2030;
-  --surface-3:  #232840;
-  --surface-4:  #e8edf5;
-  --border:     #1e2433;
-  --border-2:   #2a3349;
-  --border-3:   #3d4f6b;
-  --text-strong:#e8edf5;
-  --text:       #b8c2d8;
-  --text-2:     #6b7c99;
-  --text-3:     #424f68;
-  --white:      #e8edf5;
+  --bg:         var(--background);
+  --surface:    var(--card);
+  --surface-2:  var(--muted);
+  --surface-3:  var(--secondary);
+  --surface-4:  var(--primary);
+  --border:     var(--border);
+  --border-2:   var(--border);
+  --border-3:   var(--ring);
+  --text-strong:var(--foreground);
+  --text:       var(--card-foreground);
+  --text-2:     var(--muted-foreground);
+  --text-3:     var(--muted-foreground);
+  --white:      var(--primary-foreground);
   --green:      #22c55e;
   --green-dim:  rgba(34, 197, 94, 0.12);
-  --red:        #ef4444;
-  --red-dim:    rgba(239, 68, 68, 0.12);
+  --red:        var(--destructive);
+  --red-dim:    var(--destructive-foreground);
   --amber:      #f59e0b;
   --amber-dim:  rgba(245, 158, 11, 0.12);
-  --blue:       #60a5fa;
-  --blue-dim:   rgba(96, 165, 250, 0.12);
+  --blue:       var(--chart-3);
+  --blue-dim:   var(--chart-1);
   --teal:       #2dd4bf;
   --teal-dim:   rgba(45, 212, 191, 0.12);
-  --ink:        #e8edf5;
-  --accent:     #60a5fa;
+  --ink:        var(--primary);
+  --accent:     var(--chart-3);
 }
 
 [data-theme="dark"] body {
@@ -1707,7 +1707,7 @@ button:hover, .btn:hover {
   border: 1px solid var(--amber);
   color: var(--amber);
   padding: 9px 16px;
-  border-radius: 0px;
+  border-radius: var(--radius, 0.625rem);
   font-size: 12px;
   margin-bottom: 16px;
   display: flex;

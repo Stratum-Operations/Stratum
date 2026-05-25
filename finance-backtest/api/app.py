@@ -12,27 +12,15 @@ load_dotenv()
 
 app = FastAPI(title="Quant Backtest API")
 
-# Configure CORS to bridge the FastAPI backend with the local React development servers
+# Configure CORS to bridge the FastAPI backend with any local or remote dev environment origin
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "http://localhost:8001",
-        "http://127.0.0.1:8001",
-    ],
+    allow_origin_regex=r"https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Establish robust absolute paths relative to the file location to prevent relative path mismatches
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -62,7 +50,10 @@ def _load_performance_frame():
     if "date" in df.columns:
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
         df = df.sort_values("date")
-    return df.apply(lambda col: pd.to_numeric(col, errors="ignore"))
+    for col in df.columns:
+        if col != "date":
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+    return df
 
 
 def _series_metrics(df, prefix, benchmark_prefix="SPY"):
@@ -244,10 +235,10 @@ def run_backtest(params: dict):
         freq_mult = 2.5 if rebal_freq == "Weekly" else 1.0 if rebal_freq == "Monthly" else 0.4
         
         # Friction assumptions
-        tc_bps = float(params.get("tc_bps", 20))
+        tc_bps = float(params.get("tc_bps", params.get("slippage", 20)))
         tc_drag = (tc_bps / 100.0) * 0.15 * freq_mult
         
-        comm_flat = float(params.get("comm_flat", 1.0))
+        comm_flat = float(params.get("comm_flat", params.get("commission", 1.0)))
         comm_drag = comm_flat * 0.05 * freq_mult
         
         tax_drag = float(params.get("tax_drag", 1.0))
@@ -603,7 +594,7 @@ def _compute_risk_radar(enriched: list) -> dict:
         [
             {
                 "sector": s,
-                "weight": round(w * 100, 1),
+                "weight": round(w, 4),
                 "status": "alert" if w > 0.40 else "warning" if w > 0.30 else "ok",
             }
             for s, w in sector_weights.items()
@@ -641,6 +632,9 @@ def _compute_risk_radar(enriched: list) -> dict:
                                 "a": in_universe[i],
                                 "b": in_universe[j],
                                 "corr": round(float(val), 2),
+                                # UI expected keys
+                                "pair": f"{in_universe[i]}/{in_universe[j]}",
+                                "value": round(float(val), 2)
                             })
                 pairs.sort(key=lambda x: -x["corr"])
 
@@ -693,7 +687,7 @@ def _compute_risk_radar(enriched: list) -> dict:
     # ── 4. Top-5 Concentration ───────────────────────────────────────
     top5 = sorted(
         [
-            {"ticker": e["ticker"], "weight": round((e["weight"] or 0) * 100, 1)}
+            {"ticker": e["ticker"], "weight": round(e["weight"] or 0, 4)}
             for e in enriched
             if e["weight"]
         ],
@@ -782,6 +776,11 @@ def _compute_defensive_intelligence(enriched: list) -> dict:
             "baseline":    f"{eq_vol * 100:.1f}%",
             "delta_label": f"{abs(vol_delta_pp):.1f}% {'lower' if improved_vol else 'higher'} than equal-weight",
             "improved":    improved_vol,
+            # UI expected keys
+            "name":         "Annual Volatility",
+            "portfolio":    f"{portfolio_vol * 100:.1f}%",
+            "equal_weight": f"{eq_vol * 100:.1f}%",
+            "delta":        f"{abs(vol_delta_pp):.1f}% {'lower' if improved_vol else 'higher'}"
         })
 
         var_curr     = portfolio_vol * 1.65 * 100
@@ -794,6 +793,11 @@ def _compute_defensive_intelligence(enriched: list) -> dict:
             "baseline":    f"-{var_eq:.1f}%",
             "delta_label": f"~{abs(dd_delta_pp):.1f}% {'less' if improved_dd else 'more'} downside vs. equal-weight",
             "improved":    improved_dd,
+            # UI expected keys
+            "name":         "Estimated Downside (1yr, 95%)",
+            "portfolio":    f"-{var_curr:.1f}%",
+            "equal_weight": f"-{var_eq:.1f}%",
+            "delta":        f"~{abs(dd_delta_pp):.1f}% {'less' if improved_dd else 'more'} downside"
         })
 
     metrics.append({
@@ -802,6 +806,11 @@ def _compute_defensive_intelligence(enriched: list) -> dict:
         "baseline":    str(n),
         "delta_label": f"{round(effective_n / n * 100)}% of max diversification captured",
         "improved":    effective_n >= n * 0.65,
+        # UI expected keys
+        "name":         "Effective Position Count",
+        "portfolio":    str(effective_n),
+        "equal_weight": str(n),
+        "delta":        f"{round(effective_n / n * 100)}% of max"
     })
 
     metrics.append({
@@ -811,6 +820,12 @@ def _compute_defensive_intelligence(enriched: list) -> dict:
         "delta_label": "within limit" if current_max_sector < 0.35
                        else f"{round((current_max_sector - 0.35) * 100, 1)}% over limit",
         "improved":    current_max_sector < 0.35,
+        # UI expected keys
+        "name":         "Max Sector Exposure",
+        "portfolio":    f"{round(current_max_sector * 100, 1)}%",
+        "equal_weight": "35% limit",
+        "delta":        "within limit" if current_max_sector < 0.35
+                       else f"{round((current_max_sector - 0.35) * 100, 1)}% over limit"
     })
 
     # ── Narrative insight sentences ───────────────────────────────────
