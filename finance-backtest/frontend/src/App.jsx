@@ -3,7 +3,7 @@ import axios from 'axios'
 import {
   LayoutDashboard, BarChart2,
   SlidersHorizontal, ClipboardList,
-  ClipboardCheck, Sparkles, Search, Settings,
+  ClipboardCheck, Bot, Search, Settings,
 } from 'lucide-react'
 import './App.css'
 import AiAnalystDrawer from './components/AiAnalystDrawer'
@@ -145,13 +145,9 @@ export default function App() {
             onClick={() => setChatOpen(!chatOpen)}
             title="AI Analyst Copilot (⌘K)"
           >
-            <Sparkles size={15} />
+            <Bot size={15} />
           </button>
           <AnimatedThemeToggler theme={theme} onThemeChange={setTheme} />
-          <div className="top-bar-status">
-            <div className="w-1.5 h-1.5 bg-green rounded-full animate-pulse" />
-            <span>Live</span>
-          </div>
         </div>
       </header>
 
@@ -186,17 +182,7 @@ export default function App() {
               <Settings size={14} className="sidebar-icon" />
               <span>Settings</span>
             </div>
-            <span className="text-[10px] text-text-3 font-mono tracking-wider font-semibold">
-              STRATUM V1.2.0
-            </span>
-            {rebalanceDate && (
-              <span className="text-[10px] text-text-3 font-mono tracking-wider">
-                [REBALANCE: {rebalanceDate}]
-              </span>
-            )}
-            <span className={`text-[10px] font-mono tracking-wider font-semibold ${isDemoMode ? 'text-amber' : 'text-green'}`}>
-              {isDemoMode ? '[SYS: DEMO]' : '[SYS: ONLINE]'}
-            </span>
+
           </div>
         </aside>
 
