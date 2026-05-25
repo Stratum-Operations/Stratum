@@ -1202,12 +1202,12 @@ def get_portfolio_evaluator_audit():
 
 
 @app.post("/api/portfolio/manual")
-def analyze_manual_portfolio(body: dict):
+def analyze_manual_portfolio(body: dict, date: str = None):
     """
     Accepts a user-supplied list of positions, enriches each with last-close price
     and sector, then computes market values and portfolio weights.
 
-    Priority: local price parquet → yfinance fallback.
+    Priority: local price parquet → yfinance fallback. Supports point-in-time dates.
     """
     positions = body.get("positions", [])
     if not positions:
@@ -1227,6 +1227,11 @@ def analyze_manual_portfolio(body: dict):
     prices: dict = {}
     try:
         prices_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "prices", "sp500_prices.parquet"))
+        
+        # Support point-in-time lookup if date query parameter is provided
+        if date:
+            prices_df = prices_df[prices_df.index <= pd.to_datetime(date)]
+
         for t in tickers:
             if t in prices_df.columns:
                 series = prices_df[t].dropna()
@@ -1241,7 +1246,21 @@ def analyze_manual_portfolio(body: dict):
     if missing:
         try:
             import yfinance as yf
-            raw = yf.download(missing, period="5d", progress=False, auto_adjust=True, threads=False)
+            if date:
+                # Fetch historical range around target date
+                end_dt = pd.to_datetime(date)
+                start_dt = end_dt - pd.Timedelta(days=5)
+                raw = yf.download(
+                    missing, 
+                    start=start_dt.strftime("%Y-%m-%d"), 
+                    end=(end_dt + pd.Timedelta(days=1)).strftime("%Y-%m-%d"), 
+                    progress=False, 
+                    auto_adjust=True, 
+                    threads=False
+                )
+            else:
+                raw = yf.download(missing, period="5d", progress=False, auto_adjust=True, threads=False)
+
             if raw.empty:
                 for t in missing:
                     fetch_errors[t] = "Yahoo Finance returned empty data. The ticker symbol may be invalid or inactive."
@@ -1286,6 +1305,14 @@ def analyze_manual_portfolio(body: dict):
             if cb > 0:
                 pnl_pct = round((price - cb) / cb * 100, 2)
 
+        # Determine source
+        source = "missing"
+        if price is not None:
+            if ticker in missing:
+                source = "yfinance"
+            else:
+                source = "parquet"
+
         enriched.append({
             "ticker": ticker,
             "shares": shares,
@@ -1294,7 +1321,8 @@ def analyze_manual_portfolio(body: dict):
             "mkt_value": mkt_value,
             "sector": sector_map.get(ticker, "—"),
             "pnl_pct": pnl_pct,
-            "error": fetch_errors.get(ticker) if price is None else None
+            "error": fetch_errors.get(ticker) if price is None else None,
+            "source": source
         })
 
     # ── Portfolio weights ────────────────────────────────────────────
@@ -1306,6 +1334,30 @@ def analyze_manual_portfolio(body: dict):
             else None
         )
 
+    # ── Data Quality Manifest summary ────────────────────────────────
+    parquet_count = sum(1 for e in enriched if e["source"] == "parquet")
+    yfinance_count = sum(1 for e in enriched if e["source"] == "yfinance")
+    missing_count = sum(1 for e in enriched if e["source"] == "missing")
+
+    manifest_flags = []
+    if yfinance_count > 0:
+        manifest_flags.append({
+            "type": "warning",
+            "message": f"Used yfinance fallback for {yfinance_count} position(s). Pricing data might have latency."
+        })
+    if missing_count > 0:
+        manifest_flags.append({
+            "type": "alert",
+            "message": f"Stale or missing pricing for {missing_count} position(s). Cost basis assumed as $0 or ticker delisted."
+        })
+
+    data_quality_manifest = {
+        "parquet_count": parquet_count,
+        "yfinance_count": yfinance_count,
+        "missing_count": missing_count,
+        "flags": manifest_flags
+    }
+
     return {
         "total_value": round(total_value, 2),
         "position_count": len(enriched),
@@ -1313,4 +1365,5 @@ def analyze_manual_portfolio(body: dict):
         "health":      _compute_health_score(enriched),
         "risk_radar":  _compute_risk_radar(enriched),
         "defense":     _compute_defensive_intelligence(enriched),
+        "data_quality_manifest": data_quality_manifest
     }

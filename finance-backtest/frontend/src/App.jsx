@@ -3,7 +3,7 @@ import axios from 'axios'
 import {
   LayoutDashboard, BarChart2,
   SlidersHorizontal, ClipboardList,
-  ClipboardCheck, Bot, Search, Settings,
+  ClipboardCheck, Bot, Search, Settings, Upload,
 } from 'lucide-react'
 import './App.css'
 import AiAnalystDrawer from './components/AiAnalystDrawer'
@@ -18,6 +18,7 @@ import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 import { SuggestiveSearch } from '@/components/ui/suggestive-search'
 import StockDetail from './components/StockDetail'
 import SettingsTab from './components/SettingsTab'
+import PortfolioImportModal from './components/PortfolioImportModal'
 
 const API_BASE = '/api'
 
@@ -38,6 +39,37 @@ export default function App() {
   const [chatOpen, setChatOpen]   = useState(false)
   const [selectedHolding, setSelectedHolding] = useState(null)
   const [username, setUsername]   = useState(() => localStorage.getItem('stratum-username') || 'Joshua')
+  const [importModalOpen, setImportModalOpen] = useState(false)
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().substring(0, 10))
+  const [isRefreshingHoldings, setIsRefreshingHoldings] = useState(false)
+
+  const handleDateChange = async (dateStr) => {
+    setSelectedDate(dateStr)
+    const isManual = data.holdings?.data_quality_manifest !== undefined
+    const posList = data.holdings?.positions
+    
+    if (isManual && posList?.length) {
+      setIsRefreshingHoldings(true)
+      try {
+        const payload = {
+          positions: posList.map(p => ({
+            ticker: p.ticker,
+            shares: p.shares,
+            cost_basis: p.cost_basis
+          }))
+        }
+        const response = await axios.post(`/api/portfolio/manual?date=${dateStr}`, payload)
+        setData(prev => ({
+          ...prev,
+          holdings: response.data
+        }))
+      } catch (err) {
+        console.error("Failed to reload manual portfolio for date:", err)
+      } finally {
+        setIsRefreshingHoldings(false)
+      }
+    }
+  }
 
   useEffect(() => {
     localStorage.setItem('stratum-username', username)
@@ -139,6 +171,15 @@ export default function App() {
             className="top-search"
           />
           <button
+            className="font-mono text-[10px] uppercase tracking-wider border border-border px-3 py-1.5 bg-surface-2 hover:bg-surface transition-colors cursor-pointer flex items-center gap-1.5 h-[30px]"
+            style={{ borderRadius: 'var(--radius, 0.625rem)' }}
+            onClick={() => setImportModalOpen(true)}
+            title="Import Brokerage CSV"
+          >
+            <Upload size={13} />
+            <span>Import CSV</span>
+          </button>
+          <button
             className={`top-icon-button transition-colors duration-150 ${
               chatOpen ? 'active text-green border-green' : ''
             }`}
@@ -195,12 +236,29 @@ export default function App() {
                 <span><strong>SANDBOX DEMO MODE</strong> — Backend API is currently unreachable. Displaying local simulated data.</span>
               </div>
             )}
-            {view === 'command'  && <LivePortfolio holdings={data.holdings} perf={data.perf} strat={strat} spy={spy} />}
+            {view === 'command'  && (
+              <LivePortfolio 
+                holdings={data.holdings} 
+                perf={data.perf} 
+                strat={strat} 
+                spy={spy} 
+                selectedDate={selectedDate}
+                onDateChange={handleDateChange}
+                loading={isRefreshingHoldings}
+              />
+            )}
             {view === 'screener' && <AlphaScreener />}
             {view === 'backtest' && <BacktestLab perf={data.perf} />}
             {view === 'blotter'  && <TradeBlotter holdings={data.holdings?.holdings} />}
             {view === 'audit'    && <EvaluatorAudit />}
-            {view === 'settings' && <SettingsTab username={username} setUsername={setUsername} />}
+            {view === 'settings' && (
+              <SettingsTab 
+                username={username} 
+                setUsername={setUsername} 
+                setView={setView}
+                setData={setData}
+              />
+            )}
           </div>
         </main>
 
@@ -242,6 +300,18 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Portfolio CSV Ingestion Modal */}
+      <PortfolioImportModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImportSuccess={(manualHoldingsData) => {
+          setData(prev => ({
+            ...prev,
+            holdings: manualHoldingsData
+          }));
+        }}
+      />
     </div>
   )
 }
