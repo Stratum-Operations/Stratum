@@ -1,281 +1,408 @@
-import { useState, useEffect, useMemo } from 'react'
-import axios from 'axios'
-import { ChevronDown, ChevronUp, Layers, Scale, LayoutGrid, ShieldCheck, TrendingUp } from 'lucide-react'
-import { Card, CardContent } from './ui/card'
-import { Button } from './ui/button'
-import { mockHoldings } from '../data/mockFallbackData'
+import { useMemo } from 'react'
 
-export default function LivePortfolio({ strat, spy }) {
-  const [data, setData]       = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState(null)
-  const [showLogs, setShowLogs] = useState(false)
+/* ── Utilities ───────────────────────────────────────────────────── */
+function healthColor(score) {
+  if (score >= 80) return 'text-green'
+  if (score >= 60) return 'text-amber'
+  return 'text-red'
+}
 
-  useEffect(() => {
-    const fetchPortfolio = async () => {
-      try {
-        const res = await axios.get('http://127.0.0.1:8001/api/holdings')
-        setData(res.data)
-      } catch (err) {
-        console.warn('API unreachable, loading mock live portfolio data', err)
-        setData({
-          holdings: mockHoldings.holdings,
-          total_value: 1000000.0,
-          date: mockHoldings.date
-        })
-      }
-      setLoading(false)
-    }
-    fetchPortfolio()
-  }, [])
+function textBar(value, max, length = 10) {
+  const filled = Math.round(Math.min(value / max, 1) * length)
+  return '█'.repeat(filled) + '░'.repeat(length - filled)
+}
 
-  const summary = useMemo(() => {
-    const holdings = data?.holdings ?? []
-    const active = holdings.filter(w => Number(w.weight) > 0)
-    const topWeight = active[0]?.weight ? active[0].weight * 100 : 0
-    const sectors = new Set(active.map(w => w.sector).filter(s => s && s !== '—' && s !== 'Unknown'))
-    const avgScore = active.length
-      ? active.reduce((sum, w) => sum + Number(w.score || 0), 0) / active.length
-      : 0
-    const totalValue = data?.total_value ?? 0
-
-    return {
-      activeCount: active.length,
-      topWeight,
-      sectorCount: sectors.size,
-      avgScore,
-      totalValue,
-    }
-  }, [data])
-
-  const sectorData = useMemo(() => {
-    const holdings = data?.holdings ?? []
-    const active = holdings.filter(w => Number(w.weight) > 0)
-    const sectors = {}
-    
-    active.forEach(w => {
-      const sec = w.sector || 'Unknown'
-      if (!sectors[sec]) sectors[sec] = 0
-      sectors[sec] += Number(w.weight)
-    })
-    
-    return Object.entries(sectors)
-      .map(([name, weight]) => ({ name, weight }))
-      .sort((a, b) => b.weight - a.weight)
-  }, [data])
-
-  if (loading) return (
-    <div className="flex flex-col gap-4 p-5 min-h-[400px]">
-      {/* Hero Card Skeleton */}
-      <div className="h-28 bg-surface-2 border border-border-2 flex flex-col justify-center p-6 gap-3 animate-pulse">
-        <div className="w-60 h-5 bg-border-3" />
-        <div className="w-36 h-3 bg-border-2" />
-      </div>
-
-      {/* Metric Cards Skeleton */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map(i => (
-          <div 
-            key={i} 
-            className="h-20 bg-surface-2 border border-border-2 p-4 flex flex-col justify-between animate-pulse"
-          >
-            <div className="w-20 h-2 bg-border-3" />
-            <div className="w-16 h-4 bg-border-2" />
-          </div>
-        ))}
-      </div>
-
-      {/* Allocation Log Skeleton */}
-      <div className="h-60 bg-surface-2 border border-border-2 p-5 flex flex-col gap-4 animate-pulse">
-        <div className="w-32 h-3 bg-border-3" />
-        {[1, 2, 3].map(i => (
-          <div key={i} className="flex justify-between items-center">
-            <div className="flex gap-3 items-center">
-              <div className="w-10 h-3 bg-border-3" />
-              <div className="w-20 h-2.5 bg-border-2" />
-            </div>
-            <div className="w-32 h-1.5 bg-border-3" />
-          </div>
-        ))}
-      </div>
+/* ── KPI Block ───────────────────────────────────────────────────── */
+function KpiBlock({ value, label, valueClass = '' }) {
+  return (
+    <div className="flex-1 bg-surface border border-border-2 p-4 flex flex-col gap-2 justify-between overflow-hidden">
+      <span className="font-mono text-[10px] uppercase tracking-widest text-text-3 block">
+        {label}
+      </span>
+      <span className={`font-mono font-black text-3xl leading-none ${valueClass}`}>
+        {value}
+      </span>
     </div>
   )
+}
 
-  if (error) return (
-    <Card className="p-5 mb-4 text-red font-bold text-[13px]">
-      {error}
-    </Card>
-  )
+/* ── Risk Radar ──────────────────────────────────────────────────── */
+function RiskRadar({ rr }) {
+  if (!rr) {
+    return (
+      <div className="text-text-3 font-mono text-[11px] p-4">
+        RISK RADAR DATA NOT AVAILABLE
+      </div>
+    )
+  }
 
-  const insightCards = [
-    {
-      label: 'Portfolio Value',
-      value: summary.totalValue ? `$${summary.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00',
-      icon: TrendingUp,
-      tone: 'green',
-    },
-    {
-      label: 'Holdings',
-      value: summary.activeCount || '—',
-      icon: Layers,
-      tone: 'blue',
-    },
-    {
-      label: 'Largest Pos',
-      value: summary.topWeight ? `${summary.topWeight.toFixed(1)}%` : '—',
-      icon: Scale,
-      tone: summary.topWeight > 10 ? 'amber' : 'green',
-    },
-    {
-      label: 'Sectors',
-      value: summary.sectorCount || '—',
-      icon: LayoutGrid,
-      tone: 'teal',
-    },
-    {
-      label: 'Score',
-      value: Number.isFinite(summary.avgScore) ? summary.avgScore.toFixed(2) : '—',
-      icon: ShieldCheck,
-      tone: 'blue',
-    },
-  ]
-
-  const cagr = parseFloat(strat?.CAGR) || 0
-  const spyCagr = parseFloat(spy?.CAGR) || 0
-  const isOnTrack = cagr >= spyCagr
+  const { sector_exposure = [], correlation = {}, factor_tilt = {}, top5 = [] } = rr
+  const tilts = factor_tilt.tilts || {}
 
   return (
-    <section className="portfolio-overview flex flex-col gap-4">
-      <Card 
-        className={`portfolio-hero rounded-none border border-border-2 p-6 border-l-4 ${isOnTrack ? 'border-l-green bg-surface-2' : 'border-l-amber bg-surface-2'}`}
-      >
-        <CardContent className="portfolio-hero-content p-0 flex justify-between items-center">
-          <div className="flex flex-col gap-[6px]">
-            <div className="flex items-center">
-              <span className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-none font-mono ${isOnTrack ? 'bg-green/10 text-green' : 'bg-amber/10 text-amber'}`}>
-                {isOnTrack ? 'ON TRACK' : 'LAGGING BENCHMARK'}
-              </span>
-            </div>
-            <h1 className="text-[18px] font-extrabold text-text-strong m-0 tracking-tight leading-snug">
-              {isOnTrack 
-                ? "Your capital is doing exactly what it's supposed to be doing right now." 
-                : "Your capital allocation is currently underperforming the market index."
-              }
-            </h1>
-            <p className="m-0 text-[12px] text-text-2 leading-relaxed">
-              {isOnTrack 
-                ? `Active factor loading generates a +${cagr.toFixed(2)}% simulated CAGR, outperforming the benchmark S&P 500 (+${spyCagr.toFixed(2)}% CAGR) with managed downside risk.`
-                : `Active portfolio CAGR (+${cagr.toFixed(2)}%) lags behind S&P 500 (+${spyCagr.toFixed(2)}%). Consider reviewing sector and size factor weights.`
-              }
-            </p>
-          </div>
-          <div className="portfolio-hero-actions">
-            <Button size="md" onClick={() => setShowLogs(true)}>Review allocations</Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="portfolio-summary-grid">
-        {insightCards.map(item => {
-          const Icon = item.icon
+    <div className="flex flex-col gap-5 p-4">
+      {/* Sector Exposure */}
+      <div>
+        <div className="font-mono text-[10px] uppercase tracking-widest text-text-3 mb-2 pb-1 border-b border-border">
+          SECTOR EXPOSURE
+        </div>
+        {sector_exposure.length > 0 ? sector_exposure.map(s => {
+          const pct = (Number(s.weight) * 100).toFixed(1)
+          const bar = textBar(Number(s.weight), 0.40)
+          const badge = s.status === 'alert'
+            ? <span className="text-red font-bold">[ALERT]</span>
+            : s.status === 'warning'
+              ? <span className="text-amber font-bold">[WARN]</span>
+              : <span className="text-green font-bold">[OK]</span>
           return (
-            <Card key={item.label} className={`summary-card ${item.tone}`}>
-              <CardContent className="summary-card-content">
-                <div className="summary-card-top">
-                  <span>{item.label}</span>
-                  <Icon size={18} />
-                </div>
-                <strong>{item.value}</strong>
-              </CardContent>
-            </Card>
+            <div key={s.sector} className="font-mono text-[11px] flex items-center gap-2 mb-1">
+              <span className="w-20 text-text-2 truncate uppercase">{s.sector}</span>
+              <span className="text-text-3 tracking-tighter">{bar}</span>
+              <span className="text-text-2 w-10 text-right">{pct}%</span>
+              {badge}
+            </div>
           )
-        })}
+        }) : (
+          <div className="font-mono text-[11px] text-text-3">NO SECTOR DATA</div>
+        )}
       </div>
 
-      {/* Sector Allocation Exposure Visualizer */}
-      {sectorData.length > 0 && (
-        <Card className="p-5 bg-surface border border-border-2">
-          <div className="flex justify-between items-center mb-4">
-            <div className="text-[11px] font-extrabold font-mono text-white tracking-wider uppercase">
-              ✦ Sector Diversification Exposure
-            </div>
-            <div className="text-[10px] text-text-3 font-mono">
-              {sectorData.length} active sectors
-            </div>
-          </div>
-          
-          {/* Horizontal Stacked Bar */}
-          <div className="h-6 w-full flex overflow-hidden mb-5 border border-border-2">
-            {sectorData.map((s, idx) => {
-              const colors = ['#22c55e', '#3b82f6', '#a855f7', '#06b6d4', '#f59e0b', '#ec4899', '#10b981', '#6366f1']
-              const color = colors[idx % colors.length]
-              return (
-                <div 
-                  key={s.name}
-                  style={{
-                    width: `${s.weight * 100}%`,
-                    background: color,
-                  }}
-                  className="h-full transition-all duration-300 ease-in-out"
-                  title={`${s.name}: ${(s.weight * 100).toFixed(1)}%`}
-                />
-              )
-            })}
-          </div>
-
-          {/* Legend Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3">
-            {sectorData.map((s, idx) => {
-              const colors = ['#22c55e', '#3b82f6', '#a855f7', '#06b6d4', '#f59e0b', '#ec4899', '#10b981', '#6366f1']
-              const color = colors[idx % colors.length]
-              return (
-                <div key={s.name} className="flex items-center gap-2 min-w-0">
-                  <span 
-                    style={{ background: color }} 
-                    className="w-2 h-2 flex-shrink-0" 
-                  />
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-bold text-white overflow-hidden text-overflow-ellipsis white-space-nowrap font-sans">
-                      {s.name}
-                    </span>
-                    <span className="text-[9px] text-text-3 font-mono">
-                      {(s.weight * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </Card>
-      )}
-
-      <Card className="allocation-log-card">
-        <button
-          onClick={() => setShowLogs(!showLogs)}
-          className="allocation-log-toggle"
-        >
-          <span>Allocations</span>
-          {showLogs ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </button>
-
-        {showLogs && data?.holdings && (
-          <div className="allocation-log-list">
-            {data.holdings.filter(w => Number(w.weight) > 0).map(w => (
-              <div key={w.ticker} className="allocation-row">
-                <div>
-                  <strong>{w.ticker}</strong>
-                  <span>{w.sector}</span>
-                </div>
-                <div className="allocation-row-weight">
-                  <div><span style={{ width: `${Math.max(w.weight * 420, 4)}px` }} /></div>
-                  <strong>{(w.weight * 100).toFixed(2)}%</strong>
-                  {w.score && <em>{Number(w.score).toFixed(2)}</em>}
-                </div>
-              </div>
-            ))}
+      {/* Correlation */}
+      <div>
+        <div className="font-mono text-[10px] uppercase tracking-widest text-text-3 mb-2 pb-1 border-b border-border">
+          CORRELATION
+        </div>
+        <div className="font-mono text-[11px] text-text-2">
+          AVG INTRA-PORTFOLIO CORR:{' '}
+          <span className={Number(correlation.avg) > 0.5 ? 'text-amber font-bold' : 'text-green font-bold'}>
+            {correlation.avg ?? '—'}
+          </span>
+          {' '}{Number(correlation.avg) > 0.5 ? '[WARNING]' : '[OK]'}
+        </div>
+        {correlation.high_pairs?.[0] && (
+          <div className="font-mono text-[11px] text-text-2 mt-1">
+            TOP PAIR: {correlation.high_pairs[0].pair} ={' '}
+            <span className="text-amber font-bold">{correlation.high_pairs[0].value}</span>
           </div>
         )}
-      </Card>
-    </section>
+      </div>
+
+      {/* Factor Tilt */}
+      <div>
+        <div className="font-mono text-[10px] uppercase tracking-widest text-text-3 mb-2 pb-1 border-b border-border">
+          FACTOR TILT
+        </div>
+        {[
+          ['MOMENTUM 6M',  tilts.momentum_6m],
+          ['MOMENTUM 12M', tilts.momentum_12m],
+          ['VOLATILITY',   tilts.volatility],
+          ['QUALITY',      tilts.quality],
+        ].map(([label, val]) => {
+          if (val == null) return null
+          const num = Number(val)
+          const color = num >= 0 ? 'text-green' : 'text-red'
+          return (
+            <div key={label} className="font-mono text-[11px] flex justify-between mb-1">
+              <span className="text-text-2">{label}</span>
+              <span className={`font-bold ${color}`}>
+                {num >= 0 ? '+' : ''}{num.toFixed(2)}
+              </span>
+            </div>
+          )
+        })}
+        {Object.keys(tilts).length === 0 && (
+          <div className="font-mono text-[11px] text-text-3">NO TILT DATA</div>
+        )}
+      </div>
+
+      {/* Concentration */}
+      {top5.length > 0 && (
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-text-3 mb-2 pb-1 border-b border-border">
+            CONCENTRATION — TOP 5
+          </div>
+          {top5.map((p, i) => (
+            <div key={p.ticker} className="font-mono text-[11px] flex justify-between mb-1">
+              <span className="text-text-2">{i + 1}. {p.ticker}</span>
+              <span className="text-text-strong font-bold">
+                {(Number(p.weight) * 100).toFixed(1)}%
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ── Defensive Intelligence ──────────────────────────────────────── */
+function DefensiveIntelligence({ defense, health }) {
+  if (!defense && !health) {
+    return (
+      <div className="text-text-3 font-mono text-[11px] p-4">
+        DEFENSIVE INTELLIGENCE DATA NOT AVAILABLE
+      </div>
+    )
+  }
+
+  const metrics    = defense?.metrics    ?? []
+  const insights   = defense?.insights   ?? []
+  const components = health?.components  ?? {}
+  const flags      = health?.flags       ?? []
+  const score      = health?.score       ?? 0
+
+  return (
+    <div className="flex flex-col gap-5 p-4">
+      {/* Metrics vs Baseline */}
+      {metrics.length > 0 && (
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-text-3 mb-2 pb-1 border-b border-border">
+            METRICS VS BASELINE
+          </div>
+          <table className="w-full table-fixed font-mono text-[10px]">
+            <thead>
+              <tr className="text-text-3">
+                <th className="text-left pb-1 font-normal w-[40%]">METRIC</th>
+                <th className="text-right pb-1 font-normal">PORTFOLIO</th>
+                <th className="text-right pb-1 font-normal">EQ-WT</th>
+                <th className="text-right pb-1 font-normal">DELTA</th>
+                <th className="w-5 text-center pb-1 font-normal" />
+              </tr>
+            </thead>
+            <tbody>
+              {metrics.map((m, i) => (
+                <tr key={i} className="border-t border-border">
+                  <td className="py-1 text-text-2 truncate pr-2">{m.name}</td>
+                  <td className="py-1 text-right text-text-strong">{m.portfolio}</td>
+                  <td className="py-1 text-right text-text-3">{m.equal_weight}</td>
+                  <td className="py-1 text-right text-text-3">{m.delta}</td>
+                  <td className="py-1 text-center">
+                    {m.improved
+                      ? <span className="text-green font-bold">✓</span>
+                      : <span className="text-red font-bold">✗</span>
+                    }
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Risk Insights */}
+      {insights.length > 0 && (
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-text-3 mb-2 pb-1 border-b border-border">
+            RISK INSIGHTS
+          </div>
+          {insights.map((ins, i) => {
+            const tag = ins.type === 'defense'
+              ? <span className="text-green font-bold flex-shrink-0">[DEFENSE]</span>
+              : <span className="text-red font-bold flex-shrink-0">[RISK]</span>
+            return (
+              <div key={i} className="font-mono text-[11px] text-text-2 mb-2 flex gap-2">
+                {tag}
+                <span>{ins.text}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Health Score Breakdown */}
+      {Object.keys(components).length > 0 && (
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-text-3 mb-2 pb-1 border-b border-border">
+            HEALTH SCORE — {score}/100
+          </div>
+          {[
+            ['DIVERSIFICATION', components.diversification],
+            ['CONCENTRATION',   components.concentration],
+            ['SECTOR BALANCE',  components.sector_balance],
+            ['POSITION COUNT',  components.position_count],
+          ].map(([label, val]) => {
+            if (val == null) return null
+            const num = Number(val)
+            const bar = textBar(num, 100)
+            return (
+              <div key={label} className="font-mono text-[11px] flex items-center gap-2 mb-1.5">
+                <span className="w-28 text-text-2 flex-shrink-0">{label}</span>
+                <span className="text-text-strong w-6 text-right">{num}</span>
+                <span className="text-text-3 tracking-tighter">{bar}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Flags */}
+      {flags.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {flags.map((flag, i) => (
+            <div key={i} className="border border-red p-2 font-mono text-[11px] text-red">
+              {flag}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ── Holdings Table ──────────────────────────────────────────────── */
+function HoldingsTable({ holdings }) {
+  return (
+    <>
+      <div className="bg-surface-2 border-b border-border-2 px-4 py-2 flex-shrink-0">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-text-3">
+          HOLDINGS
+        </span>
+      </div>
+      <div className="overflow-y-auto flex-1">
+        <table className="w-full table-fixed font-mono text-[11px]">
+          <thead className="sticky top-0 bg-surface-2 z-10">
+            <tr>
+              {['TICKER', 'SECTOR', 'WEIGHT', 'SHARES', 'MKT VALUE', 'P&L'].map(col => (
+                <th
+                  key={col}
+                  className="text-left px-3 py-2 text-[10px] text-text-3 font-normal uppercase tracking-widest border-b border-border-2 whitespace-nowrap"
+                >
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {holdings.map((row, i) => {
+              const weight = Number(row.weight || 0)
+              const pnl    = Number(row.pnl_pct || 0)
+              const pnlColor = row.pnl_pct != null
+                ? (pnl >= 0 ? 'text-green' : 'text-red')
+                : 'text-text-3'
+              const barFill = Math.min(Math.round(weight * 100), 10)
+              return (
+                <tr
+                  key={row.ticker}
+                  className={i % 2 === 0 ? 'bg-surface' : 'bg-surface-2'}
+                >
+                  <td className="px-3 py-1.5 text-text-strong font-bold">{row.ticker}</td>
+                  <td className="px-3 py-1.5 text-text-2 truncate">{row.sector || '—'}</td>
+                  <td className="px-3 py-1.5">
+                    <div className="flex items-center gap-1">
+                      <span className="text-text-strong">{(weight * 100).toFixed(1)}%</span>
+                      <span className="text-text-3 text-[9px] tracking-tighter">
+                        {'█'.repeat(barFill)}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-1.5 text-text-2">
+                    {row.shares ?? '—'}
+                  </td>
+                  <td className="px-3 py-1.5 text-text-2">
+                    {row.mkt_value != null
+                      ? `$${Number(row.mkt_value).toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+                      : '—'
+                    }
+                  </td>
+                  <td className={`px-3 py-1.5 font-bold ${pnlColor}`}>
+                    {row.pnl_pct != null
+                      ? `${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}%`
+                      : '—'
+                    }
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )
+}
+
+/* ── Command Center ──────────────────────────────────────────────── */
+export default function LivePortfolio({ holdings, perf, strat, spy }) {
+  const h = holdings || {}
+
+  const healthScore    = h.health?.score ?? 0
+  const activeHoldings = useMemo(
+    () => (h.holdings ?? []).filter(x => Number(x.weight) > 0),
+    [h]
+  )
+  const sortedHoldings = useMemo(
+    () => [...(h.holdings ?? [])].sort((a, b) => Number(b.weight) - Number(a.weight)),
+    [h]
+  )
+  const maxSectorEntry = h.risk_radar?.sector_exposure?.[0]
+
+  const navValue = h.total_value != null
+    ? `$${Number(h.total_value).toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+    : '—'
+
+  const maxSectorLabel = maxSectorEntry != null
+    ? `${(Number(maxSectorEntry.weight) * 100).toFixed(1)}%`
+    : '—'
+
+  if (!holdings) {
+    return (
+      <div className="flex items-center justify-center font-mono text-[11px] text-text-3"
+        style={{ height: 'calc(100vh - 104px)' }}>
+        LOADING PORTFOLIO DATA...
+      </div>
+    )
+  }
+
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateRows: '1fr 2fr 2fr',
+        height: 'calc(100vh - 104px)',
+        overflow: 'hidden',
+        gap: '1px',
+        background: 'var(--border-2)',
+      }}
+    >
+      {/* ── Row A: KPI Strip ──────────────────────────────────────── */}
+      <div className="flex gap-[1px] overflow-hidden" style={{ background: 'var(--border-2)' }}>
+        <KpiBlock value={navValue}             label="PORTFOLIO NAV"    />
+        <KpiBlock
+          value={healthScore}
+          label="HEALTH SCORE"
+          valueClass={healthColor(healthScore)}
+        />
+        <KpiBlock value={activeHoldings.length} label="ACTIVE POSITIONS" />
+        <KpiBlock value={maxSectorLabel}        label="MAX SECTOR EXP"  />
+      </div>
+
+      {/* ── Row B: Split panel ─────────────────────────────────────── */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '1px',
+          background: 'var(--border-2)',
+          overflow: 'hidden',
+        }}
+      >
+        <div className="bg-surface overflow-y-auto">
+          <div className="font-mono text-[10px] uppercase tracking-widest text-text-3 px-4 py-2 border-b border-border-2 bg-surface-2 sticky top-0">
+            RISK RADAR
+          </div>
+          <RiskRadar rr={h.risk_radar} />
+        </div>
+        <div className="bg-surface overflow-y-auto">
+          <div className="font-mono text-[10px] uppercase tracking-widest text-text-3 px-4 py-2 border-b border-border-2 bg-surface-2 sticky top-0">
+            DEFENSIVE INTELLIGENCE
+          </div>
+          <DefensiveIntelligence defense={h.defense} health={h.health} />
+        </div>
+      </div>
+
+      {/* ── Row C: Holdings DataTable ─────────────────────────────── */}
+      <div className="bg-surface overflow-hidden flex flex-col">
+        <HoldingsTable holdings={sortedHoldings} />
+      </div>
+    </div>
   )
 }

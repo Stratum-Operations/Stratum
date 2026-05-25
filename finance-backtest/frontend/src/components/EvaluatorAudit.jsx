@@ -1,290 +1,365 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 import { mockEvaluatorAudit } from '../data/mockFallbackData'
-import {
-  AlertTriangle,
-  BarChart3,
-  CheckCircle2,
-  CircleDot,
-  ClipboardCheck,
-  Gauge,
-  LineChart,
-  ListChecks,
-  ShieldAlert,
-  Sparkles,
-} from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { Badge } from './ui/badge'
-import { Button } from './ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 
 const API_BASE = 'http://127.0.0.1:8001/api'
 
-const severityVariant = {
-  high: 'red',
-  medium: 'amber',
-  low: 'green',
+function scoreColor(s) {
+  if (s >= 80) return 'text-green'
+  if (s >= 60) return 'text-amber'
+  return 'text-red'
 }
 
-function formatMetric(value, suffix = '') {
-  if (value === null || value === undefined || Number.isNaN(Number(value))) return '-'
-  return `${value}${suffix}`
+function SeverityBadge({ sev }) {
+  if (sev === 'high')
+    return <span className="font-mono text-[8px] border border-red text-red px-1 font-bold flex-shrink-0">[HIGH]</span>
+  if (sev === 'medium')
+    return <span className="font-mono text-[8px] border border-amber text-amber px-1 font-bold flex-shrink-0">[MED]</span>
+  return <span className="font-mono text-[8px] border border-border text-text-3 px-1 font-bold flex-shrink-0">[LOW]</span>
 }
 
-function MetricTile({ label, value, sub, icon: Icon, tone = 'blue' }) {
+function MetricRow({ label, value }) {
   return (
-    <Card className={`audit-metric-tile audit-tone-${tone}`}>
-      <CardContent className="audit-metric-content">
-        <div className="audit-metric-icon"><Icon size={18} /></div>
-        <span>{label}</span>
-        <strong>{value}</strong>
-        {sub && <em>{sub}</em>}
-      </CardContent>
-    </Card>
+    <div className="flex items-baseline justify-between border-b border-border py-1.5">
+      <span className="font-mono text-[9px] uppercase tracking-widest text-text-3">{label}</span>
+      <span className="font-mono text-[12px] font-bold text-text-strong">{value ?? '—'}</span>
+    </div>
   )
 }
 
-function GapCard({ gap }) {
-  const severity = gap.severity || 'medium'
-  return (
-    <Card className="audit-gap-card">
-      <CardHeader className="audit-gap-header">
-        <div>
-          <CardTitle>{gap.area}</CardTitle>
-          <CardDescription>{gap.why}</CardDescription>
-        </div>
-        <Badge variant={severityVariant[severity] || 'muted'}>{severity}</Badge>
-      </CardHeader>
-      <CardContent className="audit-gap-content">
-        <div className="audit-chip-row">
-          {(gap.missing || []).map(item => (
-            <Badge key={item} variant="muted">{item}</Badge>
-          ))}
-        </div>
-        <div className="audit-procedure">
-          <ClipboardCheck size={16} />
-          <span>{gap.procedure}</span>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
+const BENCH_FIELDS = [
+  { label: 'CAGR',         field: 'CAGR',        invert: false },
+  { label: 'SHARPE',       field: 'Sharpe',       invert: false },
+  { label: 'SORTINO',      field: 'Sortino',      invert: false },
+  { label: 'MAX DRAWDOWN', field: 'Max Drawdown', invert: true  },
+  { label: 'VOLATILITY',   field: 'Volatility',   invert: true  },
+  { label: 'CALMAR',       field: 'Calmar',       invert: false },
+]
+
+const BENCHMARKS = ['SPY', 'QQQ', 'MTUM', 'QUAL']
 
 export default function EvaluatorAudit() {
-  const [audit, setAudit] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [isSimulated, setIsSimulated] = useState(false)
-  const [tab, setTab] = useState('gaps')
+  const [audit, setAudit]       = useState(null)
+  const [btMeta, setBtMeta]     = useState(null)
+  const [loading, setLoading]   = useState(true)
+  const [openGaps, setOpenGaps] = useState(new Set([0]))
 
   useEffect(() => {
-    let live = true
     const load = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/portfolio/evaluator_audit`)
-        if (live) setAudit(res.data)
-      } catch (err) {
-        console.warn('API unreachable, loading mock evaluator audit data', err)
-        if (live) {
-          if (mockEvaluatorAudit) {
-            setAudit(mockEvaluatorAudit)
-            setIsSimulated(true)
-          } else {
-            setError('Failed to fetch evaluator audit data and mock data is unavailable.')
-          }
-        }
-      } finally {
-        if (live) setLoading(false)
+        const r = await axios.get(`${API_BASE}/portfolio/evaluator_audit`)
+        setAudit(r.data)
+      } catch {
+        setAudit(mockEvaluatorAudit)
       }
+      try {
+        const r = await axios.get(`${API_BASE}/backtest/metrics`)
+        setBtMeta(r.data)
+      } catch {
+        setBtMeta(null)
+      }
+      setLoading(false)
     }
     load()
-    return () => { live = false }
   }, [])
 
-  const strategy = audit?.computed?.strategy || {}
-  const topGaps = useMemo(() => audit?.gaps?.slice(0, 3) || [], [audit])
+  const btRows = useMemo(() => {
+    const src = Array.isArray(btMeta?.metrics) ? btMeta.metrics
+              : Array.isArray(btMeta)           ? btMeta
+              : null
+    if (!src) return {}
+    return src.reduce((acc, m) => { acc[m.Metric] = m; return acc }, {})
+  }, [btMeta])
+
+  /* Benchmark rows: prefer audit.computed.benchmarks, fall back to btRows */
+  const benchRows = useMemo(() => {
+    const ab = audit?.computed?.benchmarks
+    if (ab && typeof ab === 'object') return ab
+    return btRows
+  }, [audit, btRows])
+
+  const toggleGap = i => {
+    setOpenGaps(prev => {
+      const next = new Set(prev)
+      next.has(i) ? next.delete(i) : next.add(i)
+      return next
+    })
+  }
 
   if (loading) {
     return (
-      <Card className="audit-loading-card">
-        <CardContent className="audit-loading-content">
-          <div className="spinner" />
-          <span>Researching evaluator coverage...</span>
-        </CardContent>
-      </Card>
+      <div
+        className="flex items-center justify-center font-mono text-[11px] text-text-3"
+        style={{ height: 'calc(100vh - 104px)' }}
+      >
+        LOADING AUDIT DATA...
+      </div>
     )
   }
 
-  if (error) {
-    return (
-      <Card className="audit-loading-card">
-        <CardContent className="audit-error-content">
-          <AlertTriangle size={18} />
-          <span>{error}</span>
-        </CardContent>
-      </Card>
-    )
-  }
+  const score      = audit?.score ?? 0
+  const strategy   = audit?.computed?.strategy || {}
+  const gaps       = audit?.gaps ?? []
+  const implOrder  = audit?.implementation_order ?? []
+  const stratRow   = btRows['Strategy'] || {}
+
+  const positionCount    = audit?.summary?.position_count
+                        ?? strategy?.position_count
+                        ?? '—'
+  const metricsAvailable = audit?.summary?.metrics_available?.length
+                        ?? BENCH_FIELDS.filter(({ field }) => stratRow[field] != null).length
+  const missingCount     = audit?.summary?.missing_metric_count ?? '—'
 
   return (
-    <section className="audit-shell">
-      {isSimulated && (
-        <div style={{
-          padding: '10px 16px',
-          background: 'var(--surface-2)',
-          border: '1px solid var(--border)',
-          color: 'var(--text-2)',
-          fontSize: '11px',
-          fontFamily: 'Geist Mono, monospace',
-          marginBottom: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          borderRadius: '0px',
-        }}>
-          <CircleDot size={13} className="animate-pulse" style={{ color: 'var(--blue)' }} />
-          <span>SANDBOX MODE — Running local evaluator audit simulation.</span>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: 'calc(100vh - 104px)',
+        overflow: 'hidden',
+      }}
+    >
+      {/* ── Top Strip ────────────────────────────────────────────── */}
+      <div
+        className="flex-shrink-0 border-b border-border-2 bg-surface"
+        style={{ display: 'flex', alignItems: 'stretch' }}
+      >
+        {/* Score */}
+        <div
+          className="px-6 py-4 border-r border-border-2 flex flex-col justify-center flex-shrink-0"
+          style={{ minWidth: 120 }}
+        >
+          <span className="font-mono text-[9px] uppercase tracking-widest text-text-3 block mb-1">
+            EVAL SCORE
+          </span>
+          <span
+            className={`font-mono font-black leading-none ${scoreColor(score)}`}
+            style={{ fontSize: 48 }}
+          >
+            {score}
+          </span>
         </div>
-      )}
-      <div className="audit-hero">
-        <div className="audit-hero-copy">
-          <Badge variant="solid">Portfolio evaluator research</Badge>
-          <h1>{audit.summary?.headline || 'Evaluator audit'}</h1>
-          <p>
-            A live review of what the allocator measures well, what it misses, and where the product workflow should become more evidence-driven.
-          </p>
-        </div>
-        <div className="audit-score-panel">
-          <span>Evaluator score</span>
-          <strong>{audit.score}</strong>
-          <em>Based on computed metrics, missing appraisal coverage, and current workflow reliability.</em>
-        </div>
-      </div>
 
-      <div className="audit-metric-grid">
-        <MetricTile label="CAGR" value={formatMetric(strategy.cagr, '%')} sub="strategy" icon={LineChart} tone="green" />
-        <MetricTile label="Sharpe" value={formatMetric(strategy.sharpe)} sub="risk adjusted" icon={Gauge} tone="blue" />
-        <MetricTile label="Max drawdown" value={formatMetric(strategy.max_drawdown, '%')} sub={`${formatMetric(strategy.drawdown_duration_days)} day max duration`} icon={ShieldAlert} tone="red" />
-        <MetricTile label="Missing metrics" value={audit.summary?.missing_metric_count ?? '-'} sub="advanced evaluator fields" icon={ListChecks} tone="amber" />
-      </div>
-
-      <Card className="audit-hub-card">
-        <CardHeader className="audit-hub-header">
-          <div>
-            <CardTitle>Evaluator command center</CardTitle>
-            <CardDescription>Access system status, prioritized implementation steps, and usability recommendations to enhance quantitative modeling precision.</CardDescription>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => setTab('roadmap')}>View roadmap</Button>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="audit-tabs flex gap-2 p-1.5 bg-surface-2 border border-border rounded-none w-full md:w-auto mb-6">
-              {[
-                ['gaps', 'Gaps'],
-                ['procedures', 'Procedures'],
-                ['ux', 'UX'],
-                ['research', 'Basis'],
-              ].map(([value, label]) => (
-                <TabsTrigger 
-                  key={value} 
-                  value={value} 
-                  currentValue={tab} 
-                  onValueChange={setTab}
-                  className="flex-1 md:flex-initial px-6 py-2.5 min-h-10 text-[11px] font-extrabold uppercase tracking-wider transition-all duration-150 rounded-none"
-                >
-                  {label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            <TabsContent value="gaps" currentValue={tab}>
-              <div className="audit-gap-grid">
-                {(audit.gaps || []).map(gap => <GapCard key={gap.area} gap={gap} />)}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="procedures" currentValue={tab}>
-              <div className="audit-roadmap-list">
-                {(audit.implementation_order || []).map((item, index) => (
-                  <div key={item} className="audit-roadmap-row">
-                    <span>{index + 1}</span>
-                    <p>{item}</p>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="ux" currentValue={tab}>
-              <div className="audit-ux-grid">
-                {(audit.ux_recommendations || []).map(item => (
-                  <Card key={item.title} className="audit-ux-card">
-                    <CardHeader>
-                      <div className="audit-ux-icon"><Sparkles size={17} /></div>
-                      <CardTitle>{item.title}</CardTitle>
-                      <CardDescription>{item.component}</CardDescription>
-                    </CardHeader>
-                    <CardContent><p>{item.impact}</p></CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="research" currentValue={tab}>
-              <div className="audit-research-list">
-                {(audit.research_basis || []).map(item => (
-                  <div key={item} className="audit-research-row">
-                    <CheckCircle2 size={17} />
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="roadmap" currentValue={tab}>
-              <div className="audit-roadmap-list">
-                {(audit.implementation_order || []).map((item, index) => (
-                  <div key={item} className="audit-roadmap-row">
-                    <span>{index + 1}</span>
-                    <p>{item}</p>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      <div className="audit-bottom-grid">
-        <Card>
-          <CardHeader>
-            <CardTitle>Current strengths</CardTitle>
-            <CardDescription>What the app already has in place.</CardDescription>
-          </CardHeader>
-          <CardContent className="audit-strength-list">
+        {/* Headline + stats */}
+        <div className="flex-1 px-6 py-4 flex flex-col justify-between">
+          <span className="font-mono text-[11px] text-text-2 font-semibold">
+            {audit?.summary?.headline || 'EVALUATOR AUDIT'}
+          </span>
+          <div className="flex gap-8 mt-2">
             {[
-              'Monthly rebalance pipeline with factor scoring',
-              'Long-only optimizer with covariance-aware risk penalty',
-              'Transaction cost model with dynamic slippage',
-              'Bootstrap, parameter perturbation, and walk-forward modules',
-              'Manual portfolio intake with concentration and sector risk checks',
-            ].map(item => (
-              <div key={item}><CircleDot size={14} /><span>{item}</span></div>
+              { label: 'POSITIONS',         value: positionCount    },
+              { label: 'METRICS AVAILABLE', value: metricsAvailable },
+              { label: 'MISSING METRICS',   value: missingCount     },
+            ].map(({ label, value }) => (
+              <div key={label} className="flex flex-col gap-0.5">
+                <span className="font-mono text-[8px] uppercase tracking-widest text-text-3">{label}</span>
+                <span className="font-mono text-[16px] font-black text-text-strong">{value}</span>
+              </div>
             ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Fastest fixes</CardTitle>
-            <CardDescription>Highest trust gain for the least product churn.</CardDescription>
-          </CardHeader>
-          <CardContent className="audit-strength-list">
-            {topGaps.map(gap => (
-              <div key={gap.area}><BarChart3 size={14} /><span>{gap.area}</span></div>
-            ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
-    </section>
+
+      {/* ── Body: 2×2 grid ───────────────────────────────────────── */}
+      <div
+        style={{
+          flex: 1,
+          overflow: 'hidden',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gridTemplateRows: '1fr 1fr',
+          gap: '1px',
+          background: 'var(--border-2)',
+        }}
+      >
+        {/* ── Cell 1: Gap Accordion ────────────────────────────── */}
+        <div className="bg-surface overflow-y-auto flex flex-col">
+          <div className="px-4 py-2 border-b border-border-2 bg-surface-2 flex-shrink-0 sticky top-0">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-text-3">
+              EVALUATOR GAPS
+            </span>
+          </div>
+          <div className="p-4 flex flex-col gap-2">
+            {gaps.map((gap, i) => {
+              const isOpen = openGaps.has(i)
+              return (
+                <div key={gap.area} className="border border-border-2">
+                  <button
+                    onClick={() => toggleGap(i)}
+                    className="w-full px-3 py-2 flex items-center gap-2 bg-surface-2 hover:bg-surface cursor-pointer text-left"
+                  >
+                    <SeverityBadge sev={gap.severity} />
+                    <span className="font-mono text-[10px] text-text-strong font-bold flex-1 truncate">
+                      {gap.area}
+                    </span>
+                    <span className="font-mono text-[10px] text-text-3 flex-shrink-0">
+                      {isOpen ? '▲' : '▼'}
+                    </span>
+                  </button>
+                  {isOpen && (
+                    <div className="px-3 py-3 border-t border-border-2 bg-surface flex flex-col gap-2">
+                      <p className="font-mono text-[10px] text-text-2 leading-relaxed">{gap.why}</p>
+                      {(gap.missing || []).length > 0 && (
+                        <div className="flex flex-col gap-1 mt-1">
+                          {gap.missing.map(item => (
+                            <div key={item} className="flex items-center gap-2 font-mono text-[10px] text-text-3">
+                              <span className="w-3 h-3 border border-border-2 flex-shrink-0 inline-block" />
+                              {item}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {gap.procedure && (
+                        <p className="font-mono text-[10px] text-text-3 italic leading-relaxed mt-1">
+                          {gap.procedure}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+            {gaps.length === 0 && (
+              <div className="font-mono text-[11px] text-text-3 py-4 text-center">
+                NO GAPS DETECTED
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Cell 2: Strategy Metrics + Benchmark Comparison ──── */}
+        <div className="bg-surface overflow-y-auto flex flex-col">
+          <div className="px-4 py-2 border-b border-border-2 bg-surface-2 flex-shrink-0 sticky top-0">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-text-3">
+              STRATEGY METRICS
+            </span>
+          </div>
+          <div className="p-4 flex flex-col gap-4">
+            {/* Metric rows from audit computed data */}
+            <div>
+              {[
+                { label: 'CAGR',         val: strategy.cagr         != null ? `${Number(strategy.cagr).toFixed(2)}%`          : (stratRow.CAGR ?? '—') },
+                { label: 'SHARPE',       val: strategy.sharpe       != null ? Number(strategy.sharpe).toFixed(2)              : (stratRow.Sharpe ?? '—') },
+                { label: 'SORTINO',      val: strategy.sortino      != null ? Number(strategy.sortino).toFixed(2)             : (stratRow.Sortino ?? '—') },
+                { label: 'MAX DRAWDOWN', val: strategy.max_drawdown != null ? `${Number(strategy.max_drawdown).toFixed(2)}%`  : (stratRow['Max Drawdown'] ?? '—') },
+                { label: 'VOLATILITY',   val: strategy.volatility   != null ? `${Number(strategy.volatility).toFixed(2)}%`   : (stratRow.Volatility ?? '—') },
+                { label: 'CALMAR',       val: strategy.calmar       != null ? Number(strategy.calmar).toFixed(2)              : (stratRow.Calmar ?? '—') },
+                { label: 'WIN RATE',     val: strategy.win_rate     != null ? `${Number(strategy.win_rate).toFixed(1)}%`      : '—' },
+              ].map(m => <MetricRow key={m.label} label={m.label} value={m.val} />)}
+            </div>
+
+            {/* Benchmark comparison table */}
+            <div>
+              <div className="font-mono text-[9px] uppercase tracking-widest text-text-3 mb-2 pb-1 border-b border-border">
+                BENCHMARK COMPARISON
+              </div>
+              <table className="w-full table-fixed font-mono text-[10px] border-collapse">
+                <thead>
+                  <tr>
+                    <th className="text-left py-1 pr-2 text-[8px] text-text-3 font-normal w-[30%]">METRIC</th>
+                    {BENCHMARKS.map(b => (
+                      <th key={b} className="text-right py-1 text-[8px] text-text-3 font-normal">
+                        {b}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {BENCH_FIELDS.map(({ label, field, invert }) => {
+                    const sv = parseFloat(stratRow[field])
+                    return (
+                      <tr key={label} className="border-t border-border">
+                        <td className="py-1 pr-2 text-text-3 text-[9px]">{label}</td>
+                        {BENCHMARKS.map(b => {
+                          const bRow = benchRows[b]
+                          const bv   = bRow?.[field] ?? bRow?.[field.toLowerCase()]
+                          const bn   = parseFloat(bv)
+                          let cellColor = 'text-text-3'
+                          if (!isNaN(sv) && !isNaN(bn)) {
+                            const beats = invert ? sv < bn : sv > bn
+                            cellColor = beats ? 'text-green' : 'text-red'
+                          }
+                          return (
+                            <td key={b} className={`text-right py-1 font-bold ${cellColor}`}>
+                              {bv ?? '—'}
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Cell 3: Factor IC Matrix ──────────────────────────── */}
+        <div className="bg-surface overflow-y-auto flex flex-col">
+          <div className="px-4 py-2 border-b border-border-2 bg-surface-2 flex-shrink-0 sticky top-0">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-text-3">
+              FACTOR IC MATRIX
+            </span>
+          </div>
+          <div className="p-4">
+            <div
+              className="p-4 flex flex-col gap-3"
+              style={{ border: '1px dashed var(--border-2)' }}
+            >
+              <div className="flex flex-col gap-0.5">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-text-3">
+                  FACTOR INFORMATION COEFFICIENT (IC)
+                </span>
+                <span className="font-mono text-[9px] text-text-3">
+                  Pearson Correlation: Factor Rank vs 1M Forward Return
+                </span>
+              </div>
+              {[
+                { key: 'r6',  label: 'r6  (Momentum 6M)'   },
+                { key: 'r12', label: 'r12 (Momentum 12M)'  },
+                { key: 'rv',  label: 'rv  (Low Volatility)' },
+                { key: 'rq',  label: 'rq  (Quality)'        },
+              ].map(({ key, label }) => (
+                <div
+                  key={key}
+                  className="flex items-center justify-between font-mono text-[10px] border-b border-border pb-1.5"
+                >
+                  <span className="text-text-2">{label}</span>
+                  <span className="text-text-3 text-[9px]">[ DATA PENDING — run src/main.py ]</span>
+                </div>
+              ))}
+              <p className="font-mono text-[9px] text-text-3 italic leading-relaxed">
+                IC data is computed by metrics.py/calculate_factor_attribution()
+                but is not yet exposed via an API endpoint.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Cell 4: Implementation Order ─────────────────────── */}
+        <div className="bg-surface overflow-y-auto flex flex-col">
+          <div className="px-4 py-2 border-b border-border-2 bg-surface-2 flex-shrink-0 sticky top-0">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-text-3">
+              IMPLEMENTATION ORDER
+            </span>
+          </div>
+          <div className="p-4 flex flex-col gap-2">
+            {implOrder.map((item, i) => (
+              <div key={i} className="flex gap-3 border-b border-border pb-2">
+                <span className="font-mono text-[10px] font-bold text-text-3 w-6 flex-shrink-0">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="font-mono text-[10px] text-text-2 leading-relaxed">{item}</span>
+              </div>
+            ))}
+            {implOrder.length === 0 && (
+              <div className="font-mono text-[11px] text-text-3">
+                NO IMPLEMENTATION STEPS AVAILABLE
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

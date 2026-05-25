@@ -1,192 +1,385 @@
-import { useState, useMemo } from 'react'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
+import { useState, useEffect, useMemo } from 'react'
+import axios from 'axios'
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, Legend,
+} from 'recharts'
 
-const VERSIONS = ['V1', 'V2', 'V3', 'V4', 'V7']
-const UNIVERSES = ['S&P 500', 'Nasdaq 100']
-const TOP_N_OPTS = ['10', '15', '20', '50']
+const API_BASE = 'http://127.0.0.1:8001/api'
 
-function genMetrics(version, baseMetrics) {
-  const strat = baseMetrics?.find(m => m.Metric === 'Strategy') || {}
-  const baseCagr = parseFloat(strat.CAGR || 15)
-  const baseVol = parseFloat(strat.Volatility || 15)
-  const baseDrw = parseFloat(strat['Max Drawdown'] || -20)
-  const baseSharpe = parseFloat(strat.Sharpe || 1)
-  
-  let offset = 0
-  if (version === 'V1') offset = -0.4
-  if (version === 'V2') offset = -0.3
-  if (version === 'V3') offset = -0.15
-  if (version === 'V4') offset = -0.05
-  if (version === 'V7') offset = 0
-
-  return {
-    version,
-    cagr: (baseCagr + (offset * 10)).toFixed(2) + '%',
-    volatility: (baseVol - (offset * 5)).toFixed(2) + '%',
-    sharpe: (baseSharpe + (offset * 0.5)).toFixed(2),
-    drawdown: (baseDrw - (offset * 15)).toFixed(2) + '%',
-    turnover: (40 + (offset * 20)).toFixed(1) + '%',
-    winrate: (52 + (offset * 5)).toFixed(1) + '%',
-    bestMo: (8 + (offset * 2)).toFixed(1) + '%',
-    worstMo: (-6 + (offset * 2)).toFixed(1) + '%'
-  }
+const FRICTION_DEFAULTS = {
+  slippage: 20,
+  commission: 1.00,
+  tax_drag: 1.0,
+  rebal_freq: 'Monthly',
 }
 
-export default function BacktestLab({ perf, metrics }) {
-  const [selectedVersions, setSelectedVersions] = useState(['V3', 'V7'])
-  const [universe, setUniverse] = useState('S&P 500')
-  const [topN, setTopN] = useState('15')
-  
-  const toggleVersion = (v) => {
-    if (selectedVersions.includes(v)) {
-      if (selectedVersions.length > 1) setSelectedVersions(selectedVersions.filter(x => x !== v))
-    } else {
-      setSelectedVersions([...selectedVersions, v])
-    }
-  }
+/* ── Custom mono tooltip ─────────────────────────────────────────── */
+function MonoTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div style={{
+      background: 'var(--ink)',
+      border: '1px solid var(--border-2)',
+      padding: '8px 12px',
+      fontFamily: 'Geist Mono, monospace',
+      fontSize: '11px',
+      color: 'var(--white)',
+      borderRadius: 0,
+    }}>
+      <div style={{ color: 'var(--text-3)', marginBottom: 4 }}>{label}</div>
+      {payload.map(p => (
+        <div key={p.dataKey} style={{ color: p.color }}>
+          {p.name}: {typeof p.value === 'number' ? p.value.toFixed(2) : p.value}
+        </div>
+      ))}
+    </div>
+  )
+}
 
-  const tableData = useMemo(() => {
-    return selectedVersions.map(v => genMetrics(v, metrics))
-  }, [selectedVersions, metrics])
-
-  const chartData = useMemo(() => {
-    if (!perf) return []
-    const sampled = perf.filter((_, i) => i % 5 === 0)
-    return sampled.map(p => {
-      const row = { date: p.date, SPY: p.SPY_Equity }
-      selectedVersions.forEach(v => {
-        let offset = 0
-        if (v === 'V1') offset = 0.6
-        if (v === 'V2') offset = 0.7
-        if (v === 'V3') offset = 0.85
-        if (v === 'V4') offset = 0.95
-        if (v === 'V7') offset = 1.0
-        
-        row[v] = ((p.Strategy_Equity - 1) * offset) + 1
-      })
-      return row
-    })
-  }, [perf, selectedVersions])
-
-  const colors = {
-    'V1': '#4cc9f0',
-    'V2': '#4361ee',
-    'V3': '#f72585',
-    'V4': '#7209b7',
-    'V7': '#00e5ff'
+/* ── Evaluation Matrix ───────────────────────────────────────────── */
+function EvalMatrix({ metrics, isEstimated }) {
+  if (!metrics?.length) {
+    return (
+      <div className="p-4 font-mono text-[11px] text-text-3">
+        METRICS DATA PENDING — run src/main.py or check GET /api/backtest/metrics
+      </div>
+    )
   }
 
   return (
-    <div className="glass-panel mt-6">
-      <div className="chart-header">
-        <span className="chart-title">Backtest Laboratory</span>
+    <div className="flex flex-wrap gap-[1px]" style={{ background: 'var(--border-2)' }}>
+      {metrics.map(m => {
+        const delta = m.delta
+        const deltaPositive = m.invert
+          ? delta != null && delta <= 0
+          : delta != null && delta >= 0
+        const deltaColor = delta == null ? '' : deltaPositive ? 'text-green' : 'text-red'
+        const sign = delta != null && delta > 0 ? '+' : ''
+
+        return (
+          <div
+            key={m.label}
+            className="bg-surface p-4 flex flex-col gap-1"
+            style={{ flex: '1 1 130px', minWidth: 130 }}
+          >
+            <span className="font-mono text-[9px] uppercase tracking-widest text-text-3 flex items-center gap-2">
+              {m.label}
+              {isEstimated && (
+                <span className="border border-amber text-amber px-1 text-[8px]">EST</span>
+              )}
+            </span>
+            <span className="font-mono font-black text-2xl text-text-strong leading-none">
+              {m.stratVal}
+            </span>
+            <span className="font-mono text-[10px] text-text-3">SPY: {m.spyVal}</span>
+            {delta != null && (
+              <span className={`font-mono text-[10px] font-bold ${deltaColor}`}>
+                Δ {sign}{delta.toFixed(2)}
+              </span>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ── BacktestLab ─────────────────────────────────────────────────── */
+export default function BacktestLab({ perf }) {
+  const [mode, setMode]                   = useState('historical')
+  const [btMetrics, setBtMetrics]         = useState(null)
+  const [scenarioResult, setScenarioResult] = useState(null)
+  const [scenarioRunning, setScenarioRunning] = useState(false)
+  const [friction, setFriction]           = useState(FRICTION_DEFAULTS)
+
+  useEffect(() => {
+    axios.get(`${API_BASE}/backtest/metrics`)
+      .then(r => setBtMetrics(r.data))
+      .catch(() => setBtMetrics(null))
+  }, [])
+
+  const runScenario = async () => {
+    setScenarioRunning(true)
+    try {
+      const r = await axios.post(`${API_BASE}/backtest`, friction)
+      setScenarioResult(r.data)
+    } catch {
+      setScenarioResult({ error: true })
+    }
+    setScenarioRunning(false)
+  }
+
+  /* chart — sample every 3rd point */
+  const chartData = useMemo(() => {
+    if (!perf) return []
+    return perf.filter((_, i) => i % 3 === 0)
+  }, [perf])
+
+  /* which equity lines are actually present in the data */
+  const lines = useMemo(() => {
+    const sample = chartData[0] || {}
+    return [
+      { key: 'Strategy_Equity', name: 'Strategy', stroke: 'var(--text-strong)', strokeWidth: 2,   dashed: false },
+      { key: 'SPY_Equity',      name: 'SPY',      stroke: 'var(--text-3)',      strokeWidth: 1,   dashed: true  },
+      { key: 'QQQ_Equity',      name: 'QQQ',      stroke: 'var(--blue)',        strokeWidth: 1,   dashed: true  },
+      { key: 'MTUM_Equity',     name: 'MTUM',     stroke: 'var(--amber)',       strokeWidth: 1,   dashed: true  },
+      { key: 'QUAL_Equity',     name: 'QUAL',     stroke: 'var(--teal)',        strokeWidth: 1,   dashed: true  },
+    ].filter(l => sample[l.key] != null)
+  }, [chartData])
+
+  /* parse eval metrics from /api/backtest/metrics response */
+  const evalMetrics = useMemo(() => {
+    const KEYS = [
+      { label: 'CAGR',         field: 'CAGR',                 invert: false },
+      { label: 'VOLATILITY',   field: 'Volatility',           invert: true  },
+      { label: 'SHARPE',       field: 'Sharpe',               invert: false },
+      { label: 'SORTINO',      field: 'Sortino',              invert: false },
+      { label: 'MAX DRAWDOWN', field: 'Max Drawdown',         invert: true  },
+      { label: 'CALMAR',       field: 'Calmar',               invert: false },
+      { label: 'AVG TURNOVER', field: 'Annualized Turnover',  invert: true  },
+    ]
+    const src = Array.isArray(btMetrics?.metrics) ? btMetrics.metrics
+              : Array.isArray(btMetrics)           ? btMetrics
+              : null
+    if (!src) return null
+
+    const strat = src.find(m => m.Metric === 'Strategy') || {}
+    const spy   = src.find(m => m.Metric === 'SPY')      || {}
+
+    return KEYS.map(({ label, field, invert }) => {
+      const sv = strat[field] ?? '—'
+      const bv = spy[field]   ?? '—'
+      const sn = parseFloat(sv)
+      const bn = parseFloat(bv)
+      const delta = !isNaN(sn) && !isNaN(bn) ? sn - bn : null
+      return { label, stratVal: sv, spyVal: bv, delta, invert }
+    })
+  }, [btMetrics])
+
+  /* scenario metrics — map POST response to the same shape when available */
+  const scenarioMetrics = useMemo(() => {
+    if (!scenarioResult || scenarioResult.error) return evalMetrics
+    const base = evalMetrics || []
+    const sc = scenarioResult
+    return base.map(m => ({
+      ...m,
+      stratVal: sc[m.label.toLowerCase().replace(/ /g, '_')] ?? sc[m.label] ?? m.stratVal,
+    }))
+  }, [scenarioResult, evalMetrics])
+
+  const displayMetrics = mode === 'scenario' ? scenarioMetrics : evalMetrics
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: 'calc(100vh - 104px)',
+        overflow: 'hidden',
+      }}
+    >
+      {/* ── Mode Toggle ──────────────────────────────────────────── */}
+      <div
+        className="flex-shrink-0 flex border-b border-border-2 bg-surface"
+      >
+        {[
+          { id: 'historical', label: 'HISTORICAL RESULTS'  },
+          { id: 'scenario',   label: 'SCENARIO ESTIMATOR'  },
+        ].map(m => (
+          <button
+            key={m.id}
+            onClick={() => setMode(m.id)}
+            className={`
+              font-mono text-[10px] uppercase tracking-widest px-6 py-3
+              border-b-2 bg-transparent cursor-pointer transition-colors
+              ${mode === m.id
+                ? 'border-text-strong text-text-strong font-bold'
+                : 'border-transparent text-text-3 hover:text-text-2'
+              }
+            `}
+          >
+            {m.label}
+          </button>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(250px,1fr)_3fr] gap-6 p-5">
-        {/* Controls Card */}
-        <div className="flex flex-col gap-4 bg-surface-2 p-4 rounded-none border border-border">
-           <div>
-             <span className="text-[11px] text-text-2 font-bold tracking-wider uppercase font-mono">Simulation Constraints</span>
-           </div>
-           
-           <div>
-             <span className="text-xs text-text-2">Universe</span>
-             <select 
-               value={universe} 
-               onChange={e => setUniverse(e.target.value)} 
-               className="w-full p-2 bg-surface border border-border text-text mt-1 rounded-none cursor-pointer outline-none focus:border-border-3 text-[11px] font-mono"
-             >
-               {UNIVERSES.map(u => <option key={u} value={u}>{u}</option>)}
-             </select>
-           </div>
-           
-           <div>
-             <span className="text-xs text-text-2">Top N Holdings</span>
-             <select 
-               value={topN} 
-               onChange={e => setTopN(e.target.value)} 
-               className="w-full p-2 bg-surface border border-border text-text mt-1 rounded-none cursor-pointer outline-none focus:border-border-3 text-[11px] font-mono"
-             >
-               {TOP_N_OPTS.map(u => <option key={u} value={u}>{u}</option>)}
-             </select>
-           </div>
+      {/* ── Scenario warning banner ───────────────────────────────── */}
+      {mode === 'scenario' && (
+        <div
+          className="flex-shrink-0 border-b border-amber px-4 py-2 font-mono text-[10px] text-amber"
+          style={{ background: 'rgba(217,119,6,0.06)' }}
+        >
+          ⚠ ESTIMATED MODE — Results are parameterized approximations, not real simulations.
+          Run src/main.py to generate real backtest data.
+        </div>
+      )}
 
-           <div>
-             <span className="text-xs text-text-2">Compare Versions</span>
-             <div className="flex flex-wrap gap-2 mt-2">
-                {VERSIONS.map(v => (
-                  <div 
-                    key={v} 
-                    onClick={() => toggleVersion(v)} 
-                    style={{ 
-                      padding: '6px 12px', 
-                      fontSize: '0.8rem', 
-                      border: '1px solid var(--border-2)', 
-                      borderRadius: '0px', 
-                      cursor: 'pointer', 
-                      background: selectedVersions.includes(v) ? colors[v] : 'transparent', 
-                      color: selectedVersions.includes(v) ? '#000' : 'var(--text)', 
-                      fontWeight: selectedVersions.includes(v) ? 600 : 400, 
-                      transition: 'all 0.2s ease' 
+      {/* ── Chart row + Friction config (60%) ────────────────────── */}
+      <div
+        style={{
+          flex: '0 0 57%',
+          display: 'flex',
+          overflow: 'hidden',
+          borderBottom: '1px solid var(--border-2)',
+        }}
+      >
+        {/* Equity Curve Chart */}
+        <div className="flex-1 bg-surface flex flex-col overflow-hidden">
+          <div className="px-4 py-2 border-b border-border-2 bg-surface-2 flex-shrink-0 flex items-center justify-between">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-text-3">
+              EQUITY CURVE
+            </span>
+            {mode === 'scenario' && (
+              <span className="font-mono text-[9px] border border-amber text-amber px-2 py-0.5">
+                [ESTIMATED]
+              </span>
+            )}
+          </div>
+          <div className="flex-1 p-3 min-h-0">
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+                  <XAxis
+                    dataKey="date"
+                    stroke="var(--border-2)"
+                    tick={{
+                      fontSize: 9,
+                      fill: 'var(--text-3)',
+                      fontFamily: 'Geist Mono, monospace',
                     }}
-                  >
-                    {v}
-                  </div>
-                ))}
-             </div>
-           </div>
+                    tickFormatter={t => t?.substring(0, 7) ?? t}
+                    minTickGap={50}
+                  />
+                  <YAxis
+                    stroke="var(--border-2)"
+                    tick={{
+                      fontSize: 9,
+                      fill: 'var(--text-3)',
+                      fontFamily: 'Geist Mono, monospace',
+                    }}
+                    domain={['auto', 'auto']}
+                    width={52}
+                  />
+                  <Tooltip content={<MonoTooltip />} />
+                  <Legend
+                    wrapperStyle={{
+                      fontSize: '10px',
+                      fontFamily: 'Geist Mono, monospace',
+                      color: 'var(--text-2)',
+                      paddingTop: '4px',
+                    }}
+                  />
+                  {lines.map(l => (
+                    <Line
+                      key={l.key}
+                      type="linear"
+                      dataKey={l.key}
+                      name={l.name}
+                      stroke={l.stroke}
+                      strokeWidth={l.strokeWidth}
+                      dot={false}
+                      strokeDasharray={l.dashed ? '4 4' : undefined}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full font-mono text-[11px] text-text-3">
+                NO PERFORMANCE DATA — run src/main.py
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Metrics Table */}
-        <div className="table-wrapper bg-surface-2 p-4 rounded-none border border-border overflow-x-auto">
-          <table className="data-table mt-[-8px]">
-             <thead>
-               <tr>
-                 <th>Metric</th>
-                 {tableData.map(t => <th key={t.version}>{t.version}</th>)}
-               </tr>
-             </thead>
-             <tbody>
-               <tr>
-                 <td>CAGR</td>
-                 {tableData.map(t => <td key={t.version} className="text-teal font-mono font-semibold">{t.cagr}</td>)}
-               </tr>
-               <tr>
-                 <td>Volatility</td>
-                 {tableData.map(t => <td key={t.version}>{t.volatility}</td>)}
-               </tr>
-               <tr>
-                 <td>Sharpe</td>
-                 {tableData.map(t => <td key={t.version}>{t.sharpe}</td>)}
-               </tr>
-               <tr>
-                 <td>Max Drawdown</td>
-                 {tableData.map(t => <td key={t.version} className="text-red font-mono font-semibold">{t.drawdown}</td>)}
-               </tr>
-               <tr>
-                 <td>Win Rate</td>
-                 {tableData.map(t => <td key={t.version}>{t.winrate}</td>)}
-               </tr>
-             </tbody>
-          </table>
+        {/* Friction Config */}
+        <div
+          className="flex-shrink-0 bg-surface flex flex-col overflow-y-auto"
+          style={{ width: 256, borderLeft: '1px solid var(--border-2)' }}
+        >
+          <div className="px-4 py-2 border-b border-border-2 bg-surface-2 flex-shrink-0">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-text-3">
+              FRICTION CONFIG
+            </span>
+          </div>
+          <div className="p-4 flex flex-col gap-4 flex-1">
+            {[
+              { key: 'slippage',   label: 'SLIPPAGE (bps)', type: 'number', step: 1     },
+              { key: 'commission', label: 'COMMISSION ($)',  type: 'number', step: 0.01  },
+              { key: 'tax_drag',   label: 'TAX DRAG (%)',   type: 'number', step: 0.1   },
+            ].map(f => (
+              <div key={f.key} className="flex flex-col gap-1">
+                <label className="font-mono text-[9px] uppercase tracking-widest text-text-3">
+                  {f.label}
+                </label>
+                <input
+                  type={f.type}
+                  step={f.step}
+                  value={friction[f.key]}
+                  onChange={e =>
+                    setFriction(fr => ({ ...fr, [f.key]: Number(e.target.value) }))
+                  }
+                  className={`w-full font-mono text-[12px] p-1.5 bg-surface-2 border border-border-2
+                    text-text-strong outline-none transition-opacity
+                    ${mode !== 'scenario' ? 'opacity-40' : ''}
+                  `}
+                />
+              </div>
+            ))}
+
+            <div className="flex flex-col gap-1">
+              <label className="font-mono text-[9px] uppercase tracking-widest text-text-3">
+                REBAL FREQ
+              </label>
+              <select
+                value={friction.rebal_freq}
+                onChange={e =>
+                  setFriction(fr => ({ ...fr, rebal_freq: e.target.value }))
+                }
+                className={`w-full font-mono text-[11px] p-1.5 bg-surface-2 border border-border-2
+                  text-text outline-none cursor-pointer transition-opacity
+                  ${mode !== 'scenario' ? 'opacity-40' : ''}
+                `}
+              >
+                {['Weekly', 'Monthly', 'Quarterly'].map(v => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            </div>
+
+            {mode === 'scenario' ? (
+              <button
+                onClick={runScenario}
+                disabled={scenarioRunning}
+                className="mt-2 w-full font-mono text-[10px] uppercase tracking-widest border border-border-2 bg-transparent py-2.5 cursor-pointer hover:bg-surface-2 disabled:opacity-50 text-text-strong"
+              >
+                {scenarioRunning ? 'RUNNING...' : 'RUN SCENARIO'}
+              </button>
+            ) : (
+              <p className="font-mono text-[9px] text-text-3 mt-2 leading-relaxed">
+                Friction parameters apply to Scenario Estimator mode only.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="mt-6 h-[400px] p-5">
-         <ResponsiveContainer width="100%" height="100%">
-           <LineChart data={chartData}>
-             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-             <XAxis dataKey="date" stroke="var(--border-3)" tick={{fontSize: 10, fill: 'var(--text-2)'}} tickFormatter={t => t.substring(0,4)} minTickGap={30}/>
-             <YAxis stroke="var(--border-3)" tick={{fontSize: 10, fill: 'var(--text-2)'}} domain={['auto', 'auto']} />
-             <Tooltip contentStyle={{background: 'var(--surface-2)', border: '1px solid var(--border-2)', borderRadius: '0px', color: 'var(--text)'}} />
-             <Legend wrapperStyle={{fontSize: '0.85rem', color: 'var(--text-2)'}} />
-             <Line type="monotone" dataKey="SPY" name="SPY Benchmark" stroke="var(--text-3)" strokeWidth={1.5} dot={false} strokeDasharray="5 5" />
-             {selectedVersions.map(v => (
-               <Line key={v} type="monotone" dataKey={v} name={`Strategy ${v}`} stroke={colors[v]} strokeWidth={2.5} dot={false} />
-             ))}
-           </LineChart>
-         </ResponsiveContainer>
+      {/* ── Evaluation Matrix (40%) ───────────────────────────────── */}
+      <div className="flex-1 bg-surface overflow-auto min-h-0">
+        <div className="px-4 py-2 border-b border-border-2 bg-surface-2 sticky top-0 flex items-center justify-between">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-text-3">
+            EVALUATION MATRIX
+          </span>
+          {mode === 'scenario' && (
+            <span className="font-mono text-[9px] border border-amber text-amber px-2 py-0.5">
+              [ESTIMATED]
+            </span>
+          )}
+        </div>
+        <EvalMatrix
+          metrics={displayMetrics}
+          isEstimated={mode === 'scenario'}
+        />
       </div>
     </div>
   )
