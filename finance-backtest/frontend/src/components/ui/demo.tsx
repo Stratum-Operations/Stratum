@@ -1,22 +1,5 @@
-import * as React from "react"
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
-import AiAssistat from "@/components/ui/ai-assistat";
+import { Component } from "@/components/ui/category-bar-chart";
 
 export default function DemoOne() {
-  return (
-    <div className="flex min-h-[200px] w-full items-center justify-center">
-      <AnimatedThemeToggler />
-    </div>
-  );
+  return <Component className="max-w-[500px]" />;
 }
-
-function DemoAiAssistatBasic() {
-  return (
-    <AiAssistat
-      title="Smart AI Assistant"
-      description="Interact with an intelligent assistant that understands your queries and provides instant responses."
-    />
-  );
-}
-
-export { DemoAiAssistatBasic }

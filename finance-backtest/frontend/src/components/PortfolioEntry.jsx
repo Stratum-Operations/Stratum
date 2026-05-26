@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import { ClipboardPaste, UploadCloud, AlertCircle, Sparkles, Search } from 'lucide-react'
+import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts'
 
 const API_BASE = '/api'
 const MONO = 'Geist Mono, monospace'
@@ -358,9 +359,9 @@ function HealthScoreCard({ health }) {
 /* ── Risk Radar helpers ─────────────────────────────────────────── */
 const STATUS_COLOR = { ok: 'var(--green)', warning: 'var(--amber)', alert: 'var(--red)', unknown: 'var(--text-3)' }
 
-function RadarPanel({ title, status = 'ok', children }) {
+function RadarPanel({ title, status = 'ok', className = '', children }) {
   return (
-    <div className="p-5 border-r border-b border-border flex flex-col min-w-0">
+    <div className={`p-5 border-r border-b border-border flex flex-col min-w-0 ${className}`}>
       <div className="flex items-center justify-between mb-4">
         <span className="text-[9px] font-bold tracking-wider uppercase text-text-3 font-mono">{title}</span>
         <div style={{ background: STATUS_COLOR[status] ?? STATUS_COLOR.unknown }} className="w-1.5 h-1.5 flex-shrink-0" />
@@ -402,8 +403,7 @@ function TiltRow({ label, value }) {
 /* ── Risk Radar card ────────────────────────────────────────────── */
 function RiskRadar({ radar }) {
   if (!radar || !Object.keys(radar).length) return null
-  const { sector_exposure = [], correlation = {}, factor_tilt = {}, top5 = [] } = radar
-  const maxSectorW = sector_exposure[0]?.weight ?? 1
+  const { sector_exposure = [], correlation = {}, factor_tilt = {} } = radar
 
   const corrLevelLabel = { ok: 'LOW', warning: 'MODERATE', alert: 'HIGH', unknown: '—' }
 
@@ -423,22 +423,67 @@ function RiskRadar({ radar }) {
           status={sector_exposure.find(s => s.status === 'alert') ? 'alert'
                 : sector_exposure.find(s => s.status === 'warning') ? 'warning' : 'ok'}
         >
-          {sector_exposure.length === 0
-            ? <span className="text-[10px] text-text-3 font-mono">No sector data</span>
-            : sector_exposure.map(s => (
-              <div key={s.sector} className="mb-2">
-                <div className="flex justify-between mb-0.5">
-                  <span className="text-[9px] text-text-2 font-mono overflow-hidden text-overflow-ellipsis white-space-nowrap max-w-[65%]">
-                    {s.sector}
-                  </span>
-                  <span style={{ color: STATUS_COLOR[s.status] }} className="text-[10px] font-bold font-mono">
-                    {s.weight}%
-                  </span>
-                </div>
-                <MiniBar value={s.weight} max={maxSectorW} color={STATUS_COLOR[s.status]} />
+          {sector_exposure.length === 0 ? (
+            <span className="text-[10px] text-text-3 font-mono">No sector data</span>
+          ) : (
+            <>
+              <div className="flex h-3 w-full bg-surface-2 border border-border rounded-none overflow-hidden mb-3">
+                {sector_exposure.map((s, idx) => {
+                  const weight = Number(s.weight);
+                  if (weight <= 0) return null;
+                  const colors = [
+                    'var(--chart-1)',
+                    'var(--chart-3)',
+                    'var(--chart-4)',
+                    'var(--chart-5)',
+                    'var(--blue)',
+                    'var(--text-2)',
+                    'var(--amber)',
+                  ];
+                  const color = colors[idx % colors.length];
+                  return (
+                    <div
+                      key={s.sector}
+                      style={{
+                        width: `${(weight * 100).toFixed(2)}%`,
+                        backgroundColor: color,
+                      }}
+                      title={`${s.sector}: ${(weight * 100).toFixed(1)}%`}
+                    />
+                  );
+                })}
               </div>
-            ))
-          }
+              <div className="flex flex-wrap gap-x-4 gap-y-2">
+                {sector_exposure.map((s, idx) => {
+                  const weight = Number(s.weight);
+                  if (weight <= 0) return null;
+                  const colors = [
+                    'var(--chart-1)',
+                    'var(--chart-3)',
+                    'var(--chart-4)',
+                    'var(--chart-5)',
+                    'var(--blue)',
+                    'var(--text-2)',
+                    'var(--amber)',
+                  ];
+                  const color = colors[idx % colors.length];
+                  const badge = s.status === 'alert'
+                    ? <span className="text-red font-bold ml-1 text-[9px]">[ALERT]</span>
+                    : s.status === 'warning'
+                      ? <span className="text-amber font-bold ml-1 text-[9px]">[WARN]</span>
+                      : null;
+                  return (
+                    <div key={s.sector} className="font-mono text-[11px] flex items-center gap-1.5">
+                      <span style={{ backgroundColor: color }} className="w-1.5 h-1.5 flex-shrink-0" />
+                      <span className="text-text-2 uppercase">{s.sector}</span>
+                      <span className="text-text-strong font-bold">{(weight * 100).toFixed(1)}%</span>
+                      {badge}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </RadarPanel>
 
         {/* Panel 2: Correlation Risk */}
@@ -488,42 +533,48 @@ function RiskRadar({ radar }) {
         </RadarPanel>
 
         {/* Panel 3: Factor Tilt */}
-        <RadarPanel title="Factor Tilt" status="ok">
+        <RadarPanel title="Factor Tilt" status="ok" className="md:col-span-2 border-r-0">
           {!factor_tilt.has_data ? (
             <span className="text-[10px] text-text-3 font-mono">
               No universe overlap — factor data unavailable
             </span>
           ) : (
-            <>
-              <TiltRow label="Momentum 6M"  value={factor_tilt.tilts?.momentum_6m}  />
-              <TiltRow label="Momentum 12M" value={factor_tilt.tilts?.momentum_12m} />
-              <TiltRow label="Quality"      value={factor_tilt.tilts?.quality}      />
-              <TiltRow label="Volatility"   value={factor_tilt.tilts?.volatility}   />
-              <div className="mt-2 text-[9px] text-text-3 font-mono">
-                {factor_tilt.n_covered}/{factor_tilt.n_total} positions in universe
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              {/* Radar Chart */}
+              <div className="h-[180px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart outerRadius="70%" data={[
+                    { subject: 'MOM 6M', value: Number(factor_tilt.tilts?.momentum_6m || 0) },
+                    { subject: 'MOM 12M', value: Number(factor_tilt.tilts?.momentum_12m || 0) },
+                    { subject: 'QUALITY', value: Number(factor_tilt.tilts?.quality || 0) },
+                    { subject: 'VOLATILITY', value: Number(factor_tilt.tilts?.volatility || 0) },
+                  ]}>
+                    <PolarGrid stroke="#333" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-3)', fontSize: 9, fontFamily: 'Geist Mono, monospace' }} />
+                    <Radar
+                      name="Factor Tilt"
+                      dataKey="value"
+                      stroke="var(--green)"
+                      fill="var(--green)"
+                      fillOpacity={0.25}
+                      dot={{ r: 3, fill: 'var(--green)', strokeWidth: 0 }}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
               </div>
-            </>
-          )}
-        </RadarPanel>
 
-        {/* Panel 4: Top-5 Concentration */}
-        <RadarPanel title="Top-5 Positions" status="ok">
-          {top5.length === 0
-            ? <span className="text-[10px] text-text-3 font-mono">No data</span>
-            : top5.map((p, i) => (
-              <div key={p.ticker} className="mb-2">
-                <div className="flex justify-between mb-0.5">
-                  <span className="text-[11px] font-bold font-mono text-white">
-                    {i + 1}. {p.ticker}
-                  </span>
-                  <span className="text-[10px] font-bold font-mono text-text">
-                    {p.weight}%
-                  </span>
+              {/* Numerical List */}
+              <div className="flex flex-col justify-center">
+                <TiltRow label="Momentum 6M"  value={factor_tilt.tilts?.momentum_6m}  />
+                <TiltRow label="Momentum 12M" value={factor_tilt.tilts?.momentum_12m} />
+                <TiltRow label="Quality"      value={factor_tilt.tilts?.quality}      />
+                <TiltRow label="Volatility"   value={factor_tilt.tilts?.volatility}   />
+                <div className="mt-2 text-[9px] text-text-3 font-mono">
+                  {factor_tilt.n_covered}/{factor_tilt.n_total} positions in universe
                 </div>
-                <MiniBar value={p.weight} max={top5[0]?.weight ?? 1} color="var(--border-3)" />
               </div>
-            ))
-          }
+            </div>
+          )}
         </RadarPanel>
       </div>
     </div>
